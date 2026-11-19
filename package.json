@@ -1,0 +1,23 @@
+{
+  "name": "ggpp",
+  "version": "0.2.0",
+  "private": true,
+  "description": "GG++ — a plugin-first mod for gemini.google.com (Userscript++ site)",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs --prod",
+    "build:dev": "node scripts/build.mjs --dev",
+    "watch": "node scripts/build.mjs --dev --watch",
+    "tsc": "tsc --noEmit",
+    "test": "bun test sites scripts",
+    "prepare:framework": "node scripts/prepare-framework.mjs"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.3",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

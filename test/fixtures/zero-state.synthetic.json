@@ -1,0 +1,6 @@
+{
+  "fixtureKind": "public-synthetic-structural-only-not-live-DOM",
+  "regions": {
+    "zeroState": "<modular-zero-state><div class=\"blur-bg visible-primary-message\"></div></modular-zero-state>"
+  }
+}

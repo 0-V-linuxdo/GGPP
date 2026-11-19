@@ -1,0 +1,19 @@
+{
+  "framework": "Userscript++",
+  "repository": "https://github.com/0-V-linuxdo/UserscriptPP",
+  "commit": "a2390fa39ea8387227aef920eccdad6e8a935061",
+  "archiveUrl": "https://codeload.github.com/0-V-linuxdo/UserscriptPP/tar.gz/a2390fa39ea8387227aef920eccdad6e8a935061",
+  "archiveSha256": "bba8cb38e832d86603838a88417509bfabc8708e0a1e292aa0aa081fbdf9f004",
+  "upstreamPackageLockSha256": "7295cbd5d5433e5235a197564a24afd1e446d7de89a2ec28780925aee8446634",
+  "licenses": {
+    "framework": "GPL-3.0-or-later",
+    "preact": "MIT",
+    "esbuild": "MIT"
+  },
+  "versions": {
+    "nodeTested": "24.19.0",
+    "bunTested": "1.3.14",
+    "esbuild": "0.25.10",
+    "preact": "10.29.8"
+  }
+}

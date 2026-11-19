@@ -1,0 +1,16 @@
+node_modules/
+.build-deps/
+dist/
+dist-dev/
+dist-next/
+acceptance/
+coverage/
+.cache/
+.DS_Store
+**/.DS_Store
+.env
+.env.*
+*.log
+*.zip
+userscript/*.dev.*
+**/*.map

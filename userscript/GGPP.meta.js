@@ -1,0 +1,35 @@
+// ==UserScript==
+// @name         GG++
+// @namespace    ggpp
+// @version      0.2.0
+// @description  A plugin-first mod for Gemini on the web (Userscript++).
+// @author       GG++
+// @license      GPL-3.0-or-later
+// @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NiIgaGVpZ2h0PSI2NiIgdmlld0JveD0iMCAwIDY2IDY2IiBmaWxsPSJub25lIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ2dwcFNwYXJrIiB4MT0iMTguNDUiIHkxPSI0My40MiIgeDI9IjUyLjE1IiB5Mj0iMTUuMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzQ4OTNGQyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjAuMjciIHN0b3AtY29sb3I9IiM0ODkzRkMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIwLjc3NyIgc3RvcC1jb2xvcj0iIzk2OURGRiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNCRDk5RkUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDwhLS0gR0crKyByZXZpZXcgKGJveCBvbmx5KS4gU3RhciBwYXRoIGQ9IGlkZW50aWNhbCB0byBDRE4gb3JpZ2luYWwuICsrIHZpYSBldmVub2RkIGhvbGVzLiAtLT4KICA8cGF0aCBmaWxsPSJ1cmwoI2dncHBTcGFyaykiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTU4LjY4MTkgMjkuNDE5NUM1My42MTE2IDI3LjIzNjkgNDkuMTc1MyAyNC4yNDI2IDQ1LjM3MTEgMjAuNDQwM0M0MS41Njg4IDE2LjYzOCAzOC41NzQ1IDEyLjE5OTggMzYuMzkxOSA3LjEyOTUxQzM1LjU1NCA1LjE4NjI5IDM0Ljg4MDcgMy4xODg4MyAzNC4zNjQ1IDEuMTQwODdDMzQuMTk2MiAwLjQ3MTMxMSAzMy41OTU4IDAgMzIuOTA1NyAwQzMyLjIxNTYgMCAzMS42MTUyIDAuNDcxMzExIDMxLjQ0NjkgMS4xNDA4N0MzMC45MzA3IDMuMTg4ODMgMzAuMjU3NCA1LjE4NDQyIDI5LjQxOTUgNy4xMjk1MUMyNy4yMzY5IDEyLjE5OTggMjQuMjQyNiAxNi42MzggMjAuNDQwMyAyMC40NDAzQzE2LjYzOCAyNC4yNDI2IDEyLjE5OTggMjcuMjM2OSA3LjEyOTUxIDI5LjQxOTVDNS4xODYyOSAzMC4yNTc0IDMuMTg4ODMgMzAuOTMwNyAxLjE0MDg3IDMxLjQ0NjlDMC40NzEzMTEgMzEuNjE1MiAwIDMyLjIxNTYgMCAzMi45MDU3QzAgMzMuNTk1OCAwLjQ3MTMxMSAzNC4xOTYyIDEuMTQwODcgMzQuMzY0NUMzLjE4ODgzIDM0Ljg4MDcgNS4xODQ0MiAzNS41NTQgNy4xMjk1MSAzNi4zOTE5QzEyLjE5OTggMzguNTc0NSAxNi42MzYxIDQxLjU2ODggMjAuNDQwMyA0NS4zNzExQzI0LjI0NDQgNDkuMTczNCAyNy4yMzY5IDUzLjYxMTYgMjkuNDE5NSA1OC42ODE5QzMwLjI1NzQgNjAuNjI1MSAzMC45MzA3IDYyLjYyMjYgMzEuNDQ2OSA2NC42NzA1QzMxLjYxNTIgNjUuMzQwMSAzMi4yMTU2IDY1LjgxMTQgMzIuOTA1NyA2NS44MTE0QzMzLjU5NTggNjUuODExNCAzNC4xOTYyIDY1LjM0MDEgMzQuMzY0NSA2NC42NzA1QzM0Ljg4MDcgNjIuNjIyNiAzNS41NTQgNjAuNjI3IDM2LjM5MTkgNTguNjgxOUMzOC41NzQ1IDUzLjYxMTYgNDEuNTY4OCA0OS4xNzUzIDQ1LjM3MTEgNDUuMzcxMUM0OS4xNzM0IDQxLjU2ODggNTMuNjExNiAzOC41NzQ1IDU4LjY4MTkgMzYuMzkxOUM2MC42MjUxIDM1LjU1NCA2Mi42MjI2IDM0Ljg4MDcgNjQuNjcwNSAzNC4zNjQ1QzY1LjM0MDEgMzQuMTk2MiA2NS44MTE0IDMzLjU5NTggNjUuODExNCAzMi45MDU3QzY1LjgxMTQgMzIuMjE1NiA2NS4zNDAxIDMxLjYxNTIgNjQuNjcwNSAzMS40NDY5QzYyLjYyMjYgMzAuOTMwNyA2MC42MjcgMzAuMjU3NCA1OC42ODE5IDI5LjQxOTVaIE0yMS4yMDAsMjYuMzAwIEgyNi4wMDAgVjMwLjUwMCBIMzAuMjAwIFYzNS4zMDAgSDI2LjAwMCBWMzkuNTAwIEgyMS4yMDAgVjM1LjMwMCBIMTcuMDAwIFYzMC41MDAgSDIxLjIwMCBaIE0zOS44MDAsMjYuMzAwIEg0NC42MDAgVjMwLjUwMCBINDguODAwIFYzNS4zMDAgSDQ0LjYwMCBWMzkuNTAwIEgzOS44MDAgVjM1LjMwMCBIMzUuNjAwIFYzMC41MDAgSDM5LjgwMCBaIi8+Cjwvc3ZnPgo=
+// @match        https://gemini.google.com/*
+// @run-at       document-start
+// @inject-into  auto
+// @sandbox      JavaScript
+// @noframes
+// @grant        unsafeWindow
+// @grant        GM_addValueChangeListener
+// @grant        GM_deleteValue
+// @grant        GM_getValue
+// @grant        GM_info
+// @grant        GM_notification
+// @grant        GM_registerMenuCommand
+// @grant        GM_removeValueChangeListener
+// @grant        GM_setClipboard
+// @grant        GM_setValue
+// @grant        GM_unregisterMenuCommand
+// @grant        GM_xmlhttpRequest
+// @grant        GM.setClipboard
+// @grant        GM.notification
+// @grant        GM.getValue
+// @grant        GM.setValue
+// @grant        GM.deleteValue
+// @grant        GM.listValues
+// @grant        GM.xmlHttpRequest
+// @grant        GM.registerMenuCommand
+// @connect      *
+// ==/UserScript==
