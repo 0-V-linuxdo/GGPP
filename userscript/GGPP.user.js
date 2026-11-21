@@ -33,803 +33,6 @@
 // @grant        GM.registerMenuCommand
 // @connect      *
 // ==/UserScript==
-/*!
-# GG++ third-party and modification notices
-
-GG++ and the embedded Userscript++ framework are distributed under GPL-3.0-or-later. Full GNU GPL version 3 is in LICENSE and is embedded verbatim in the production userscript after these notices.
-
-Corresponding source: https://github.com/0-V-linuxdo/GGPP and the exact framework source https://github.com/0-V-linuxdo/UserscriptPP/tree/a2390fa39ea8387227aef920eccdad6e8a935061 . The immutable public framework archive and its digest are recorded in build-dependencies.json.
-
-Modified integration / publication packaging, 2026-11-19: GG++ uses a site adapter and feature plugins; its build temporarily injects GG++ import aliases, CSS loading and legacy compile-time constants into the framework build script. Publication packaging normalizes generated standalone source-origin comments and adds notices; it does not modify feature runtime tokens or icon bytes.
-
-Google/Gemini artwork, trademarks and related third-party rights are not granted by this GPL declaration. The existing Google-derived vector icon is retained unchanged as GG++'s tool identifier, with its source and modifications documented in ICON-RIGHTS.md and sites/gemini/USERSCRIPT-ICON-PROVENANCE.md. GG++ is independent and unofficial; no Google permission, endorsement, sponsorship or affiliation is claimed. The provenance and non-affiliation statements are not a third-party rights grant or a legal-clearance determination.
-
-The following original copyright and permission notices are preserved. Lucide/Feather notices are retained for the icon geometry; they do not grant rights in Google's artwork.
-
----
-
-## Preact 10.29.8 (runtime)
-
-Source: https://github.com/preactjs/preact/tree/10.29.8
-
-The MIT License (MIT)
-
-Copyright (c) 2015-present Jason Miller
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
-
-## esbuild 0.25.10 (build tool; not application runtime)
-
-Source: https://github.com/evanw/esbuild/tree/v0.25.10
-
-MIT License
-
-Copyright (c) 2020 Evan Wallace
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
-
-## Lucide / Feather icon notices
-
-Source: https://raw.githubusercontent.com/lucide-icons/lucide/main/LICENSE
-
-ISC License
-
-Copyright (c) 2026 Lucide Icons and Contributors
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted, provided that the above
-copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
----
-
-The following Lucide icons are derived from the Feather project:
-
-airplay, alert-circle, alert-octagon, alert-triangle, aperture, arrow-down-circle, arrow-down-left, arrow-down-right, arrow-down, arrow-left-circle, arrow-left, arrow-right-circle, arrow-right, arrow-up-circle, arrow-up-left, arrow-up-right, arrow-up, at-sign, calendar, cast, check, chevron-down, chevron-left, chevron-right, chevron-up, chevrons-down, chevrons-left, chevrons-right, chevrons-up, circle, clipboard, clock, code, columns, command, compass, corner-down-left, corner-down-right, corner-left-down, corner-left-up, corner-right-down, corner-right-up, corner-up-left, corner-up-right, crosshair, database, divide-circle, divide-square, dollar-sign, download, external-link, feather, frown, hash, headphones, help-circle, info, italic, key, layout, life-buoy, link-2, link, loader, lock, log-in, log-out, maximize, meh, minimize, minimize-2, minus-circle, minus-square, minus, monitor, moon, more-horizontal, more-vertical, move, music, navigation-2, navigation, octagon, pause-circle, percent, plus-circle, plus-square, plus, power, radio, rss, search, server, share, shopping-bag, sidebar, smartphone, smile, square, table-2, tablet, target, terminal, trash-2, trash, triangle, tv, type, upload, x-circle, x-octagon, x-square, x, zoom-in, zoom-out
-
-The MIT License (MIT) (for the icons listed above)
-
-Copyright (c) 2013-present Cole Bemis
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
----
-GNU GPL version 3 (verbatim license text)
-
-                    GNU GENERAL PUBLIC LICENSE
-                       Version 3, 29 June 2007
-
- Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>
- Everyone is permitted to copy and distribute verbatim copies
- of this license document, but changing it is not allowed.
-
-                            Preamble
-
-  The GNU General Public License is a free, copyleft license for
-software and other kinds of works.
-
-  The licenses for most software and other practical works are designed
-to take away your freedom to share and change the works.  By contrast,
-the GNU General Public License is intended to guarantee your freedom to
-share and change all versions of a program--to make sure it remains free
-software for all its users.  We, the Free Software Foundation, use the
-GNU General Public License for most of our software; it applies also to
-any other work released this way by its authors.  You can apply it to
-your programs, too.
-
-  When we speak of free software, we are referring to freedom, not
-price.  Our General Public Licenses are designed to make sure that you
-have the freedom to distribute copies of free software (and charge for
-them if you wish), that you receive source code or can get it if you
-want it, that you can change the software or use pieces of it in new
-free programs, and that you know you can do these things.
-
-  To protect your rights, we need to prevent others from denying you
-these rights or asking you to surrender the rights.  Therefore, you have
-certain responsibilities if you distribute copies of the software, or if
-you modify it: responsibilities to respect the freedom of others.
-
-  For example, if you distribute copies of such a program, whether
-gratis or for a fee, you must pass on to the recipients the same
-freedoms that you received.  You must make sure that they, too, receive
-or can get the source code.  And you must show them these terms so they
-know their rights.
-
-  Developers that use the GNU GPL protect your rights with two steps:
-(1) assert copyright on the software, and (2) offer you this License
-giving you legal permission to copy, distribute and/or modify it.
-
-  For the developers' and authors' protection, the GPL clearly explains
-that there is no warranty for this free software.  For both users' and
-authors' sake, the GPL requires that modified versions be marked as
-changed, so that their problems will not be attributed erroneously to
-authors of previous versions.
-
-  Some devices are designed to deny users access to install or run
-modified versions of the software inside them, although the manufacturer
-can do so.  This is fundamentally incompatible with the aim of
-protecting users' freedom to change the software.  The systematic
-pattern of such abuse occurs in the area of products for individuals to
-use, which is precisely where it is most unacceptable.  Therefore, we
-have designed this version of the GPL to prohibit the practice for those
-products.  If such problems arise substantially in other domains, we
-stand ready to extend this provision to those domains in future versions
-of the GPL, as needed to protect the freedom of users.
-
-  Finally, every program is threatened constantly by software patents.
-States should not allow patents to restrict development and use of
-software on general-purpose computers, but in those that do, we wish to
-avoid the special danger that patents applied to a free program could
-make it effectively proprietary.  To prevent this, the GPL assures that
-patents cannot be used to render the program non-free.
-
-  The precise terms and conditions for copying, distribution and
-modification follow.
-
-                       TERMS AND CONDITIONS
-
-  0. Definitions.
-
-  "This License" refers to version 3 of the GNU General Public License.
-
-  "Copyright" also means copyright-like laws that apply to other kinds of
-works, such as semiconductor masks.
-
-  "The Program" refers to any copyrightable work licensed under this
-License.  Each licensee is addressed as "you".  "Licensees" and
-"recipients" may be individuals or organizations.
-
-  To "modify" a work means to copy from or adapt all or part of the work
-in a fashion requiring copyright permission, other than the making of an
-exact copy.  The resulting work is called a "modified version" of the
-earlier work or a work "based on" the earlier work.
-
-  A "covered work" means either the unmodified Program or a work based
-on the Program.
-
-  To "propagate" a work means to do anything with it that, without
-permission, would make you directly or secondarily liable for
-infringement under applicable copyright law, except executing it on a
-computer or modifying a private copy.  Propagation includes copying,
-distribution (with or without modification), making available to the
-public, and in some countries other activities as well.
-
-  To "convey" a work means any kind of propagation that enables other
-parties to make or receive copies.  Mere interaction with a user through
-a computer network, with no transfer of a copy, is not conveying.
-
-  An interactive user interface displays "Appropriate Legal Notices"
-to the extent that it includes a convenient and prominently visible
-feature that (1) displays an appropriate copyright notice, and (2)
-tells the user that there is no warranty for the work (except to the
-extent that warranties are provided), that licensees may convey the
-work under this License, and how to view a copy of this License.  If
-the interface presents a list of user commands or options, such as a
-menu, a prominent item in the list meets this criterion.
-
-  1. Source Code.
-
-  The "source code" for a work means the preferred form of the work
-for making modifications to it.  "Object code" means any non-source
-form of a work.
-
-  A "Standard Interface" means an interface that either is an official
-standard defined by a recognized standards body, or, in the case of
-interfaces specified for a particular programming language, one that
-is widely used among developers working in that language.
-
-  The "System Libraries" of an executable work include anything, other
-than the work as a whole, that (a) is included in the normal form of
-packaging a Major Component, but which is not part of that Major
-Component, and (b) serves only to enable use of the work with that
-Major Component, or to implement a Standard Interface for which an
-implementation is available to the public in source code form.  A
-"Major Component", in this context, means a major essential component
-(kernel, window system, and so on) of the specific operating system
-(if any) on which the executable work runs, or a compiler used to
-produce the work, or an object code interpreter used to run it.
-
-  The "Corresponding Source" for a work in object code form means all
-the source code needed to generate, install, and (for an executable
-work) run the object code and to modify the work, including scripts to
-control those activities.  However, it does not include the work's
-System Libraries, or general-purpose tools or generally available free
-programs which are used unmodified in performing those activities but
-which are not part of the work.  For example, Corresponding Source
-includes interface definition files associated with source files for
-the work, and the source code for shared libraries and dynamically
-linked subprograms that the work is specifically designed to require,
-such as by intimate data communication or control flow between those
-subprograms and other parts of the work.
-
-  The Corresponding Source need not include anything that users
-can regenerate automatically from other parts of the Corresponding
-Source.
-
-  The Corresponding Source for a work in source code form is that
-same work.
-
-  2. Basic Permissions.
-
-  All rights granted under this License are granted for the term of
-copyright on the Program, and are irrevocable provided the stated
-conditions are met.  This License explicitly affirms your unlimited
-permission to run the unmodified Program.  The output from running a
-covered work is covered by this License only if the output, given its
-content, constitutes a covered work.  This License acknowledges your
-rights of fair use or other equivalent, as provided by copyright law.
-
-  You may make, run and propagate covered works that you do not
-convey, without conditions so long as your license otherwise remains
-in force.  You may convey covered works to others for the sole purpose
-of having them make modifications exclusively for you, or provide you
-with facilities for running those works, provided that you comply with
-the terms of this License in conveying all material for which you do
-not control copyright.  Those thus making or running the covered works
-for you must do so exclusively on your behalf, under your direction
-and control, on terms that prohibit them from making any copies of
-your copyrighted material outside their relationship with you.
-
-  Conveying under any other circumstances is permitted solely under
-the conditions stated below.  Sublicensing is not allowed; section 10
-makes it unnecessary.
-
-  3. Protecting Users' Legal Rights From Anti-Circumvention Law.
-
-  No covered work shall be deemed part of an effective technological
-measure under any applicable law fulfilling obligations under article
-11 of the WIPO copyright treaty adopted on 20 December 1996, or
-similar laws prohibiting or restricting circumvention of such
-measures.
-
-  When you convey a covered work, you waive any legal power to forbid
-circumvention of technological measures to the extent such circumvention
-is effected by exercising rights under this License with respect to
-the covered work, and you disclaim any intention to limit operation or
-modification of the work as a means of enforcing, against the work's
-users, your or third parties' legal rights to forbid circumvention of
-technological measures.
-
-  4. Conveying Verbatim Copies.
-
-  You may convey verbatim copies of the Program's source code as you
-receive it, in any medium, provided that you conspicuously and
-appropriately publish on each copy an appropriate copyright notice;
-keep intact all notices stating that this License and any
-non-permissive terms added in accord with section 7 apply to the code;
-keep intact all notices of the absence of any warranty; and give all
-recipients a copy of this License along with the Program.
-
-  You may charge any price or no price for each copy that you convey,
-and you may offer support or warranty protection for a fee.
-
-  5. Conveying Modified Source Versions.
-
-  You may convey a work based on the Program, or the modifications to
-produce it from the Program, in the form of source code under the
-terms of section 4, provided that you also meet all of these conditions:
-
-    a) The work must carry prominent notices stating that you modified
-    it, and giving a relevant date.
-
-    b) The work must carry prominent notices stating that it is
-    released under this License and any conditions added under section
-    7.  This requirement modifies the requirement in section 4 to
-    "keep intact all notices".
-
-    c) You must license the entire work, as a whole, under this
-    License to anyone who comes into possession of a copy.  This
-    License will therefore apply, along with any applicable section 7
-    additional terms, to the whole of the work, and all its parts,
-    regardless of how they are packaged.  This License gives no
-    permission to license the work in any other way, but it does not
-    invalidate such permission if you have separately received it.
-
-    d) If the work has interactive user interfaces, each must display
-    Appropriate Legal Notices; however, if the Program has interactive
-    interfaces that do not display Appropriate Legal Notices, your
-    work need not make them do so.
-
-  A compilation of a covered work with other separate and independent
-works, which are not by their nature extensions of the covered work,
-and which are not combined with it such as to form a larger program,
-in or on a volume of a storage or distribution medium, is called an
-"aggregate" if the compilation and its resulting copyright are not
-used to limit the access or legal rights of the compilation's users
-beyond what the individual works permit.  Inclusion of a covered work
-in an aggregate does not cause this License to apply to the other
-parts of the aggregate.
-
-  6. Conveying Non-Source Forms.
-
-  You may convey a covered work in object code form under the terms
-of sections 4 and 5, provided that you also convey the
-machine-readable Corresponding Source under the terms of this License,
-in one of these ways:
-
-    a) Convey the object code in, or embodied in, a physical product
-    (including a physical distribution medium), accompanied by the
-    Corresponding Source fixed on a durable physical medium
-    customarily used for software interchange.
-
-    b) Convey the object code in, or embodied in, a physical product
-    (including a physical distribution medium), accompanied by a
-    written offer, valid for at least three years and valid for as
-    long as you offer spare parts or customer support for that product
-    model, to give anyone who possesses the object code either (1) a
-    copy of the Corresponding Source for all the software in the
-    product that is covered by this License, on a durable physical
-    medium customarily used for software interchange, for a price no
-    more than your reasonable cost of physically performing this
-    conveying of source, or (2) access to copy the
-    Corresponding Source from a network server at no charge.
-
-    c) Convey individual copies of the object code with a copy of the
-    written offer to provide the Corresponding Source.  This
-    alternative is allowed only occasionally and noncommercially, and
-    only if you received the object code with such an offer, in accord
-    with subsection 6b.
-
-    d) Convey the object code by offering access from a designated
-    place (gratis or for a charge), and offer equivalent access to the
-    Corresponding Source in the same way through the same place at no
-    further charge.  You need not require recipients to copy the
-    Corresponding Source along with the object code.  If the place to
-    copy the object code is a network server, the Corresponding Source
-    may be on a different server (operated by you or a third party)
-    that supports equivalent copying facilities, provided you maintain
-    clear directions next to the object code saying where to find the
-    Corresponding Source.  Regardless of what server hosts the
-    Corresponding Source, you remain obligated to ensure that it is
-    available for as long as needed to satisfy these requirements.
-
-    e) Convey the object code using peer-to-peer transmission, provided
-    you inform other peers where the object code and Corresponding
-    Source of the work are being offered to the general public at no
-    charge under subsection 6d.
-
-  A separable portion of the object code, whose source code is excluded
-from the Corresponding Source as a System Library, need not be
-included in conveying the object code work.
-
-  A "User Product" is either (1) a "consumer product", which means any
-tangible personal property which is normally used for personal, family,
-or household purposes, or (2) anything designed or sold for incorporation
-into a dwelling.  In determining whether a product is a consumer product,
-doubtful cases shall be resolved in favor of coverage.  For a particular
-product received by a particular user, "normally used" refers to a
-typical or common use of that class of product, regardless of the status
-of the particular user or of the way in which the particular user
-actually uses, or expects or is expected to use, the product.  A product
-is a consumer product regardless of whether the product has substantial
-commercial, industrial or non-consumer uses, unless such uses represent
-the only significant mode of use of the product.
-
-  "Installation Information" for a User Product means any methods,
-procedures, authorization keys, or other information required to install
-and execute modified versions of a covered work in that User Product from
-a modified version of its Corresponding Source.  The information must
-suffice to ensure that the continued functioning of the modified object
-code is in no case prevented or interfered with solely because
-modification has been made.
-
-  If you convey an object code work under this section in, or with, or
-specifically for use in, a User Product, and the conveying occurs as
-part of a transaction in which the right of possession and use of the
-User Product is transferred to the recipient in perpetuity or for a
-fixed term (regardless of how the transaction is characterized), the
-Corresponding Source conveyed under this section must be accompanied
-by the Installation Information.  But this requirement does not apply
-if neither you nor any third party retains the ability to install
-modified object code on the User Product (for example, the work has
-been installed in ROM).
-
-  The requirement to provide Installation Information does not include a
-requirement to continue to provide support service, warranty, or updates
-for a work that has been modified or installed by the recipient, or for
-the User Product in which it has been modified or installed.  Access to a
-network may be denied when the modification itself materially and
-adversely affects the operation of the network or violates the rules and
-protocols for communication across the network.
-
-  Corresponding Source conveyed, and Installation Information provided,
-in accord with this section must be in a format that is publicly
-documented (and with an implementation available to the public in
-source code form), and must require no special password or key for
-unpacking, reading or copying.
-
-  7. Additional Terms.
-
-  "Additional permissions" are terms that supplement the terms of this
-License by making exceptions from one or more of its conditions.
-Additional permissions that are applicable to the entire Program shall
-be treated as though they were included in this License, to the extent
-that they are valid under applicable law.  If additional permissions
-apply only to part of the Program, that part may be used separately
-under those permissions, but the entire Program remains governed by
-this License without regard to the additional permissions.
-
-  When you convey a copy of a covered work, you may at your option
-remove any additional permissions from that copy, or from any part of
-it.  (Additional permissions may be written to require their own
-removal in certain cases when you modify the work.)  You may place
-additional permissions on material, added by you to a covered work,
-for which you have or can give appropriate copyright permission.
-
-  Notwithstanding any other provision of this License, for material you
-add to a covered work, you may (if authorized by the copyright holders of
-that material) supplement the terms of this License with terms:
-
-    a) Disclaiming warranty or limiting liability differently from the
-    terms of sections 15 and 16 of this License; or
-
-    b) Requiring preservation of specified reasonable legal notices or
-    author attributions in that material or in the Appropriate Legal
-    Notices displayed by works containing it; or
-
-    c) Prohibiting misrepresentation of the origin of that material, or
-    requiring that modified versions of such material be marked in
-    reasonable ways as different from the original version; or
-
-    d) Limiting the use for publicity purposes of names of licensors or
-    authors of the material; or
-
-    e) Declining to grant rights under trademark law for use of some
-    trade names, trademarks, or service marks; or
-
-    f) Requiring indemnification of licensors and authors of that
-    material by anyone who conveys the material (or modified versions of
-    it) with contractual assumptions of liability to the recipient, for
-    any liability that these contractual assumptions directly impose on
-    those licensors and authors.
-
-  All other non-permissive additional terms are considered "further
-restrictions" within the meaning of section 10.  If the Program as you
-received it, or any part of it, contains a notice stating that it is
-governed by this License along with a term that is a further
-restriction, you may remove that term.  If a license document contains
-a further restriction but permits relicensing or conveying under this
-License, you may add to a covered work material governed by the terms
-of that license document, provided that the further restriction does
-not survive such relicensing or conveying.
-
-  If you add terms to a covered work in accord with this section, you
-must place, in the relevant source files, a statement of the
-additional terms that apply to those files, or a notice indicating
-where to find the applicable terms.
-
-  Additional terms, permissive or non-permissive, may be stated in the
-form of a separately written license, or stated as exceptions;
-the above requirements apply either way.
-
-  8. Termination.
-
-  You may not propagate or modify a covered work except as expressly
-provided under this License.  Any attempt otherwise to propagate or
-modify it is void, and will automatically terminate your rights under
-this License (including any patent licenses granted under the third
-paragraph of section 11).
-
-  However, if you cease all violation of this License, then your
-license from a particular copyright holder is reinstated (a)
-provisionally, unless and until the copyright holder explicitly and
-finally terminates your license, and (b) permanently, if the copyright
-holder fails to notify you of the violation by some reasonable means
-prior to 60 days after the cessation.
-
-  Moreover, your license from a particular copyright holder is
-reinstated permanently if the copyright holder notifies you of the
-violation by some reasonable means, this is the first time you have
-received notice of violation of this License (for any work) from that
-copyright holder, and you cure the violation prior to 30 days after
-your receipt of the notice.
-
-  Termination of your rights under this section does not terminate the
-licenses of parties who have received copies or rights from you under
-this License.  If your rights have been terminated and not permanently
-reinstated, you do not qualify to receive new licenses for the same
-material under section 10.
-
-  9. Acceptance Not Required for Having Copies.
-
-  You are not required to accept this License in order to receive or
-run a copy of the Program.  Ancillary propagation of a covered work
-occurring solely as a consequence of using peer-to-peer transmission
-to receive a copy likewise does not require acceptance.  However,
-nothing other than this License grants you permission to propagate or
-modify any covered work.  These actions infringe copyright if you do
-not accept this License.  Therefore, by modifying or propagating a
-covered work, you indicate your acceptance of this License to do so.
-
-  10. Automatic Licensing of Downstream Recipients.
-
-  Each time you convey a covered work, the recipient automatically
-receives a license from the original licensors, to run, modify and
-propagate that work, subject to this License.  You are not responsible
-for enforcing compliance by third parties with this License.
-
-  An "entity transaction" is a transaction transferring control of an
-organization, or substantially all assets of one, or subdividing an
-organization, or merging organizations.  If propagation of a covered
-work results from an entity transaction, each party to that
-transaction who receives a copy of the work also receives whatever
-licenses to the work the party's predecessor in interest had or could
-give under the previous paragraph, plus a right to possession of the
-Corresponding Source of the work from the predecessor in interest, if
-the predecessor has it or can get it with reasonable efforts.
-
-  You may not impose any further restrictions on the exercise of the
-rights granted or affirmed under this License.  For example, you may
-not impose a license fee, royalty, or other charge for exercise of
-rights granted under this License, and you may not initiate litigation
-(including a cross-claim or counterclaim in a lawsuit) alleging that
-any patent claim is infringed by making, using, selling, offering for
-sale, or importing the Program or any portion of it.
-
-  11. Patents.
-
-  A "contributor" is a copyright holder who authorizes use under this
-License of the Program or a work on which the Program is based.  The
-work thus licensed is called the contributor's "contributor version".
-
-  A contributor's "essential patent claims" are all patent claims
-owned or controlled by the contributor, whether already acquired or
-hereafter acquired, that would be infringed by some manner, permitted
-by this License, of making, using, or selling its contributor version,
-but do not include claims that would be infringed only as a
-consequence of further modification of the contributor version.  For
-purposes of this definition, "control" includes the right to grant
-patent sublicenses in a manner consistent with the requirements of
-this License.
-
-  Each contributor grants you a non-exclusive, worldwide, royalty-free
-patent license under the contributor's essential patent claims, to
-make, use, sell, offer for sale, import and otherwise run, modify and
-propagate the contents of its contributor version.
-
-  In the following three paragraphs, a "patent license" is any express
-agreement or commitment, however denominated, not to enforce a patent
-(such as an express permission to practice a patent or covenant not to
-sue for patent infringement).  To "grant" such a patent license to a
-party means to make such an agreement or commitment not to enforce a
-patent against the party.
-
-  If you convey a covered work, knowingly relying on a patent license,
-and the Corresponding Source of the work is not available for anyone
-to copy, free of charge and under the terms of this License, through a
-publicly available network server or other readily accessible means,
-then you must either (1) cause the Corresponding Source to be so
-available, or (2) arrange to deprive yourself of the benefit of the
-patent license for this particular work, or (3) arrange, in a manner
-consistent with the requirements of this License, to extend the patent
-license to downstream recipients.  "Knowingly relying" means you have
-actual knowledge that, but for the patent license, your conveying the
-covered work in a country, or your recipient's use of the covered work
-in a country, would infringe one or more identifiable patents in that
-country that you have reason to believe are valid.
-
-  If, pursuant to or in connection with a single transaction or
-arrangement, you convey, or propagate by procuring conveyance of, a
-covered work, and grant a patent license to some of the parties
-receiving the covered work authorizing them to use, propagate, modify
-or convey a specific copy of the covered work, then the patent license
-you grant is automatically extended to all recipients of the covered
-work and works based on it.
-
-  A patent license is "discriminatory" if it does not include within
-the scope of its coverage, prohibits the exercise of, or is
-conditioned on the non-exercise of one or more of the rights that are
-specifically granted under this License.  You may not convey a covered
-work if you are a party to an arrangement with a third party that is
-in the business of distributing software, under which you make payment
-to the third party based on the extent of your activity of conveying
-the work, and under which the third party grants, to any of the
-parties who would receive the covered work from you, a discriminatory
-patent license (a) in connection with copies of the covered work
-conveyed by you (or copies made from those copies), or (b) primarily
-for and in connection with specific products or compilations that
-contain the covered work, unless you entered into that arrangement,
-or that patent license was granted, prior to 28 March 2007.
-
-  Nothing in this License shall be construed as excluding or limiting
-any implied license or other defenses to infringement that may
-otherwise be available to you under applicable patent law.
-
-  12. No Surrender of Others' Freedom.
-
-  If conditions are imposed on you (whether by court order, agreement or
-otherwise) that contradict the conditions of this License, they do not
-excuse you from the conditions of this License.  If you cannot convey a
-covered work so as to satisfy simultaneously your obligations under this
-License and any other pertinent obligations, then as a consequence you may
-not convey it at all.  For example, if you agree to terms that obligate you
-to collect a royalty for further conveying from those to whom you convey
-the Program, the only way you could satisfy both those terms and this
-License would be to refrain entirely from conveying the Program.
-
-  13. Use with the GNU Affero General Public License.
-
-  Notwithstanding any other provision of this License, you have
-permission to link or combine any covered work with a work licensed
-under version 3 of the GNU Affero General Public License into a single
-combined work, and to convey the resulting work.  The terms of this
-License will continue to apply to the part which is the covered work,
-but the special requirements of the GNU Affero General Public License,
-section 13, concerning interaction through a network will apply to the
-combination as such.
-
-  14. Revised Versions of this License.
-
-  The Free Software Foundation may publish revised and/or new versions of
-the GNU General Public License from time to time.  Such new versions will
-be similar in spirit to the present version, but may differ in detail to
-address new problems or concerns.
-
-  Each version is given a distinguishing version number.  If the
-Program specifies that a certain numbered version of the GNU General
-Public License "or any later version" applies to it, you have the
-option of following the terms and conditions either of that numbered
-version or of any later version published by the Free Software
-Foundation.  If the Program does not specify a version number of the
-GNU General Public License, you may choose any version ever published
-by the Free Software Foundation.
-
-  If the Program specifies that a proxy can decide which future
-versions of the GNU General Public License can be used, that proxy's
-public statement of acceptance of a version permanently authorizes you
-to choose that version for the Program.
-
-  Later license versions may give you additional or different
-permissions.  However, no additional obligations are imposed on any
-author or copyright holder as a result of your choosing to follow a
-later version.
-
-  15. Disclaimer of Warranty.
-
-  THERE IS NO WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY
-APPLICABLE LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT
-HOLDERS AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
-OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE PROGRAM
-IS WITH YOU.  SHOULD THE PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF
-ALL NECESSARY SERVICING, REPAIR OR CORRECTION.
-
-  16. Limitation of Liability.
-
-  IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MODIFIES AND/OR CONVEYS
-THE PROGRAM AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
-GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
-USE OR INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
-DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
-PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS),
-EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
-  17. Interpretation of Sections 15 and 16.
-
-  If the disclaimer of warranty and limitation of liability provided
-above cannot be given local legal effect according to their terms,
-reviewing courts shall apply local law that most closely approximates
-an absolute waiver of all civil liability in connection with the
-Program, unless a warranty or assumption of liability accompanies a
-copy of the Program in return for a fee.
-
-                     END OF TERMS AND CONDITIONS
-
-            How to Apply These Terms to Your New Programs
-
-  If you develop a new program, and you want it to be of the greatest
-possible use to the public, the best way to achieve this is to make it
-free software which everyone can redistribute and change under these terms.
-
-  To do so, attach the following notices to the program.  It is safest
-to attach them to the start of each source file to most effectively
-state the exclusion of warranty; and each file should have at least
-the "copyright" line and a pointer to where the full notice is found.
-
-    <one line to give the program's name and a brief idea of what it does.>
-    Copyright (C) <year>  <name of author>
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-Also add information on how to contact you by electronic and paper mail.
-
-  If the program does terminal interaction, make it output a short
-notice like this when it starts in an interactive mode:
-
-    <program>  Copyright (C) <year>  <name of author>
-    This program comes with ABSOLUTELY NO WARRANTY; for details type `show w'.
-    This is free software, and you are welcome to redistribute it
-    under certain conditions; type `show c' for details.
-
-The hypothetical commands `show w' and `show c' should show the appropriate
-parts of the General Public License.  Of course, your program's commands
-might be different; for a GUI interface, you would use an "about box".
-
-  You should also get your employer (if you work as a programmer) or school,
-if any, to sign a "copyright disclaimer" for the program, if necessary.
-For more information on this, and how to apply and follow the GNU GPL, see
-<https://www.gnu.org/licenses/>.
-
-  The GNU General Public License does not permit incorporating your program
-into proprietary programs.  If your program is a subroutine library, you
-may consider it more useful to permit linking proprietary applications with
-the library.  If this is what you want to do, use the GNU Lesser General
-Public License instead of this License.  But first, please read
-<https://www.gnu.org/licenses/why-not-lgpl.html>.
-*/
 
 (() => {
   var __defProp = Object.defineProperty;
@@ -850,6 +53,7 @@ Public License instead of this License.  But first, please read
   // <define:__USPP_SITES__>
   var define_USPP_SITES_default = ["gemini"];
 
+  // ../uspp-publish/repo/node_modules/preact/compat/dist/compat.module.js
   var compat_module_exports = {};
   __export(compat_module_exports, {
     Children: () => L2,
@@ -900,6 +104,7 @@ Public License instead of this License.  But first, please read
     version: () => cn
   });
 
+  // ../uspp-publish/repo/node_modules/preact/dist/preact.module.js
   var n;
   var l;
   var u;
@@ -1195,6 +400,7 @@ Public License instead of this License.  But first, please read
     return n2.__v.__b - l3.__v.__b;
   }, H.__r = 0, f = Math.random().toString(8), c = "__d" + f, a = "__a" + f, s = /(PointerCapture)$|Capture$/i, h2 = 0, p = V(false), v = V(true), y = 0;
 
+  // ../uspp-publish/repo/node_modules/preact/hooks/dist/hooks.module.js
   var t2;
   var r2;
   var u2;
@@ -1381,6 +587,7 @@ Public License instead of this License.  But first, please read
     return "function" == typeof t3 ? t3(n2) : t3;
   }
 
+  // ../uspp-publish/repo/node_modules/preact/compat/dist/compat.module.js
   function g3(n2, t3) {
     for (var e3 in t3) n2[e3] = t3[e3];
     return n2;
@@ -1692,8 +899,10 @@ Public License instead of this License.  But first, please read
   var Sn = hn;
   var gn = { useState: d2, useId: g2, useReducer: y2, useEffect: h3, useLayoutEffect: _2, useInsertionEffect: I2, useTransition: k3, useDeferredValue: w3, useSyncExternalStore: C3, startTransition: x3, useRef: A2, useImperativeHandle: F2, useMemo: T2, useCallback: q2, useContext: x2, useDebugValue: P2, version: "18.3.1", Children: L2, render: nn, hydrate: tn, unmountComponentAtNode: pn, createPortal: $2, createElement: k, createContext: X, createFactory: sn, cloneElement: mn, createRef: M, Fragment: S, isValidElement: hn, isElement: Sn, isFragment: vn, isMemo: dn, findDOMNode: yn, Component: C, PureComponent: M2, memo: N2, forwardRef: D3, flushSync: bn, unstable_batchedUpdates: _n, StrictMode: S, Suspense: P3, SuspenseList: B3, lazy: z3, __SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED: an };
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/gm-object.js
   var GM_OBJECT = typeof GM !== "undefined" && GM && typeof GM === "object" ? GM : null;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/env.js
   var W3 = typeof unsafeWindow !== "undefined" && unsafeWindow ? unsafeWindow : window;
   var GM2 = {
     get: typeof GM_getValue === "function" ? GM_getValue : null,
@@ -1742,6 +951,7 @@ Public License instead of this License.  But first, please read
   var INSTANCE_EXPR = `window[Symbol.for(${JSON.stringify(`uspp:${SCRIPT_ID}`)})]`;
   var API_VERSION = 1;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/diag.js
   var DIAG_KEY = `UserscriptPP:${SCRIPT_ID}:diag`;
   var cfg = {};
   if (false) {
@@ -1780,6 +990,7 @@ Public License instead of this License.  But first, please read
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/logger.js
   var COLORS = { log: "#a78bfa", info: "#38bdf8", warn: "#f59e0b", error: "#ef4444", debug: "#9ca3af" };
   var debugOn = false;
   function setDebugLogs(on3) {
@@ -1832,6 +1043,7 @@ Public License instead of this License.  But first, please read
     }
   };
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/match.js
   var reCache = /* @__PURE__ */ new Map();
   var globToRe = (s3, any) => s3.split("*").map((x4) => x4.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(any);
   function compile(pattern) {
@@ -1872,6 +1084,7 @@ Public License instead of this License.  But first, please read
     return (host2.includes("*") ? 0 : 1e4) + host2.replace(/\*/g, "").length * 10 + path.replace(/\*/g, "").length;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/sites.js
   var logger = new Logger("Sites", "#5eead4");
   var GENERIC = Object.freeze({ id: "generic", name: "Generic", matches: [], generic: true });
   var registry = /* @__PURE__ */ new Map();
@@ -1942,6 +1155,7 @@ Public License instead of this License.  But first, please read
     return true;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/react.js
   var bundled = Object.freeze({
     name: "preact",
     site: false,
@@ -2051,6 +1265,7 @@ Public License instead of this License.  But first, please read
     return Wrapped;
   };
 
+  // src/kernel/logger.ts
   var STYLE = "background:#1a73e8;color:#fff;border-radius:3px;padding:0 4px;font-weight:600";
   function createLogger(scope) {
     const tag = [`%cGG++%c ${scope}`, STYLE, ""];
@@ -2064,6 +1279,7 @@ Public License instead of this License.  But first, please read
     };
   }
 
+  // sites/gemini/runtime.ts
   var Uref = null;
   var facade = null;
   var services = /* @__PURE__ */ new Map();
@@ -2390,6 +1606,7 @@ Public License instead of this License.  But first, please read
     return ctx;
   }
 
+  // sites/gemini/migrate.ts
   var LEGACY_GM = "ggpp:settings";
   var LEGACY_LS = "ggpp:settings";
   var FLAG = "ggpp:migrated-to-uspp";
@@ -2465,6 +1682,7 @@ Public License instead of this License.  But first, please read
     }
   }
 
+  // sites/gemini/netHook.ts
   function resolveNetHookWindow() {
     try {
       if (typeof unsafeWindow !== "undefined" && unsafeWindow) return unsafeWindow;
@@ -2649,6 +1867,7 @@ Public License instead of this License.  But first, please read
     wrapXhr2();
   }
 
+  // sites/gemini/usageDiag.ts
   function emptyUsageDiagnostics() {
     return {
       bridgeReady: false,
@@ -2737,6 +1956,7 @@ Public License instead of this License.  But first, please read
     ];
   }
 
+  // sites/gemini/usageObserver.ts
   var DEFAULT_USAGE_RECIPE = { rpcid: "jSf9Qc", args: "[]" };
   var RECIPE_KEY = "ggpp:usageRecipe";
   var PAGE_SRC = "ggpp-usage";
@@ -3656,6 +2876,55 @@ Public License instead of this License.  But first, please read
     });
   }
 
+  // sites/gemini/settingsHost.ts
+  function createSettingsHost(getUi) {
+    let nextRequestId = 0;
+    let latestRequest;
+    const failed2 = () => ({ protocol: "ggpp-settings-request@1", accepted: false, status: () => "failed" });
+    return {
+      // Undefined means unsupported, NOT an accepted request or a visibility claim.
+      ggppOpenRequest(opts = {}) {
+        const token = { id: ++nextRequestId, superseded: false };
+        try {
+          const ui = getUi();
+          if (typeof ui?.openRequest !== "function") return void 0;
+          if (typeof ui.isOpen !== "function") return failed2();
+          const request2 = ui.openRequest(opts.tab, opts.plugin);
+          if (request2?.protocol !== "ggpp-settings-request@1" || request2.accepted !== true || typeof request2.status !== "function") return failed2();
+          if (!latestRequest || latestRequest.id < token.id) {
+            if (latestRequest) latestRequest.superseded = true;
+            latestRequest = token;
+          } else token.superseded = true;
+          return {
+            protocol: "ggpp-settings-request@1",
+            accepted: true,
+            status: () => token.superseded ? "superseded" : request2.status()
+          };
+        } catch {
+          return failed2();
+        }
+      },
+      open(opts = {}) {
+        try {
+          const ui = getUi();
+          if (typeof ui?.open !== "function" || typeof ui.isOpen !== "function") return false;
+          ui.open(opts.tab, opts.plugin);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      isOpen() {
+        try {
+          return getUi()?.isOpen() === true;
+        } catch {
+          return false;
+        }
+      }
+    };
+  }
+
+  // sites/gemini/index.ts
   var gemini_default = (U3) => {
     bindApi(U3);
     return U3.defineSite({
@@ -3685,21 +2954,7 @@ Public License instead of this License.  But first, please read
       ],
       // Route USPP openSettings / menu / floating into GG++ settings modal (not the framework panel).
       // open() looks up settingsUI at call time — the settings plugin provides it after start.
-      settingsHost: {
-        open(opts = {}) {
-          const ui = getKernelFacade()?.service("settingsUI");
-          if (!ui?.open) return false;
-          try {
-            ui.open(opts.tab, opts.plugin);
-            return true;
-          } catch {
-            return false;
-          }
-        },
-        isOpen() {
-          return false;
-        }
-      },
+      settingsHost: createSettingsHost(() => getKernelFacade()?.service("settingsUI")),
       start() {
         migrateGgSettings();
         installNetHook();
@@ -3744,6 +2999,7 @@ Public License instead of this License.  But first, please read
     });
   };
 
+  // sites/gemini/shims/types.ts
   var TAGS = [
     "Composer",
     "Messages",
@@ -3849,6 +3105,7 @@ Public License instead of this License.  But first, please read
     };
   }
 
+  // src/lib/dom.ts
   var OWN = "data-ggpp-own";
   function append(el, child) {
     if (child === null || child === void 0 || child === false) return;
@@ -3946,6 +3203,7 @@ Public License instead of this License.  But first, please read
     setTimeout(run, 100);
   }
 
+  // src/lib/icons.ts
   var I3 = {
     x: ["M18 6 6 18", "M6 6l12 12"],
     check: ["M20 6 9 17l-5-5"],
@@ -4003,6 +3261,7 @@ Public License instead of this License.  But first, please read
     ggpp: ["M4 7h6", "M7 4v6", "M14 7h6", "M17 4v6", "M12 13a5 5 0 1 0 5 5h-5"]
   };
 
+  // sites/gemini/plugins/accountSwitcher/index.ts
   var slotOf = () => Number(location.pathname.match(/^\/u\/(\d+)/)?.[1] ?? 0);
   var accountSwitcher_default = definePlugin({
     id: "accountSwitcher",
@@ -4069,6 +3328,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/autoCollapse/index.ts
   var autoCollapse_default = definePlugin({
     id: "autoCollapse",
     name: "AutoCollapse",
@@ -4124,6 +3384,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/autoRetry/index.ts
   var RETRY = "[data-test-id='regenerate-button'] button, button[data-test-id='regenerate-button'], button[aria-label='Redo'], button[aria-label*='Retry' i], button[aria-label*='Try again' i], button[aria-label*='重试']";
   var MENU_ITEM = "gem-menu-item, [role='menuitem']";
   var autoRetry_default = definePlugin({
@@ -4180,6 +3441,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/betterLinks/index.ts
   var TLDS = "com|org|net|io|dev|app|co|ai|gov|edu|me|xyz|gg|tv|cc|so|is|info|tech|pro|site|store|cloud|online|icu|top|be|ly|sh|to|fm|am|us|uk|ca|de|fr|es|it|nl|jp|cn|ru|br|au|in|eu";
   var DOMAIN = new RegExp(`(?<![\\w@/:.#-])((?:www\\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+(?:${TLDS})(?:/[^\\s<>"'\`)\\]},，。]*)?)(?![\\w-])`, "gi");
   var HAS_DOMAIN = new RegExp(DOMAIN.source, "i");
@@ -4243,6 +3505,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/betterModeSelect/index.ts
   var OPTION = "[data-test-id^='bard-mode-option-']";
   var sleep = (ms) => new Promise((r3) => setTimeout(r3, ms));
   var betterModeSelect_default = definePlugin({
@@ -4449,6 +3712,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // src/lib/text.ts
   function preview(text, max = 120) {
     const plain = text.replace(/```[\s\S]*?```/g, " ").replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/[*_`#>~|]+/g, "").replace(/\s+/g, " ").trim();
     return truncate(plain, max);
@@ -4457,6 +3721,7 @@ Public License instead of this License.  But first, please read
     return text.length > max ? `${text.slice(0, max - 1)}…` : text;
   }
 
+  // sites/gemini/plugins/betterNavigator/index.ts
   var READ_LINE = 0.28;
   var LOCK_MS = 1e3;
   var TOP_OFFSET = 72;
@@ -4723,6 +3988,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/betterQueue/store.ts
   var MAX_ITEMS = 30;
   var MAX_AGE = 24 * 60 * 6e4;
   var MAX_TEXT = 1e5;
@@ -4749,6 +4015,7 @@ Public License instead of this License.  But first, please read
     return { ...rest, [id]: [...rest[id] ?? [], ...fresh] };
   }
 
+  // sites/gemini/plugins/betterQueue/index.ts
   var sleep2 = (ms) => new Promise((r3) => setTimeout(r3, ms));
   var betterQueue_default = definePlugin({
     id: "betterQueue",
@@ -5038,6 +4305,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/betterQuotes/index.ts
   var HIGHLIGHT_MS = 1800;
   var norm = (s3) => s3.replace(/^[\s>*\-•\d.]+/gm, "").replace(/\s+/g, " ").trim().toLowerCase();
   var betterQuotes_default = definePlugin({
@@ -5187,6 +4455,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/betterSidebar/index.ts
   var SECTION = (key) => `expandable-section[storagekey='${key}']`;
   var sleep3 = (ms) => new Promise((r3) => setTimeout(r3, ms));
   async function waitFor(find2, ms = 3e3) {
@@ -5403,6 +4672,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/chatBar/index.ts
   var MODE_BUTTON = "[data-test-id='bard-mode-menu-button']";
   var chatBar_default = definePlugin({
     id: "chatBar",
@@ -5501,6 +4771,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/chatListStatus/index.ts
   var chatListStatus_default = definePlugin({
     id: "chatListStatus",
     name: "ChatListStatus",
@@ -5576,6 +4847,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/chatStateFavicons/index.ts
   var COLORS2 = {
     rotate: "#3B82F6",
     done: "#22C55E",
@@ -5750,6 +5022,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/cleaner/index.ts
   var RULES = {
     hideUpgrade: [
       "[data-test-id='desktop-upgrade-tier2-button']",
@@ -5764,8 +5037,23 @@ Public License instead of this License.  But first, please read
       "[data-test-id^='bard-mode-option-']:has([data-test-id*='upsell' i], [fonticon='lock'])",
       "[data-test-id^='bard-mode-option-'][aria-disabled='true']"
     ],
-    hideDisclaimer: ["hallucination-disclaimer"]
+    /** Composer-only (acceptance/dom: tag under input-container). */
+    hideDisclaimer: ["input-container hallucination-disclaimer"]
   };
+  function buildCleanerHideCss(settings2) {
+    const on3 = Object.keys(RULES).filter((k4) => settings2[k4]);
+    if (!on3.length) return null;
+    return `${on3.flatMap((k4) => RULES[k4]).join(",\n")} { display: none !important; }`;
+  }
+  function installCleanerStyles(ctx) {
+    const style = ctx.css("");
+    const apply2 = () => {
+      style.textContent = buildCleanerHideCss(ctx.settings) ?? "";
+    };
+    apply2();
+    ctx.on("settings:cleaner", apply2);
+    return { style, apply: apply2 };
+  }
   var cleaner_default = definePlugin({
     id: "cleaner",
     name: "Cleaner",
@@ -5774,20 +5062,21 @@ Public License instead of this License.  But first, please read
     icon: I3.brush,
     enabledByDefault: true,
     updated: "2026-10-14",
+    liveSettings: true,
     settings: {
       hideUpgrade: { type: "boolean", label: "Upgrade buttons", description: "The Upgrade / Google AI plan buttons and links.", default: true },
       hidePromoGreeting: { type: "boolean", label: "Home promo", description: `The new-model promo headline and "Let's go" button on the home screen.`, default: true },
       hideGetApp: { type: "boolean", label: "Get app button", description: 'The "Get app" promo in the top bar.', default: true },
       hideBanners: { type: "boolean", label: "Promo banners", description: "Promotional banners and cards.", default: true },
       hideLockedModels: { type: "boolean", label: "Locked models", description: "Models you cannot use (upgrade gated) in the model picker.", default: true },
-      hideDisclaimer: { type: "boolean", label: "Disclaimer line", description: 'The "Gemini is AI and can make mistakes" line under the message box.', default: false }
+      hideDisclaimer: { type: "boolean", label: "Disclaimer line", description: 'The "Gemini is AI and can make mistakes" line under the message box.', default: true }
     },
     start(ctx) {
-      const on3 = Object.keys(RULES).filter((k4) => ctx.settings[k4]);
-      if (on3.length) ctx.css(`${on3.flatMap((k4) => RULES[k4]).join(",\n")} { display: none !important; }`);
+      installCleanerStyles(ctx);
     }
   });
 
+  // sites/gemini/plugins/completeToast/index.ts
   var completeToast_default = definePlugin({
     id: "completeToast",
     name: "CompleteToast",
@@ -5904,6 +5193,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/composerOpacity/index.ts
   var composerOpacity_default = definePlugin({
     id: "composerOpacity",
     name: "ComposerOpacity",
@@ -5941,6 +5231,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/customGreeting/index.ts
   var customGreeting_default = definePlugin({
     id: "customGreeting",
     name: "CustomGreeting",
@@ -6054,6 +5345,7 @@ Public License instead of this License.  But first, please read
     }
   });
 
+  // sites/gemini/plugins/customInstructions/index.ts
   var LIMIT = 4e3;
   var customInstructions_default = definePlugin({
     id: "customInstructions",
@@ -6239,6 +5531,7 @@ ${text}`);
     }
   });
 
+  // sites/gemini/plugins/customSidebarIdentity/index.ts
   var SIZE = 256;
   async function toSquare(file) {
     const bmp = await createImageBitmap(file);
@@ -6336,6 +5629,7 @@ ${text}`);
     }
   });
 
+  // sites/gemini/plugins/diagnostics/index.ts
   var ANCHORS = ["sidenav", "conversationRow", "accountFooter", "topBar", "conversationMenuButton", "composer", "editor", "modeButton", "mic", "userQuery", "modelResponse", "scroller", "greeting"];
   var diagnostics_default = definePlugin({
     id: "diagnostics",
@@ -6414,6 +5708,7 @@ ${text}`);
     }
   });
 
+  // src/lib/markdown.ts
   var SKIP = /* @__PURE__ */ new Set(["BUTTON", "MAT-ICON", "GEM-ICON", "SVG", "STYLE", "SCRIPT", "SOURCES-CAROUSEL-INLINE", "SOURCE-FOOTNOTE"]);
   function inline(node) {
     let out = "";
@@ -6518,6 +5813,7 @@ ${[head, ...rows.slice(1).map((r3) => `| ${r3.join(" | ")} |`)].join("\n")}
     return convert(root2, 0).replace(/\n{3,}/g, "\n\n").trim();
   }
 
+  // sites/gemini/plugins/exportChat/index.ts
   var MIME = { json: "application/json", md: "text/markdown", txt: "text/plain", html: "text/html" };
   var fileName = (title) => title.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim().replace(/\s+/g, "-") || "chat";
   var esc = (s3) => s3.replace(/[&<>"']/g, (c3) => `&#${c3.charCodeAt(0)};`);
@@ -6641,6 +5937,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/gemini/index.ts
   var SEL = {
     main: ":is(bard-sidenav-content, main.chat-app, [role='main'])",
     chatWindow: "chat-window",
@@ -7064,6 +6361,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/hideBlueBackground/index.ts
   var HIDE_BLUE_BACKGROUND_SELECTOR = "modular-zero-state .blur-bg";
   var HIDE_BLUE_LM_GLOW_BEFORE_SELECTOR = "chat-window.show-lm-background > div.lm-glow::before";
   var HIDE_BLUE_BACKGROUND_CSS = [
@@ -7083,6 +6381,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/incognito/index.ts
   var ENTRY = "temp-chat-button gem-icon-button.temp-chat-entry button, temp-chat-button button[aria-label='Temporary chat']";
   var incognito_default = definePlugin({
     id: "incognito",
@@ -7111,6 +6410,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/inputHistory/index.ts
   var DEDUPE_MS = 2e3;
   var SETTLE_MS = 120;
   var normalize = (t3) => t3.replace(/​/g, "").replace(/\r\n?/g, "\n").trim();
@@ -7450,6 +6750,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/menus/index.ts
   function classify(trigger, sel) {
     const label = `${trigger.getAttribute("aria-label") ?? ""} ${trigger.getAttribute("mattooltip") ?? ""} ${trigger.dataset.testId ?? ""}`;
     const iconName = trigger.querySelector("mat-icon")?.getAttribute("fonticon") ?? trigger.querySelector("mat-icon")?.textContent?.trim() ?? "";
@@ -7649,7 +6950,15 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/messageStars/index.ts
   var ORANGE = "#ff7a17";
+  function pickModelStarHost(row) {
+    return row.querySelector(".buttons-container-v2") ?? row.querySelector(".actions-container-v2, .response-actions") ?? row.firstElementChild ?? row;
+  }
+  function releaseStarButton(buttons, msg, btn) {
+    btn.remove();
+    if (buttons.get(msg) === btn) buttons.delete(msg);
+  }
   var messageStars_default = definePlugin({
     id: "messageStars",
     name: "MessageStars",
@@ -7745,13 +7054,10 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       ctx.cleanup(
         gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
           const msg = row.closest(gemini.SEL.modelResponse);
-          const host2 = row.querySelector(".actions-container-v2, .buttons-container-v2, .response-actions") ?? row.firstElementChild ?? row;
+          const host2 = pickModelStarHost(row);
           const btn = starButton(msg);
           host2.append(btn);
-          return () => {
-            btn.remove();
-            buttons.delete(msg);
-          };
+          return () => releaseStarButton(buttons, msg, btn);
         })
       );
       ctx.cleanup(
@@ -7760,10 +7066,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
           if (buttons.has(msg)) return;
           const btn = starButton(msg);
           row.append(btn);
-          return () => {
-            btn.remove();
-            buttons.delete(msg);
-          };
+          return () => releaseStarButton(buttons, msg, btn);
         })
       );
       const list2 = h4("div", { class: "ggpp-stars-list", hidden: true, role: "dialog", "aria-label": "Starred messages" });
@@ -7903,6 +7206,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/messageTimestamps/index.ts
   var MAX = 5e3;
   var messageTimestamps_default = definePlugin({
     id: "messageTimestamps",
@@ -8049,6 +7353,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     }
   });
 
+  // sites/gemini/plugins/noDictation/index.ts
   var NO_DICTATION_CSS = `input-container :is(speech-dictation-mic-button, .mic-button-container) { display: none !important; }
 input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-child) { min-width: 0 !important; }`;
   var noDictation_default = definePlugin({
@@ -8064,6 +7369,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     }
   });
 
+  // sites/gemini/plugins/noShareLink/index.ts
   var noShareLink_default = definePlugin({
     id: "noShareLink",
     name: "NoShareLink",
@@ -8084,6 +7390,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     }
   });
 
+  // sites/gemini/plugins/noSidebarIdentity/index.ts
   var ACCOUNT = "sidenav-mavatar-footer";
   var noSidebarIdentity_default = definePlugin({
     id: "noSidebarIdentity",
@@ -8128,6 +7435,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     }
   });
 
+  // sites/gemini/plugins/noStarters/index.ts
   var noStarters_default = definePlugin({
     id: "noStarters",
     name: "NoStarters",
@@ -8144,6 +7452,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     }
   });
 
+  // sites/gemini/plugins/oneko/index.ts
   var oneko_default = definePlugin({
     id: "oneko",
     name: "Oneko",
@@ -8200,6 +7509,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     }
   });
 
+  // src/lib/cssEditor.ts
   function formatCss(css) {
     let out = "";
     let depth = 0;
@@ -8249,6 +7559,7 @@ ${depth === 0 ? "\n" : ""}`;
     return ta;
   }
 
+  // sites/gemini/plugins/quickCss/index.ts
   var quickCss_default = definePlugin({
     id: "quickCss",
     name: "QuickCSS",
@@ -8303,6 +7614,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/recentTopics/index.ts
   var ACCENTS = ["#2563eb", "#0ea5e9", "#14b8a6", "#f97316", "#64748b"];
   var TRIGGER_CODES = /* @__PURE__ */ new Set(["Backquote", "IntlBackslash"]);
   var TRIGGER_CHARS = /* @__PURE__ */ new Set(["`", "~", "·", "｀", "～"]);
@@ -8505,6 +7817,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/responseNotification/index.ts
   var responseNotification_default = definePlugin({
     id: "responseNotification",
     name: "ResponseNotification",
@@ -8604,6 +7917,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/settings/fields.ts
   function settingField(ui, key, def, value, onChange) {
     const head = h4(
       "div",
@@ -8728,6 +8042,7 @@ ${depth === 0 ? "\n" : ""}`;
     return row;
   }
 
+  // sites/gemini/plugins/settings/runtimeFingerprint.ts
   var RUNTIME_FINGERPRINT_BUILD = "GGPP-HB-20261118-R1";
   var HIDE_BLUE_ID = "hideBlueBackground";
   var STATE_SET = /* @__PURE__ */ new Set(["running", "stopped", "error"]);
@@ -8758,8 +8073,10 @@ ${depth === 0 ? "\n" : ""}`;
     return `${fp.build} · count:${fp.pluginCount} · hideBlue:${fp.hasHideBlueBackground} · state:${fp.hideBlueBackgroundState}`;
   }
 
+  // sites/gemini/plugins/settings/settings.css
   var settings_default = ".ggpp-settings { height: min(760px, calc(100vh - 48px)); }\n.ggpp-settings .ggpp-modal-body { flex: 1; padding: 0; overflow: hidden; }\n.ggpp-shell { display: flex; height: 100%; min-height: 0; border-top: 1px solid var(--ggpp-border-soft); }\n\n.ggpp-nav {\n  flex: none;\n  width: 200px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  border-right: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-nav-item {\n  all: unset;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  height: 40px;\n  padding: 0 16px;\n  border-radius: 20px;\n  font: 500 14px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-2);\n  cursor: pointer;\n}\n\n.ggpp-nav-item:hover { background: var(--ggpp-hover); }\n.ggpp-nav-item.ggpp-on { background: var(--ggpp-accent-soft); color: var(--ggpp-fg); }\n.ggpp-nav-item:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-version {\n  margin-top: auto;\n  padding: 8px 16px;\n  font-size: 11px;\n  line-height: 16px;\n  color: var(--ggpp-fg-3);\n  opacity: 0.7;\n}\n\n.ggpp-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.ggpp-pane-head { display: flex; align-items: center; gap: 8px; padding: 16px 24px 8px; }\n.ggpp-pane-head h3 { margin: 0; font: 400 18px/24px var(--ggpp-font); }\n.ggpp-hint { color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 4px 24px 20px; overflow: auto; }\n\n.ggpp-banner {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 8px 8px 8px 16px;\n  border-radius: 12px;\n  background: color-mix(in srgb, var(--ggpp-warn) 16%, transparent);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-banner span { flex: 1; }\n.ggpp-banner[hidden] { display: none; }\n\n.ggpp-cats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 16px;\n  border-bottom: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-cat {\n  all: unset;\n  padding: 6px 0;\n  margin-bottom: -1px;\n  font: 500 13px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  border-bottom: 2px solid transparent;\n  cursor: pointer;\n}\n\n.ggpp-cat:hover { color: var(--ggpp-fg); }\n.ggpp-cat.ggpp-on { color: var(--ggpp-fg); border-bottom-color: var(--ggpp-accent); }\n.ggpp-cat:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-searchbar { display: flex; gap: 8px; }\n.ggpp-search { flex: 1; }\n.ggpp-filter { width: 8rem; flex: none; }\n\n.ggpp-plugin-scroll {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n  padding: 8px 2px 16px;\n  mask-image: linear-gradient(transparent, #000 8px, #000 calc(100% - 16px), transparent);\n}\n\n.ggpp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }\n\n.ggpp-grid-sep {\n  margin: 20px 0 10px;\n  padding-top: 12px;\n  border-top: 1px solid var(--ggpp-border-soft);\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n.ggpp-empty { padding: 32px 0; text-align: center; color: var(--ggpp-fg-2); }\n\n.ggpp-card {\n  display: flex;\n  flex-direction: column;\n  min-height: 112px;\n  border: 1px solid var(--ggpp-border-soft);\n  border-radius: 12px;\n  background: var(--ggpp-surface);\n  overflow: hidden;\n}\n\n.ggpp-card.ggpp-required { opacity: 0.55; }\n.ggpp-card.ggpp-crashed { opacity: 0.7; border-color: var(--ggpp-danger); }\n.ggpp-card-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px 12px; min-width: 0; }\n\n.ggpp-card-icon {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: var(--ggpp-accent-soft);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-card-name { font: 500 14px/20px var(--ggpp-font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }\n.ggpp-spacer { flex: 1; }\n.ggpp-card .ggpp-icon-btn { width: 28px; height: 28px; color: var(--ggpp-fg-3); }\n.ggpp-card .ggpp-icon-btn.ggpp-active { color: var(--ggpp-accent); }\n.ggpp-card .ggpp-icon-btn.ggpp-active svg { fill: currentColor; }\n.ggpp-card .ggpp-switch { transform: scale(0.8); margin-left: -4px; }\n\n.ggpp-card-desc {\n  margin: 0;\n  padding: 0 12px 10px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--ggpp-fg-2);\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n}\n\n.ggpp-card-foot { margin-top: auto; padding: 6px 12px; border-top: 1px solid var(--ggpp-border-soft); font-size: 11px; color: var(--ggpp-fg-3); }\n.ggpp-badge { display: inline-grid; color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-badge-err { color: var(--ggpp-danger); }\n\n.ggpp-pill {\n  padding: 0 8px;\n  border-radius: 10px;\n  background: var(--ggpp-accent);\n  color: var(--ggpp-accent-fg);\n  font: 500 11px/18px var(--ggpp-font);\n  margin-left: 6px;\n}\n\n.ggpp-pill-warn { background: color-mix(in srgb, var(--ggpp-warn) 25%, transparent); color: var(--ggpp-fg); }\n.ggpp-error-text { color: var(--ggpp-danger); margin: 0; }\n\n.ggpp-section-label {\n  margin-top: 4px;\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n/* fields */\n.ggpp-fields { display: flex; flex-direction: column; gap: 14px; }\n.ggpp-field { display: flex; flex-direction: column; gap: 8px; }\n.ggpp-field-inline { flex-direction: row; align-items: center; gap: 16px; }\n.ggpp-field-head { flex: 1; min-width: 0; }\n.ggpp-field-label { font-weight: 500; display: flex; align-items: center; }\n.ggpp-field-desc { font-size: 13px; line-height: 18px; color: var(--ggpp-fg-2); margin-top: 2px; }\n.ggpp-number-wrap { display: flex; align-items: center; gap: 6px; }\n.ggpp-number { width: 96px; }\n.ggpp-unit { color: var(--ggpp-fg-3); }\n.ggpp-slider-row { display: flex; align-items: center; gap: 12px; }\n.ggpp-slider { flex: 1; accent-color: var(--ggpp-accent); }\n.ggpp-slider-value { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ggpp-fg-2); }\n.ggpp-color { width: 48px; height: 32px; border: 1px solid var(--ggpp-border); border-radius: 8px; background: none; padding: 2px; cursor: pointer; }\n.ggpp-list { display: flex; flex-direction: column; gap: 6px; }\n.ggpp-list-row { display: flex; gap: 6px; align-items: center; }\n.ggpp-list-add { align-self: flex-start; }\n\n@media (width <= 720px) {\n  .ggpp-shell { flex-direction: column; }\n  .ggpp-nav { width: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ggpp-border-soft); }\n  .ggpp-version { display: none; }\n}\n\n.ggpp-css-editor {\n  flex: 1;\n  min-height: 260px;\n  font: 13px/20px var(--ggpp-mono);\n  tab-size: 4;\n  white-space: pre;\n  overflow: auto;\n  background: var(--ggpp-surface);\n}\n\n.ggpp-css-editor:disabled { opacity: 0.5; }\n.ggpp-theme-section { padding-bottom: 12px; border-bottom: 1px solid var(--ggpp-border-soft); }\n.ggpp-searchbar[hidden] { display: none; }\n";
 
+  // sites/gemini/plugins/settings/index.ts
   var RECENT_DAYS = 7;
   var NEW_DAYS = 2;
   var DAY = 864e5;
@@ -9075,12 +8392,14 @@ ${depth === 0 ? "\n" : ""}`;
       const allTabs = () => [{ id: "plugins", label: "Plugins", icon: I3.puzzle, order: 0, hint: "Toggle features. Click the gear to configure.", render: pluginsTab }, ...tabs.values()].sort(
         (a3, b3) => (a3.order ?? 50) - (b3.order ?? 50)
       );
-      function openSettings3(tabId = lastTab, pluginId) {
+      function showSettings(tabId = lastTab, pluginId) {
         if (open) {
-          open.select(tabId);
+          const current3 = open;
+          current3.select(tabId);
           if (pluginId) openPluginDialog(pluginId);
-          return;
+          return current3;
         }
+        const session = { closed: false, failed: false };
         const nav = h4("nav", { class: "ggpp-nav" });
         const pane = h4("section", { class: "ggpp-pane" });
         let paneAbort = null;
@@ -9126,19 +8445,44 @@ ${depth === 0 ? "\n" : ""}`;
           width: 960,
           className: "ggpp-settings",
           content: h4("div", { class: "ggpp-shell" }, nav, pane),
-          onClose: () => {
+          onClose: (reason2) => {
+            if (session.closed) return;
+            session.failed ||= ctx.signal.aborted || reason2 !== "user";
+            session.closed = true;
             paneAbort?.abort();
             offTabs();
-            open = null;
+            if (open?.session === session) open = null;
           }
         });
-        open = { close: modal.close, select };
-        select(tabId);
-        if (pluginId) openPluginDialog(pluginId);
+        const view = { root: modal.root, close: modal.close, select, session };
+        if (!session.closed) {
+          open = view;
+          select(tabId);
+          if (pluginId) openPluginDialog(pluginId);
+        }
+        return view;
+      }
+      function openSettings3(tabId = lastTab, pluginId) {
+        showSettings(tabId, pluginId);
+      }
+      function openRequest(tabId = lastTab, pluginId) {
+        let view;
+        try {
+          view = showSettings(tabId, pluginId);
+        } catch {
+          return { protocol: "ggpp-settings-request@1", accepted: false, status: () => "failed" };
+        }
+        return {
+          protocol: "ggpp-settings-request@1",
+          accepted: true,
+          status: () => view.session.failed ? "failed" : view.session.closed ? "dismissed" : ctx.signal.aborted ? "failed" : view.root.isConnected === true ? "open" : "pending"
+        };
       }
       ctx.provide("settingsUI", {
         open: openSettings3,
-        close: () => open?.close(),
+        openRequest,
+        isOpen: () => open?.root.isConnected === true,
+        close: (reason2) => open?.close(reason2),
         openPluginDialog,
         tabs: () => allTabs().map(({ id, label, icon: icon2 }) => ({ id, label, icon: icon2 })),
         configurable: () => visible().filter((p3) => !p3.def.required && hasVisibleSettings(p3)).sort((a3, b3) => a3.def.name.localeCompare(b3.def.name, void 0, { sensitivity: "base" })),
@@ -9151,7 +8495,12 @@ ${depth === 0 ? "\n" : ""}`;
           };
         }
       });
-      ctx.cleanup(() => open?.close());
+      ctx.cleanup(() => {
+        if (open) {
+          open.session.failed = true;
+          open.close("dispose");
+        }
+      });
       ctx.cleanup(
         ctx.use("menus").register({
           id: "ggpp-settings",
@@ -9186,7 +8535,7 @@ ${depth === 0 ? "\n" : ""}`;
           if (isEditable(e3.target) && !e3.target.closest?.("rich-textarea")) return;
           e3.preventDefault();
           e3.stopPropagation();
-          if (open) open.close();
+          if (open) open.close("user");
           else openSettings3();
         },
         { capture: true, signal: ctx.signal }
@@ -9194,6 +8543,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/settingsFlyout/index.ts
   var settingsFlyout_default = definePlugin({
     id: "settingsFlyout",
     name: "SettingsFlyout",
@@ -9267,6 +8617,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/skillBlocker/index.ts
   var ROW = "gem-menu-item, [role='menuitem'], [role='option'], [role='listitem'], mat-list-item, gem-nav-list-item, mat-card, li, tr, a";
   var CARDISH = /card|item|tile|row|chip|skill|gem/i;
   function container(el) {
@@ -9323,6 +8674,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/starry/index.ts
   var HEX2 = /^#[0-9a-f]{6}$/i;
   var starry_default = definePlugin({
     id: "starry",
@@ -9385,6 +8737,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/streamerMode/index.ts
   var AREAS = {
     avatar: [`${ACCOUNT} .mavatar-container`, ".ggpp-custom-avatar"],
     name: [`${ACCOUNT} .mavatar-user-info`, ".ggpp-custom-name"],
@@ -9419,6 +8772,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // src/lib/net.ts
   async function fetchText(url, withSession = false, timeoutMs = 3e4) {
     if (false) {
       const r4 = await browser.runtime.sendMessage({ type: "ggpp:fetch", url, withSession, timeoutMs });
@@ -9442,6 +8796,7 @@ ${depth === 0 ? "\n" : ""}`;
     return r3.text();
   }
 
+  // sites/gemini/plugins/themes/index.ts
   function meta(css) {
     const block = css.match(/^\s*\/\*\*?([\s\S]*?)\*\//)?.[1] ?? "";
     const tag = (t3) => block.match(new RegExp(`@${t3}\\s+(.+)`))?.[1]?.trim() ?? "";
@@ -9640,8 +8995,10 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/ui/ui.css
   var ui_default = ':root {\n  --ggpp-font: "Google Sans Text", "Google Sans", Roboto, system-ui, sans-serif;\n  --ggpp-mono: "Google Sans Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;\n  --ggpp-bg: #fff;\n  --ggpp-surface: #f0f4f9;\n  --ggpp-surface-2: #e9eef6;\n  --ggpp-hover: rgb(68 71 70 / 8%);\n  --ggpp-fg: #1f1f1f;\n  --ggpp-fg-2: #444746;\n  --ggpp-fg-3: #747775;\n  --ggpp-border: #c4c7c5;\n  --ggpp-border-soft: #e1e3e1;\n  --ggpp-accent: #0b57d0;\n  --ggpp-accent-fg: #fff;\n  --ggpp-accent-soft: #d3e3fd;\n  --ggpp-danger: #b3261e;\n  --ggpp-warn: #b06000;\n  --ggpp-ok: #146c2e;\n  --ggpp-shadow: 0 4px 8px 3px rgb(0 0 0 / 15%), 0 1px 3px rgb(0 0 0 / 30%);\n  --ggpp-radius: 16px;\n}\n\n:root[data-ggpp-theme="dark"] {\n  --ggpp-bg: #1e1f20;\n  --ggpp-surface: #282a2c;\n  --ggpp-surface-2: #333537;\n  --ggpp-hover: rgb(227 227 227 / 8%);\n  --ggpp-fg: #e3e3e3;\n  --ggpp-fg-2: #c4c7c5;\n  --ggpp-fg-3: #8e918f;\n  --ggpp-border: #444746;\n  --ggpp-border-soft: #333537;\n  --ggpp-accent: #a8c7fa;\n  --ggpp-accent-fg: #062e6f;\n  --ggpp-accent-soft: #0842a0;\n  --ggpp-danger: #f2b8b5;\n  --ggpp-warn: #fdd663;\n  --ggpp-ok: #6dd58c;\n  --ggpp-shadow: 0 4px 8px 3px rgb(0 0 0 / 30%), 0 1px 3px rgb(0 0 0 / 50%);\n}\n\n#ggpp-layer {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  pointer-events: none;\n  font-family: var(--ggpp-font);\n  color: var(--ggpp-fg);\n}\n\n#ggpp-layer > * { pointer-events: auto; }\n#ggpp-layer *, #ggpp-layer *::before, #ggpp-layer *::after { box-sizing: border-box; }\n.ggpp-icon { flex: none; display: block; }\n.ggpp-muted { color: var(--ggpp-fg-2); margin: 0; line-height: 1.5; }\n\n/* toasts */\n#ggpp-layer .ggpp-toasts {\n  position: fixed;\n  right: 16px;\n  bottom: 16px;\n  display: flex;\n  flex-direction: column;\n  gap: 8px;\n  pointer-events: none;\n  max-width: min(380px, calc(100vw - 32px));\n}\n\n.ggpp-toast {\n  pointer-events: auto;\n  display: flex;\n  gap: 12px;\n  align-items: flex-start;\n  padding: 12px 12px 12px 16px;\n  border-radius: 12px;\n  background: var(--ggpp-fg);\n  color: var(--ggpp-bg);\n  box-shadow: var(--ggpp-shadow);\n  font-size: 14px;\n  line-height: 20px;\n  animation: ggpp-in 0.18s ease-out;\n}\n\n.ggpp-toast.ggpp-clickable { cursor: pointer; }\n.ggpp-toast.ggpp-out { opacity: 0; transform: translateY(6px); transition: 0.18s; }\n.ggpp-toast-icon { margin-top: 1px; }\n.ggpp-toast-text { flex: 1; min-width: 0; }\n.ggpp-toast-title { font-weight: 500; }\n.ggpp-toast-body { opacity: 0.8; overflow-wrap: anywhere; white-space: pre-line; }\n.ggpp-toast-actions { margin-top: 6px; display: flex; gap: 12px; }\n.ggpp-toast .ggpp-link { all: unset; cursor: pointer; color: inherit; font-weight: 500; text-decoration: underline; }\n\n.ggpp-toast-x {\n  all: unset;\n  cursor: pointer;\n  opacity: 0.7;\n  padding: 2px;\n  border-radius: 50%;\n}\n\n.ggpp-toast-x:hover { opacity: 1; }\n\n@keyframes ggpp-in {\n  from { opacity: 0; transform: translateY(8px); }\n}\n\n/* modal */\n.ggpp-backdrop {\n  position: fixed;\n  inset: 0;\n  display: grid;\n  place-items: center;\n  background: rgb(0 0 0 / 40%);\n  animation: ggpp-fade 0.15s;\n}\n\n.ggpp-backdrop + .ggpp-backdrop { background: transparent; }\n\n@keyframes ggpp-fade {\n  from { opacity: 0; }\n}\n\n.ggpp-modal {\n  display: flex;\n  flex-direction: column;\n  max-height: calc(100vh - 48px);\n  background: var(--ggpp-bg);\n  color: var(--ggpp-fg);\n  border-radius: 28px;\n  box-shadow: var(--ggpp-shadow);\n  overflow: hidden;\n  animation: ggpp-pop 0.18s cubic-bezier(0.2, 0, 0, 1);\n}\n\n@keyframes ggpp-pop {\n  from { opacity: 0; transform: scale(0.96); }\n}\n\n.ggpp-modal-head {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 20px 16px 12px 24px;\n}\n\n.ggpp-modal-head h2 {\n  flex: 1;\n  margin: 0;\n  font: 400 22px/28px var(--ggpp-font);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-modal-body {\n  padding: 4px 24px 20px;\n  overflow: auto;\n  display: flex;\n  flex-direction: column;\n  gap: 12px;\n  font-size: 14px;\n}\n\n.ggpp-modal-foot {\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 12px 24px 20px;\n}\n\n/* controls */\n.ggpp-btn {\n  all: unset;\n  box-sizing: border-box;\n  display: inline-flex;\n  align-items: center;\n  gap: 8px;\n  height: 36px;\n  padding: 0 16px;\n  border-radius: 18px;\n  font: 500 14px/20px var(--ggpp-font);\n  cursor: pointer;\n  color: var(--ggpp-accent);\n  border: 1px solid var(--ggpp-border);\n  white-space: nowrap;\n}\n\n.ggpp-btn:hover { background: var(--ggpp-hover); }\n.ggpp-btn:focus-visible { outline: 2px solid var(--ggpp-accent); outline-offset: 2px; }\n.ggpp-btn[disabled] { opacity: 0.4; pointer-events: none; }\n.ggpp-btn-ghost { border-color: transparent; }\n.ggpp-btn-primary { background: var(--ggpp-accent); color: var(--ggpp-accent-fg); border-color: transparent; }\n.ggpp-btn-primary:hover { background: var(--ggpp-accent); filter: brightness(1.08); }\n.ggpp-btn-danger { background: var(--ggpp-danger); color: var(--ggpp-bg); border-color: transparent; }\n\n.ggpp-icon-btn {\n  all: unset;\n  box-sizing: border-box;\n  display: inline-grid;\n  place-items: center;\n  width: 32px;\n  height: 32px;\n  border-radius: 50%;\n  color: var(--ggpp-fg-2);\n  cursor: pointer;\n  flex: none;\n}\n\n.ggpp-icon-btn:hover { background: var(--ggpp-hover); color: var(--ggpp-fg); }\n.ggpp-icon-btn:focus-visible { outline: 2px solid var(--ggpp-accent); }\n.ggpp-icon-btn.ggpp-active { color: var(--ggpp-accent); }\n\n.ggpp-switch {\n  all: unset;\n  box-sizing: border-box;\n  position: relative;\n  flex: none;\n  width: 52px;\n  height: 32px;\n  border-radius: 16px;\n  border: 2px solid var(--ggpp-fg-3);\n  background: var(--ggpp-surface-2);\n  cursor: pointer;\n  transition: background 0.15s, border-color 0.15s;\n}\n\n.ggpp-switch::after {\n  content: "";\n  position: absolute;\n  top: 6px;\n  left: 6px;\n  width: 16px;\n  height: 16px;\n  border-radius: 50%;\n  background: var(--ggpp-fg-3);\n  transition: 0.15s cubic-bezier(0.2, 0, 0, 1);\n}\n\n.ggpp-switch[aria-checked="true"] { background: var(--ggpp-accent); border-color: var(--ggpp-accent); }\n.ggpp-switch[aria-checked="true"]::after { left: 22px; top: 2px; width: 24px; height: 24px; background: var(--ggpp-accent-fg); }\n.ggpp-switch:focus-visible { outline: 2px solid var(--ggpp-accent); outline-offset: 2px; }\n.ggpp-switch[disabled] { opacity: 0.38; cursor: default; }\n\n.ggpp-input {\n  all: unset;\n  box-sizing: border-box;\n  width: 100%;\n  min-height: 40px;\n  padding: 8px 12px;\n  border-radius: 8px;\n  border: 1px solid var(--ggpp-border);\n  background: transparent;\n  color: var(--ggpp-fg);\n  font: 400 14px/20px var(--ggpp-font);\n  white-space: pre-wrap;\n}\n\ntextarea.ggpp-input { resize: vertical; font-family: var(--ggpp-mono); font-size: 13px; }\n.ggpp-input:focus { border-color: var(--ggpp-accent); outline: 1px solid var(--ggpp-accent); }\n.ggpp-input::placeholder { color: var(--ggpp-fg-3); }\nselect.ggpp-input { appearance: auto; cursor: pointer; }\nselect.ggpp-input option { background: var(--ggpp-bg); color: var(--ggpp-fg); }\n.ggpp-label { font-weight: 500; color: var(--ggpp-fg); }\n\n/* menu */\n.ggpp-menu {\n  position: fixed;\n  min-width: 180px;\n  max-height: 60vh;\n  overflow: auto;\n  padding: 8px 0;\n  border-radius: 8px;\n  background: var(--ggpp-surface);\n  box-shadow: var(--ggpp-shadow);\n  animation: ggpp-fade 0.12s;\n}\n\n.ggpp-menu-item {\n  all: unset;\n  box-sizing: border-box;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  width: 100%;\n  height: 40px;\n  padding: 0 16px;\n  font: 400 14px/20px var(--ggpp-font);\n  color: var(--ggpp-fg);\n  cursor: pointer;\n}\n\n.ggpp-menu-item:hover, .ggpp-menu-item:focus-visible { background: var(--ggpp-hover); }\n.ggpp-menu-item.ggpp-danger { color: var(--ggpp-danger); }\n.ggpp-menu-gap { width: 16px; }\n.ggpp-menu-check { margin-left: auto; color: var(--ggpp-accent); }\n.ggpp-menu-more { color: var(--ggpp-fg-2); }\n.ggpp-menu-sep { height: 1px; margin: 8px 0; background: var(--ggpp-border-soft); }\n.ggpp-menu-heading { padding: 8px 16px 4px; font: 500 12px/16px var(--ggpp-font); color: var(--ggpp-fg-2); }\n';
 
+  // sites/gemini/plugins/ui/index.ts
   var ui_default2 = definePlugin({
     id: "ui",
     name: "UI Kit",
@@ -9711,15 +9068,18 @@ ${depth === 0 ? "\n" : ""}`;
       }
       function modal(o3) {
         const body = h4("div", { class: "ggpp-modal-body" }, o3.content);
-        const close = () => {
+        let closed = false;
+        const close = (reason2 = "unknown") => {
+          if (closed) return;
+          closed = true;
           backdrop.remove();
           window.removeEventListener("keydown", onKey, true);
-          o3.onClose?.();
+          o3.onClose?.(reason2 === "user" || reason2 === "dispose" ? reason2 : "unknown");
         };
         const onKey = (e3) => {
           if (e3.key !== "Escape" || root2.lastElementChild !== backdrop) return;
           e3.stopPropagation();
-          close();
+          close("user");
         };
         const dialog = h4(
           "div",
@@ -9735,18 +9095,18 @@ ${depth === 0 ? "\n" : ""}`;
             { class: "ggpp-modal-head" },
             o3.icon && icon(o3.icon, 20),
             h4("h2", null, o3.title),
-            h4("button", { class: "ggpp-icon-btn", title: "Close", onclick: close }, icon(I3.x, 18))
+            h4("button", { class: "ggpp-icon-btn", title: "Close", onclick: () => close("user") }, icon(I3.x, 18))
           ),
           body,
           o3.footer && h4("footer", { class: "ggpp-modal-foot" }, o3.footer)
         );
         const backdrop = h4("div", { class: "ggpp-backdrop" }, dialog);
         backdrop.addEventListener("mousedown", (e3) => {
-          if (e3.target === backdrop) close();
+          if (e3.target === backdrop) close("user");
         });
         window.addEventListener("keydown", onKey, true);
         root2.append(backdrop);
-        ctx.cleanup(() => backdrop.isConnected && close());
+        ctx.cleanup(() => close("dispose"));
         return { root: dialog, body, close };
       }
       function button(label, onClick, kind = "default") {
@@ -9909,6 +9269,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/usageDisplay/stats.ts
   var dayKey = (t3) => {
     const d3 = new Date(t3);
     return `${d3.getFullYear()}-${String(d3.getMonth() + 1).padStart(2, "0")}-${String(d3.getDate()).padStart(2, "0")}`;
@@ -9961,6 +9322,7 @@ ${depth === 0 ? "\n" : ""}`;
   }
   var signed = (v3) => v3 === void 0 ? "—" : `+${Math.round(v3 * 10) / 10}%`;
 
+  // sites/gemini/composerAppearanceDiagnostics.ts
   var CSS_REDACTED = "[redacted]";
   var COMPOSER_LAYER_IDS = [
     "inputContainer",
@@ -10327,6 +9689,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   }
 
+  // sites/gemini/plugins/usageDisplay/composerAppearanceView.ts
   var DISPLAY_ALLOW = /* @__PURE__ */ new Set([
     "none",
     "inline",
@@ -10421,6 +9784,27 @@ ${depth === 0 ? "\n" : ""}`;
     ];
   }
 
+  // sites/gemini/plugins/usageDisplay/usageCopy.ts
+  function resolveUsageUiLang(opts) {
+    const html = (opts?.htmlLang ?? "").trim().toLowerCase();
+    if (html.startsWith("zh")) return "zh";
+    const nav = (opts?.navigatorLang ?? "").trim().toLowerCase();
+    if (nav.startsWith("zh")) return "zh";
+    return "en";
+  }
+  function detectUsageUiLang() {
+    const html = typeof document !== "undefined" ? document.documentElement?.getAttribute?.("lang") ?? document.documentElement?.lang : "";
+    const nav = typeof navigator !== "undefined" ? navigator.language : "";
+    return resolveUsageUiLang({ htmlLang: html, navigatorLang: nav });
+  }
+  function formatUsagePct(v3) {
+    if (v3 === void 0 || v3 === null || !Number.isFinite(v3)) return "—";
+    return `${Math.round(v3 * 10) / 10}%`;
+  }
+  function formatSignedDelta(v3) {
+    if (v3 === void 0 || v3 === null || !Number.isFinite(v3)) return "—";
+    return `+${Math.round(v3 * 10) / 10}%`;
+  }
   var MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
   function resetTime(text, from) {
     const m3 = text?.match(/(?:([a-z]{3})[a-z]*\s+(\d{1,2})\s+)?at\s+(\d{1,2}):(\d{2})\s*(am|pm)?/i);
@@ -10441,6 +9825,170 @@ ${depth === 0 ? "\n" : ""}`;
     }
     return d3.getTime();
   }
+  function calendarDayKey(ms, timeZone) {
+    if (!timeZone) {
+      const d3 = new Date(ms);
+      return `${d3.getFullYear()}-${d3.getMonth() + 1}-${d3.getDate()}`;
+    }
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date(ms));
+  }
+  function formatResetLocal(epochSec, nowMs, lang, opts) {
+    if (typeof epochSec !== "number" || !Number.isFinite(epochSec) || epochSec < 16e8) return void 0;
+    try {
+      const rMs = epochSec * 1e3;
+      const r3 = new Date(rMs);
+      if (!Number.isFinite(r3.getTime())) return void 0;
+      const sameDay = calendarDayKey(rMs, opts?.timeZone) === calendarDayKey(nowMs, opts?.timeZone);
+      const loc = lang === "zh" ? "zh-CN" : "en";
+      const tzOpt = opts?.timeZone ? { timeZone: opts.timeZone } : {};
+      if (sameDay) {
+        const time2 = r3.toLocaleTimeString(loc, { hour: "numeric", minute: "2-digit", ...tzOpt });
+        return lang === "zh" ? `重置 ${time2}` : `Resets ${time2}`;
+      }
+      const stamp = r3.toLocaleString(loc, {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        ...tzOpt
+      });
+      return lang === "zh" ? `重置 ${stamp}` : `Resets ${stamp}`;
+    } catch {
+      return void 0;
+    }
+  }
+  function resolveResetDisplayPhrase(opts) {
+    const { nowMs, lang, formatOpts } = opts;
+    if (typeof opts.epochMs === "number" && Number.isFinite(opts.epochMs) && opts.epochMs >= 16e8 * 1e3) {
+      return formatResetLocal(opts.epochMs / 1e3, nowMs, lang, formatOpts);
+    }
+    if (typeof opts.epochMs === "number" && Number.isFinite(opts.epochMs) && opts.epochMs >= 16e8 && opts.epochMs < 16e8 * 1e3) {
+      return formatResetLocal(opts.epochMs, nowMs, lang, formatOpts);
+    }
+    const parsed = resetTime(opts.rawText ?? void 0, nowMs);
+    if (parsed != null) return formatResetLocal(parsed / 1e3, nowMs, lang, formatOpts);
+    return void 0;
+  }
+  function formatTodayHoverLine(delta, lang, opts) {
+    if (opts && !opts.statsEnabled) return null;
+    const n2 = formatSignedDelta(delta);
+    return lang === "zh" ? `今日 ${n2}（本机记录增量）` : `Today ${n2} (local log delta)`;
+  }
+  function formatWindowHoverLine(usedPct, hadValue, resetPhrase, lang) {
+    if (usedPct === void 0 && hadValue) {
+      return lang === "zh" ? "5小时已用：自上次读取后已重置" : "5-hour used: reset since last read";
+    }
+    const pct = formatUsagePct(usedPct);
+    const tail = resetPhrase ? ` · ${resetPhrase}` : "";
+    return lang === "zh" ? `5小时已用 ${pct}${tail}` : `5-hour used ${pct}${tail}`;
+  }
+  function formatWeeklyHoverLine(usedPct, hadValue, resetPhrase, lang) {
+    if (usedPct === void 0 && hadValue) {
+      return lang === "zh" ? "每周已用：自上次读取后已重置" : "Weekly used: reset since last read";
+    }
+    const pct = formatUsagePct(usedPct);
+    const tail = resetPhrase ? ` · ${resetPhrase}` : "";
+    return lang === "zh" ? `每周已用 ${pct}${tail}` : `Weekly used ${pct}${tail}`;
+  }
+  function staleHint(lang) {
+    return lang === "zh" ? "请打开用量页刷新。" : "Open the usage page to refresh.";
+  }
+  function hoverFooter(lang) {
+    return lang === "zh" ? "点击查看详情 / 刷新" : "Click for details / refresh";
+  }
+  function hoverWaiting(lang) {
+    return lang === "zh" ? "用量 — 等待本会话实时读取（不显示缓存）" : "Usage — waiting for a live read this session (cache hidden)";
+  }
+  function hoverTitle(lang) {
+    return lang === "zh" ? "用量" : "Usage";
+  }
+  function todayBaselineExplain(lang) {
+    if (lang === "zh") {
+      return "「今日」是本机从当日首次采样起算的周额度记录增量，不是服务端「今日总量」。无前日基线时首次记为 +0%；跨日本地日历日切分。百分点来自 RPC 整数四舍五入；展示最多一位小数。重置时间按浏览器本地时区，非固定 Asia/Shanghai。";
+    }
+    return "“Today” is this device’s recorded weekly-limit delta since the first sample today — not a server “today total.” With no prior baseline the first sample is +0%. Day boundaries use the browser’s local calendar. Percents are integer-rounded from RPC; display uses at most one decimal. Reset times use the browser’s local timezone (not a hard-coded Asia/Shanghai).";
+  }
+  function modalTitle(lang) {
+    return lang === "zh" ? "Gemini 用量" : "Gemini usage";
+  }
+  function modalNoLive(lang) {
+    return lang === "zh" ? "本会话尚无实时用量读取。打开 /usage 或等待 RPC 回放。" : "No live usage read yet this session. Open /usage or wait for RPC replay.";
+  }
+  function detailTermBefore(lang) {
+    return lang === "zh" ? "重置前" : "Before";
+  }
+  function detailTermAfter(lang) {
+    return lang === "zh" ? "重置后" : "After";
+  }
+  function detailTermUsed(lang) {
+    return lang === "zh" ? "已用增量" : "Used";
+  }
+  function detailTermCurrent(lang) {
+    return lang === "zh" ? "当前" : "Current";
+  }
+  function detailTermLast(lang) {
+    return lang === "zh" ? "末日值" : "Last";
+  }
+  function detailTermStart(lang) {
+    return lang === "zh" ? "日起点" : "Start";
+  }
+  function weeklyResetCaption(lang, beforeStart, beforeEnd, afterLast) {
+    if (lang === "zh") {
+      return `周额度重置：${beforeStart} → ${beforeEnd}  +  0% → ${afterLast}`;
+    }
+    return `Weekly limit reset: ${beforeStart} → ${beforeEnd}  +  0% → ${afterLast}`;
+  }
+  function buildHoverTooltip(opts) {
+    const { lang } = opts;
+    if (!opts.liveVerified || !opts.hasUsage) return hoverWaiting(lang);
+    const wReset = resolveResetDisplayPhrase({
+      epochMs: opts.windowResetEpochMs,
+      rawText: opts.windowResetRaw,
+      nowMs: opts.nowMs,
+      lang,
+      formatOpts: opts.formatOpts
+    });
+    const kReset = resolveResetDisplayPhrase({
+      epochMs: opts.weeklyResetEpochMs,
+      rawText: opts.weeklyResetRaw,
+      nowMs: opts.nowMs,
+      lang,
+      formatOpts: opts.formatOpts
+    });
+    const rows = [hoverTitle(lang)];
+    const today = formatTodayHoverLine(opts.todayDelta, lang, { statsEnabled: opts.statsEnabled });
+    if (today) rows.push(today);
+    rows.push(formatWindowHoverLine(opts.windowUsed, opts.hadWindow, wReset, lang));
+    rows.push(formatWeeklyHoverLine(opts.weeklyUsed, opts.hadWeekly, kReset, lang));
+    if (opts.stale) rows.push(staleHint(lang));
+    rows.push(hoverFooter(lang));
+    return rows.join("\n");
+  }
+  function dayLabelToday(lang) {
+    return lang === "zh" ? "今日" : "Today";
+  }
+  function statsToggleTitle(lang) {
+    return lang === "zh" ? "每日用量统计" : "Daily usage stats";
+  }
+  function statsToggleHint(lang) {
+    return lang === "zh" ? "在本机记录每日周额度增量。" : "Record local daily usage on this device.";
+  }
+  function statsOffHint(lang) {
+    return lang === "zh" ? "打开每日用量统计后，将按本机日志记录周额度增量。" : "Turn on daily usage stats to keep a per-day log of the weekly limit.";
+  }
+  function statsEmptyHint(lang) {
+    return lang === "zh" ? "尚无记录。统计从开启后的首次用量读取起算。" : "No days recorded yet. Stats start from the moment you enable tracking, each time usage is read.";
+  }
+  function nothingThatDay(lang) {
+    return lang === "zh" ? "该日无记录。" : "Nothing recorded on this day.";
+  }
+
+  // sites/gemini/plugins/usageDisplay/index.ts
   var REFRESH_MS = 6e4;
   function parse(text) {
     const lines = text.split("\n").map((l3) => l3.trim()).filter(Boolean);
@@ -10465,18 +10013,8 @@ ${depth === 0 ? "\n" : ""}`;
       at: now2
     };
   }
-  function formatResetEpoch(epoch, now2) {
-    if (typeof epoch !== "number") return void 0;
-    try {
-      const r3 = new Date(epoch * 1e3);
-      const o3 = new Date(now2);
-      if (r3.getFullYear() === o3.getFullYear() && r3.getMonth() === o3.getMonth() && r3.getDate() === o3.getDate()) {
-        return `Resets at ${r3.toLocaleTimeString(void 0, { hour: "numeric", minute: "2-digit" })}`;
-      }
-      return `Resets ${r3.toLocaleString(void 0, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
-    } catch {
-      return void 0;
-    }
+  function formatResetEpoch(epoch, now2, lang = detectUsageUiLang()) {
+    return formatResetLocal(epoch, now2, lang);
   }
   function fromMetrics(m3) {
     if (!m3.daily && !m3.weekly) return null;
@@ -10639,38 +10177,73 @@ ${depth === 0 ? "\n" : ""}`;
           })
         );
       }
-      const fmt = (v3) => v3 === void 0 ? "—" : `${Math.round(v3 * 10) / 10}%`;
+      const uiLang = () => detectUsageUiLang();
+      const fmt = (v3) => formatUsagePct(v3);
       const lines = () => {
         if (!usage) return [];
+        const lang = uiLang();
+        const now2 = Date.now();
         const w4 = live(usage.window, usage.windowResetAt);
         const k4 = live(usage.weekly, usage.weeklyResetAt);
+        const wReset = resolveResetDisplayPhrase({
+          epochMs: usage.windowResetAt,
+          rawText: usage.windowReset,
+          nowMs: now2,
+          lang
+        });
+        const kReset = resolveResetDisplayPhrase({
+          epochMs: usage.weeklyResetAt,
+          rawText: usage.weeklyReset,
+          nowMs: now2,
+          lang
+        });
         return [
-          `5-hour: ${w4 === void 0 && usage.window !== void 0 ? "reset since last read" : `${fmt(w4)}${usage.windowReset ? ` · ${usage.windowReset}` : ""}`}`,
-          `Weekly: ${k4 === void 0 && usage.weekly !== void 0 ? "reset since last read" : `${fmt(k4)}${usage.weeklyReset ? ` · ${usage.weeklyReset}` : ""}`}`,
-          ...stale() ? ["Open the usage page to refresh."] : []
+          formatWindowHoverLine(w4, usage.window !== void 0, wReset, lang),
+          formatWeeklyHoverLine(k4, usage.weekly !== void 0, kReset, lang),
+          ...stale() ? [staleHint(lang)] : []
         ];
       };
       const statsKey = () => `stats:${location.pathname.match(/^\/u\/(\d+)/)?.[1] ?? "0"}`;
       let log = await ctx.data.get(statsKey(), []);
-      const todayLine = () => {
-        if (!ctx.settings.usageStats) return [];
+      const todayDelta = () => {
+        if (!ctx.settings.usageStats) return void 0;
         const today = log.find((d3) => d3.date === dayKey(Date.now()));
-        return [`Today: ${signed(today ? used(today) : usage?.weekly === void 0 ? void 0 : 0)} of weekly limit`];
+        if (today) return used(today);
+        return usage?.weekly === void 0 ? void 0 : 0;
       };
       async function snapshot(u3) {
         if (!ctx.settings.usageStats || u3.weekly === void 0) return;
         log = record(await ctx.data.get(statsKey(), []), u3.weekly, u3.weeklyResetAt, u3.at, ctx.settings.retainDays);
         await ctx.data.set(statsKey(), log);
       }
-      const tooltip = () => liveVerified && usage ? ["用量", ...todayLine(), ...lines(), "点击查看详情 / 刷新"].join("\n") : "用量 — 等待本会话实时 RPC/DOM 读取（不显示缓存）";
+      const tooltip = () => {
+        const lang = uiLang();
+        const now2 = Date.now();
+        return buildHoverTooltip({
+          lang,
+          liveVerified,
+          hasUsage: !!usage,
+          todayDelta: todayDelta(),
+          statsEnabled: !!ctx.settings.usageStats,
+          windowUsed: usage ? live(usage.window, usage.windowResetAt) : void 0,
+          weeklyUsed: usage ? live(usage.weekly, usage.weeklyResetAt) : void 0,
+          hadWindow: !!usage && usage.window !== void 0,
+          hadWeekly: !!usage && usage.weekly !== void 0,
+          windowResetEpochMs: usage?.windowResetAt,
+          weeklyResetEpochMs: usage?.weeklyResetAt,
+          windowResetRaw: usage?.windowReset,
+          weeklyResetRaw: usage?.weeklyReset,
+          nowMs: now2,
+          stale: stale()
+        });
+      };
       ctx.cleanup(
         bar.register({
           id: "usageDisplay",
           icon: I3.clock,
           // Accessible name must stay explicit — not an anonymous icon.
           get title() {
-            const detail = tooltip();
-            return detail.startsWith("用量") ? detail : `用量 — ${detail}`;
+            return tooltip();
           },
           order: 1,
           render: ring,
@@ -10685,7 +10258,7 @@ ${depth === 0 ? "\n" : ""}`;
         historyView?.();
       });
       const label = (date, short = false) => {
-        if (date === dayKey(Date.now())) return "Today";
+        if (date === dayKey(Date.now())) return dayLabelToday(uiLang());
         const [y3, m3, d3] = date.split("-").map(Number);
         const t3 = new Date(y3, m3 - 1, d3);
         return short ? String(d3) : t3.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -10699,20 +10272,20 @@ ${depth === 0 ? "\n" : ""}`;
         const toggle = h4(
           "div",
           { class: "ggpp-ud-toggle" },
-          h4("div", null, h4("div", { class: "ggpp-ud-strong" }, "Daily usage stats"), h4("div", { class: "ggpp-muted" }, "Record local daily usage on this device.")),
+          h4("div", null, h4("div", { class: "ggpp-ud-strong" }, statsToggleTitle(uiLang())), h4("div", { class: "ggpp-muted" }, statsToggleHint(uiLang()))),
           ui.switch(ctx.settings.usageStats, (on3) => ctx.setSetting("usageStats", on3))
         );
         const render = () => {
           current3.replaceChildren(
-            ...(liveVerified && usage ? lines() : ["No live usage read yet this session. Open /usage or wait for RPC replay."]).map((l3) => h4("div", null, l3)),
+            ...(liveVerified && usage ? lines() : [modalNoLive(uiLang())]).map((l3) => h4("div", null, l3)),
             h4("div", null, ui.button("Open usage page", () => (m3.close(), gemini.navigate(usageUrl())), "ghost"))
           );
           if (!ctx.settings.usageStats) {
-            body.replaceChildren(h4("p", { class: "ggpp-muted" }, "Turn on daily usage stats to keep a per-day log of the weekly limit."));
+            body.replaceChildren(h4("p", { class: "ggpp-muted" }, statsOffHint(uiLang())));
             return;
           }
           if (!log.length) {
-            body.replaceChildren(h4("p", { class: "ggpp-muted" }, "No days recorded yet. Stats start from the moment you enable tracking, each time the usage page is read."));
+            body.replaceChildren(h4("p", { class: "ggpp-muted" }, statsEmptyHint(uiLang())));
             return;
           }
           const days = calendar(log, Date.now());
@@ -10768,18 +10341,36 @@ ${depth === 0 ? "\n" : ""}`;
           const term = (name, v3) => h4("div", { class: "ggpp-ud-term" }, h4("small", null, name), h4("span", null, v3));
           const pct = (v3) => `${Math.round(v3 * 10) / 10}%`;
           const isToday = date === dayKey(Date.now());
-          if (!day) return h4("div", { class: "ggpp-ud-detail" }, h4("div", { class: "ggpp-ud-strong" }, label(date)), h4("p", { class: "ggpp-muted" }, "Nothing recorded on this day."));
-          const formula = day.before ? [term("Before", signed(day.accrued)), h4("span", null, "+"), term("After", signed(Math.max(0, day.last - day.start))), h4("span", null, "="), term("Used", signed(used(day)))] : [term(isToday ? "Current" : "Last", pct(day.last)), h4("span", null, "−"), term("Start", pct(day.start)), h4("span", null, "="), term("Used", signed(used(day)))];
+          if (!day) return h4("div", { class: "ggpp-ud-detail" }, h4("div", { class: "ggpp-ud-strong" }, label(date)), h4("p", { class: "ggpp-muted" }, nothingThatDay(uiLang())));
+          const lang = uiLang();
+          const formula = day.before ? [
+            term(detailTermBefore(lang), signed(day.accrued)),
+            h4("span", null, "+"),
+            term(detailTermAfter(lang), signed(Math.max(0, day.last - day.start))),
+            h4("span", null, "="),
+            term(detailTermUsed(lang), signed(used(day)))
+          ] : [
+            term(isToday ? detailTermCurrent(lang) : detailTermLast(lang), pct(day.last)),
+            h4("span", null, "−"),
+            term(detailTermStart(lang), pct(day.start)),
+            h4("span", null, "="),
+            term(detailTermUsed(lang), signed(used(day)))
+          ];
           return h4(
             "div",
             { class: "ggpp-ud-detail" },
             h4("div", { class: "ggpp-ud-strong" }, label(date)),
             h4("div", { class: "ggpp-ud-formula" }, formula),
-            day.before && h4("div", { class: "ggpp-muted" }, `Weekly limit reset: ${pct(day.before.start)} → ${pct(day.before.end)}  +  0% → ${pct(day.last)}`)
+            day.before && h4(
+              "div",
+              { class: "ggpp-muted" },
+              weeklyResetCaption(lang, pct(day.before.start), pct(day.before.end), pct(day.last))
+            ),
+            isToday && h4("p", { class: "ggpp-muted" }, todayBaselineExplain(lang))
           );
         }
         const m3 = ui.modal({
-          title: "Gemini usage",
+          title: modalTitle(uiLang()),
           icon: I3.clock,
           width: 460,
           content: [current3, toggle, body],
@@ -11011,6 +10602,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/userQuotes/index.ts
   var userQuotes_default = definePlugin({
     id: "userQuotes",
     name: "UserQuotes",
@@ -11051,6 +10643,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   });
 
+  // sites/gemini/plugins/widerChat/index.ts
   var widerChat_default = definePlugin({
     id: "widerChat",
     name: "WiderChat",
@@ -11284,6 +10877,7 @@ ${depth === 0 ? "\n" : ""}`;
   // uspp:plugins
   var plugins_default = [];
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/utils.js
   var sleep4 = (ms) => new Promise((r3) => setTimeout(r3, ms));
   function debounce2(fn2, ms = 100) {
     let t3;
@@ -11351,6 +10945,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/lazy.js
   function makeLazy(factory, attempts = 5) {
     let tries = 0, cache;
     return () => {
@@ -11414,6 +11009,7 @@ ${depth === 0 ? "\n" : ""}`;
     });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/events.js
   var logger2 = new Logger("Events", "#fde68a");
   var handlers = /* @__PURE__ */ new Map();
   var Events = Object.freeze({
@@ -11452,6 +11048,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/settings.js
   var logger3 = new Logger("Settings", "#86efac");
   var STORAGE_KEY = "UserscriptPPSettings";
   var SITE_STORAGE_KEY = `UserscriptPP:${SCRIPT_ID}:settings`;
@@ -12618,6 +12215,7 @@ ${depth === 0 ? "\n" : ""}`;
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/net.js
   var CONNECT = typeof define_USPP_CONNECT_default !== "undefined" ? define_USPP_CONNECT_default : ["*"];
   var allowedHosts = () => CONNECT.slice();
   function hostAllowed(host2, list2 = CONNECT) {
@@ -12703,6 +12301,7 @@ ${depth === 0 ? "\n" : ""}`;
     });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/bridge.js
   var allowed = /* @__PURE__ */ new Map();
   var resolvers = /* @__PURE__ */ new Map();
   var pluginResolver = () => null;
@@ -12799,6 +12398,7 @@ ${depth === 0 ? "\n" : ""}`;
     Object.defineProperty(W4, INSTANCE_KEY, { value: bridge, writable: false, configurable: true, enumerable: false });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/patches.js
   var logger4 = new Logger("Patcher", "#c4b5fd");
   var IDENT = "(?:[A-Za-z_$][\\w$]*)";
   function expandIdent(source) {
@@ -13043,6 +12643,7 @@ ${depth === 0 ? "\n" : ""}`;
     return { code, applied: [...appliedPlugins], results, mismatches };
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/turbopack.js
   var logger5 = new Logger("Turbopack", "#93c5fd");
   var fnToString = Function.prototype.toString;
   var META2 = Symbol.for("uspp.ggpp.factory");
@@ -13849,6 +13450,7 @@ ${orphaned.join("\n")}`);
     tick();
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/styles.js
   var logger6 = new Logger("Styles", "#f9a8d4");
   var styles = /* @__PURE__ */ new Map();
   var container2 = null;
@@ -14028,6 +13630,7 @@ ${orphaned.join("\n")}`);
     return true;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/finders.js
   var logger7 = new Logger("Finders", "#67e8f9");
   var fnToString2 = Function.prototype.toString;
   var REACT_MEMO = Symbol.for("react.memo");
@@ -14551,6 +14154,7 @@ ${orphaned.join("\n")}`);
     return reactCache;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/dom.js
   var logger8 = new Logger("DOM", "#a7f3d0");
   var subs = /* @__PURE__ */ new Set();
   var mo = null;
@@ -14720,6 +14324,7 @@ ${orphaned.join("\n")}`);
     if (mo) collect(mo.takeRecords());
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/route.js
   var installed2 = false;
   var last = null;
   var parser = null;
@@ -14770,6 +14375,7 @@ ${orphaned.join("\n")}`);
     return subscribe(Events.ROUTE_CHANGE, fn2);
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/network.js
   var logger9 = new Logger("Network", "#c4b5fd");
   var reqSubs = /* @__PURE__ */ new Set();
   var resSubs = /* @__PURE__ */ new Set();
@@ -15168,6 +14774,7 @@ ${orphaned.join("\n")}`);
     return () => esSubs.delete(s3);
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/jsxhook.js
   var logger10 = new Logger("RenderHook", "#fca5a5");
   var hooks = /* @__PURE__ */ new Map();
   var stringHooks = /* @__PURE__ */ new Map();
@@ -15260,6 +14867,7 @@ ${orphaned.join("\n")}`);
     return treeHas(node.props?.children, test2, depth - 1);
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/slots.js
   var logger11 = new Logger("Slots", "#fdba74");
   var slots = /* @__PURE__ */ new Map();
   var listeners3 = /* @__PURE__ */ new Map();
@@ -15311,6 +14919,7 @@ ${orphaned.join("\n")}`);
   }
   var isPatchOnly = (def) => typeof def.patch === "function" && def.label == null && def.render == null;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/patcher.js
   var logger12 = new Logger("Patcher", "#f9a8d4");
   var records = /* @__PURE__ */ new WeakMap();
   var safe = (label, fn2) => {
@@ -15423,6 +15032,7 @@ ${orphaned.join("\n")}`);
   }
   var isPatched = (obj, name) => !!records.get(obj)?.get(name)?.hooks.length;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/datastore.js
   var logger13 = new Logger("DataStore", "#99f6e4");
   var DATA_DB = `UserscriptPP:${SCRIPT_ID}:data`;
   var STORE = "kv";
@@ -15599,6 +15209,7 @@ ${orphaned.join("\n")}`);
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/plugin-errors.js
   var logger14 = new Logger("Plugins", "#a7f3d0");
   var stats = /* @__PURE__ */ new Map();
   var listeners4 = /* @__PURE__ */ new Set();
@@ -15693,6 +15304,7 @@ ${orphaned.join("\n")}`);
     }
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/scope.js
   var logger15 = new Logger("Scope", "#a5b4fc");
   var scopes = /* @__PURE__ */ new Map();
   var current2 = null;
@@ -15913,6 +15525,7 @@ ${orphaned.join("\n")}`);
     return once;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/commands.js
   var logger16 = new Logger("Commands", "#bef264");
   var commands = /* @__PURE__ */ new Map();
   var listeners5 = /* @__PURE__ */ new Set();
@@ -16032,6 +15645,7 @@ ${orphaned.join("\n")}`);
     }, true);
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/interceptors.js
   var logger17 = new Logger("Interceptors", "#fca5a5");
   var chains = /* @__PURE__ */ new Map();
   var declared = /* @__PURE__ */ new Set();
@@ -16080,6 +15694,7 @@ ${orphaned.join("\n")}`);
     return { value: cur, cancelled: false, by: null };
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/settings-pages.js
   var pages = /* @__PURE__ */ new Map();
   var listeners6 = /* @__PURE__ */ new Set();
   var emit5 = () => {
@@ -16109,6 +15724,7 @@ ${orphaned.join("\n")}`);
   }
   var getRegisteredPages = () => [...pages.values()].sort((a3, b3) => (a3.order ?? 0) - (b3.order ?? 0));
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/safemode.js
   var logger18 = new Logger("SafeMode", "#fca5a5");
   var LEGACY_BOOT_KEY = "UserscriptPPBoot";
   var BOOT_KEY2 = `UserscriptPPBoot:${SCRIPT_ID}`;
@@ -16224,6 +15840,7 @@ ${orphaned.join("\n")}`);
     W3.location.reload();
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/plugins.js
   var perfNow = () => typeof performance !== "undefined" ? performance.now() : Date.now();
   var logger19 = new Logger("PluginManager", "#a5b4fc");
   var StartAt = Object.freeze({
@@ -17042,6 +16659,7 @@ ${orphaned.join("\n")}`);
     return true;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/backup.js
   var logger20 = new Logger("Backup", "#93c5fd");
   var BACKUP_FORMAT = "userscript-pp-settings";
   var clone2 = (v3) => parseStored(serialize(v3)) ?? JSON.parse(serialize(v3));
@@ -17290,6 +16908,7 @@ ${orphaned.join("\n")}`);
     });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/themes.js
   var CONNECT2 = allowedHosts();
   var logger21 = new Logger("Themes", "#fcd34d");
   var cssCache = /* @__PURE__ */ new Map();
@@ -17573,6 +17192,7 @@ ${orphaned.join("\n")}`);
     else disableStyle(QUICK_CSS);
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/menu.js
   var logger22 = new Logger("Menu", "#fcd34d");
   var registered = /* @__PURE__ */ new Map();
   function sync2() {
@@ -17623,6 +17243,7 @@ ${orphaned.join("\n")}`);
     sync2();
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/fiber.js
   function getFiber(el) {
     if (!el) return null;
     for (const k4 of Object.keys(el)) {
@@ -17649,6 +17270,7 @@ ${orphaned.join("\n")}`);
     return f3 ? f3.memoizedProps : null;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/components.js
   var components_exports = {};
   __export(components_exports, {
     Button: () => Button,
@@ -17663,6 +17285,7 @@ ${orphaned.join("\n")}`);
     Tooltip: () => Tooltip
   });
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/highlight.js
   var esc2 = (s3) => s3.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   var span = (k4, t3) => `<span class="uspp-ggpp-hl-${k4}">${esc2(t3)}</span>`;
   var TOKEN = /\/\*[\s\S]*?(?:\*\/|$)|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?|@[\w-]+|#[\da-fA-F]{3,8}\b|-?(?:\d+\.?\d*|\.\d+)(?:%|[a-zA-Z]+)?|!important\b|--[\w-]+|[\w-]+|[{}:;,()]/g;
@@ -17710,6 +17333,7 @@ ${orphaned.join("\n")}`);
     return out;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/components.js
   function withFallback(nativeRender, fallbackRender, label) {
     return (props) => {
       const fb = fallbackRender(props);
@@ -17869,6 +17493,7 @@ ${orphaned.join("\n")}`);
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/kit.js
   var kit_exports = {};
   __export(kit_exports, {
     ColorSettingRow: () => ColorSettingRow,
@@ -18031,6 +17656,7 @@ ${orphaned.join("\n")}`);
     return [busy2, run];
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/stores.js
   function createExternalStore() {
     const listeners12 = /* @__PURE__ */ new Set();
     let version2 = 0;
@@ -18091,6 +17717,7 @@ ${orphaned.join("\n")}`);
     };
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/icons.js
   var icons_exports = {};
   __export(icons_exports, {
     ArchiveIcon: () => ArchiveIcon,
@@ -18167,6 +17794,7 @@ ${orphaned.join("\n")}`);
   var BellIcon = svg2(["M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9", "M10.3 21a1.9 1.9 0 0 0 3.4 0"]);
   var SearchIcon = svg2(["M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z", "M21 21l-4.3-4.3"]);
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/theme.js
   function luminance(color) {
     const m3 = /rgba?\(([^)]+)\)/.exec(color || "");
     if (!m3) return null;
@@ -18226,6 +17854,7 @@ ${orphaned.join("\n")}`);
     }, { once: true });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/root.js
   var logger23 = new Logger("UI", "#fbcfe8");
   var root = null;
   var host = null;
@@ -18295,6 +17924,7 @@ ${orphaned.join("\n")}`);
     return a3;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/modal.js
   var logger24 = new Logger("Modal", "#fbcfe8");
   var modals = [];
   var listeners9 = /* @__PURE__ */ new Set();
@@ -18460,6 +18090,7 @@ ${orphaned.join("\n")}`);
     });
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/toast.js
   var logger25 = new Logger("Toast", "#fbcfe8");
   var ToastType = Object.freeze({
     MESSAGE: "MESSAGE",
@@ -18578,6 +18209,7 @@ ${orphaned.join("\n")}`);
     return t3;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/floating.js
   var subscribe5 = (fn2) => {
     const off = onSlotChange("floating", fn2);
     SettingsStore.addChangeListener("plugins.Settings.floatingPosition", fn2);
@@ -18627,6 +18259,7 @@ ${orphaned.join("\n")}`);
     tryMount();
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/styles.css.js
   var LIGHT = `--uspp-ggpp-surface-base:#fff;--uspp-ggpp-surface-l1:#fff;--uspp-ggpp-surface-l2:#f4f4f5;--uspp-ggpp-surface-l3:#d4d4d8;--uspp-ggpp-fg-primary:#111;--uspp-ggpp-fg-secondary:#5f5f66;--uspp-ggpp-fg-tertiary:#8a8a93;--uspp-ggpp-fg-danger:#e5484d;--uspp-ggpp-border-l1:rgb(0 0 0 / .1);--uspp-ggpp-border-l2:rgb(0 0 0 / .16);--uspp-ggpp-ring:#888;--uspp-ggpp-button-ghost-hover:rgb(0 0 0 / .06);`;
   var DARK = `--uspp-ggpp-surface-base:#151517;--uspp-ggpp-surface-l1:#1c1c1f;--uspp-ggpp-surface-l2:#26262a;--uspp-ggpp-surface-l3:#3f3f46;--uspp-ggpp-fg-primary:#f4f4f5;--uspp-ggpp-fg-secondary:#a1a1aa;--uspp-ggpp-fg-tertiary:#71717a;--uspp-ggpp-fg-danger:#f06a6e;--uspp-ggpp-border-l1:rgb(255 255 255 / .1);--uspp-ggpp-border-l2:rgb(255 255 255 / .16);--uspp-ggpp-ring:#a1a1aa;--uspp-ggpp-button-ghost-hover:rgb(255 255 255 / .08);`;
   var UI_CSS = `
@@ -18838,6 +18471,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
 }
 `;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/diagnostics.js
   var patchSummary = () => null;
   function setPatchSummary(fn2) {
     patchSummary = fn2;
@@ -18928,6 +18562,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return { url, copied: true, truncated: true };
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/Palette.js
   var PALETTE_KEY = "uspp-ggpp-palette";
   var openPluginFn = () => {
   };
@@ -19022,6 +18657,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
   }
   var closePalette = () => closeModal(PALETTE_KEY);
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/notify.js
   var logger26 = new Logger("Notify", "#fbcfe8");
   var MAX_HISTORY = 50;
   var MAX_SHOWN = 4;
@@ -19118,6 +18754,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
   }
   addLayer("notify", NotifyHost);
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/updater.js
   var logger27 = new Logger("Updater", "#fda4af");
   var UPDATE_INFO = true ? null : null;
   var CHANGELOG = typeof define_USPP_CHANGELOG_default !== "undefined" ? define_USPP_CHANGELOG_default : [];
@@ -19236,6 +18873,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return res;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/UpdatesTab.js
   var when = (t3) => t3 ? new Date(t3).toLocaleString() : "never";
   function ChangelogList({ entries: entries2 = CHANGELOG, current: current3 = VERSION }) {
     if (!entries2.length) return h("div", { className: "uspp-ggpp-empty" }, "No changelog in this build.");
@@ -19301,6 +18939,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/BackupTab.js
   var list = (names) => names.length > 6 ? `${names.slice(0, 6).join(", ")} and ${names.length - 6} more` : names.join(", ");
   var invalidText = (inv) => inv.map((x4) => x4.key === "*" ? x4.plugin : `${x4.plugin}.${x4.key} (${x4.reason})`);
   var reloadList = () => [...pendingReload].join(", ") || "Some plugins";
@@ -19418,6 +19057,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/index.js
   var NAME = "Settings";
   var MENU_COMMAND_ID = "uspp-ggpp-settings";
   var MENU_SEARCH_ID = "uspp-ggpp-search";
@@ -19554,6 +19194,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     }
   });
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/PluginPreview.js
   var SLOT_LABELS = {
     toolbar: "Toolbar button",
     menuCommand: "Script menu command",
@@ -19672,6 +19313,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/PluginModal.js
   function usePluginSettings(name) {
     const force = useForceUpdate();
     useEffect(() => {
@@ -19859,6 +19501,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/toggle.js
   var userDependents = (name) => dependentsOf(name).filter((n2) => !isEnabledAsDependency(n2));
   async function turnOffPlugin(name, onToggled = () => {
   }) {
@@ -19872,6 +19515,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return true;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/BaseCard.js
   function BaseCard({ className, attrs, name, icon: icon2, badges, description, controls, footer }) {
     return h(
       "div",
@@ -19898,9 +19542,11 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/site-label.js
   var siteLabel = () => isGeneric() ? location.hostname || "this site" : getSite().name;
   var pluginSiteLabel = (p3) => p3.site === "*" ? "All sites" : getSiteById(p3.site)?.name ?? p3.site;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/shared.js
   var TAB_IDS = { plugins: "uspp_ggpp_plugins_tab", themes: "uspp_ggpp_themes_tab", quickCss: "uspp_ggpp_quickcss_tab", backup: "uspp_ggpp_backup_tab", keybinds: "uspp_ggpp_keybinds_tab", notifications: "uspp_ggpp_notifications_tab", updates: "uspp_ggpp_updates_tab" };
   var sys3 = () => Settings.plugins.Settings;
   var sysPlain = () => PlainSettings.plugins.Settings ??= {};
@@ -19909,6 +19555,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return Array.isArray(v3) ? v3.slice() : [];
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/PluginsTab.js
   var SLOW_START_MS = 10;
   var TAGS2 = [
     ["composer", "Composer"],
@@ -20204,6 +19851,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/ThemesTab.js
   function OnlineThemeModal({ onClose }) {
     const [url, setUrl] = useState("");
     const [busy2, setBusy] = useState(false);
@@ -20350,6 +19998,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/QuickCssTab.js
   function QuickCssTab() {
     const force = useForceUpdate();
     useEffect(() => {
@@ -20370,6 +20019,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/KeybindsTab.js
   var subKeybinds = (fn2) => {
     const offs = [subscribeCommands(fn2)];
     const l3 = () => fn2();
@@ -20420,6 +20070,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/NotificationsTab.js
   var time = (t3) => new Date(t3).toLocaleTimeString();
   function NotificationsTab() {
     useSubscription(subscribeNotifications);
@@ -20458,6 +20109,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     );
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/pages.js
   var page = (C4, label) => {
     const P4 = () => h(ErrorBoundary, { fallback: h("div", { className: "uspp-ggpp-page uspp-ggpp-error" }, `${label} failed to render.`) }, h(C4));
     P4.displayName = `Uspp${label.replace(/\s/g, "")}Page`;
@@ -20486,6 +20138,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
   var getSettingsPages = () => [...BUILTIN_PAGES, ...getRegisteredPages().map(customPage)];
   var pageByKey = (key) => getSettingsPages().find((p3) => p3.key === key || p3.id === key) || BUILTIN_PAGES[0];
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/SettingsPanel.js
   var PANEL_KEY = "uspp-ggpp-settings-panel";
   function SettingsPanel({ tab, onClose }) {
     useSubscription(subscribeSettingsPages);
@@ -20519,6 +20172,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
   }
   var closeSettingsPanel = () => closeModal(PANEL_KEY);
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/ui/slot-render.js
   var logger28 = new Logger("SlotRender", "#fdba74");
   function DefaultButton({ def, ctx }) {
     const Icon = def.icon;
@@ -20608,6 +20262,7 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return { update: x4.update, unmount: x4.unmount };
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/settings/FailedPlugins.js
   var failedPlugins = () => Object.values(plugins).filter((p3) => isPluginEnabled(p3.name) && !p3.started && p3.startError);
   async function promptReload() {
     if (!pendingReload.size) return;
@@ -20655,8 +20310,10 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
     return list2.length;
   }
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/lib/webpack.js
   var fnToString3 = Function.prototype.toString;
 
+  // ../GGPP-acceptance-backups/nethook-type-integration-20261119-cntqtbk1/tmp/ggpp-uspp-ggIACc/core/index.js
   var adoptItem = (def) => def && typeof def === "object" ? { ...def, ...Object.fromEntries(["onClick", "onSelect", "render", "patch"].filter((k4) => typeof def[k4] === "function" && !(def[k4].prototype && def[k4].prototype.isReactComponent)).map((k4) => [k4, adopt2(def[k4])])) } : def;
   var adoptHooks = (hooks2) => hooks2 && typeof hooks2 === "object" ? Object.fromEntries(Object.entries(hooks2).map(([k4, v3]) => [k4, k4 === "instead" ? adopt2(v3, (args, next) => next(...args)) : adopt2(v3)])) : hooks2;
   var logger29 = new Logger("Core", "#c4b5fd");
@@ -20693,6 +20350,34 @@ uspp-ggpp-root > *, .uspp-ggpp-shadow-mount > * { pointer-events: auto; }
   function openSettings2(opts = {}) {
     const host2 = getSite().settingsHost;
     if (host2 && typeof host2.open === "function" && PlainSettings.plugins.Settings?.showSiteEntry !== false) {
+      if (typeof host2.ggppOpenRequest === "function") {
+        let request2, requestError = false, accepted = false;
+        try {
+          request2 = host2.ggppOpenRequest(opts);
+          accepted = request2?.protocol === "ggpp-settings-request@1" && request2.accepted === true && typeof request2.status === "function" && typeof host2.isOpen === "function";
+        } catch (e3) {
+          requestError = true;
+          logger29.warn("GG++ settings request failed", e3);
+        }
+        if (request2 !== void 0 || requestError) {
+          if (!requestError && accepted) {
+            setTimeout(() => {
+              let shown2 = false;
+              try {
+                const state3 = request2.status();
+                if (state3 === "dismissed" || state3 === "superseded") return;
+                shown2 = state3 === "open" && host2.isOpen() === true;
+              } catch (e3) {
+                logger29.warn("GG++ settings request status failed", e3);
+              }
+              if (!shown2) openSettingsPanel(opts);
+            }, 800);
+            return "site";
+          }
+          openSettingsPanel(opts);
+          return "panel";
+        }
+      }
       let ok = false;
       try {
         ok = !!host2.open(opts);
