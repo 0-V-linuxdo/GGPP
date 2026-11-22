@@ -6864,6 +6864,16 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
             (e3) => {
               e3.preventDefault();
               e3.stopImmediatePropagation();
+              if (typeof item.onSelect === "function") {
+                closeSub = null;
+                closeMenu(panel);
+                try {
+                  item.onSelect(c3);
+                } catch (err) {
+                  ctx.log.error(`menu item ${item.id} failed`, err);
+                }
+                return;
+              }
               show();
             },
             true
@@ -8551,6 +8561,16 @@ ${depth === 0 ? "\n" : ""}`;
       } catch (e3) {
         ctx.log.warn("failed to register GG++ floating settings entry", e3);
       }
+      const onPillPointer = (e3) => {
+        const path = typeof e3.composedPath === "function" ? e3.composedPath() : [];
+        const hit = path.some((n2) => n2 && n2.getAttribute && n2.getAttribute("data-uspp-ggpp-floating-item") === "ggpp.settingsFloating");
+        if (!hit) return;
+        e3.preventDefault();
+        e3.stopPropagation();
+        openSettings3();
+      };
+      document.addEventListener("pointerdown", onPillPointer, true);
+      ctx.cleanup(() => document.removeEventListener("pointerdown", onPillPointer, true));
       ctx.on("ggpp:open-settings", (p3) => openSettings3(p3?.tab, p3?.plugin));
       window.addEventListener(
         "keydown",
@@ -8622,7 +8642,8 @@ ${depth === 0 ? "\n" : ""}`;
           label: "GG++",
           icon: I3.ggpp,
           order: -100,
-          submenu: entries2
+          submenu: entries2,
+          onSelect: () => settingsUI.open()
         })
       );
       ctx.provide("panel:settingsFlyout", (el) => {
@@ -10018,6 +10039,470 @@ ${depth === 0 ? "\n" : ""}`;
     return lang === "zh" ? "该日无记录。" : "Nothing recorded on this day.";
   }
 
+  // sites/gemini/plugins/usageDisplay/usageTooltipGeometry.ts
+  function placeUsageTip(anchor, tip, gap, p) {
+    const ax = anchor.left + anchor.width / 2;
+    const ay = anchor.top + anchor.height / 2;
+    switch (p) {
+      case "above":
+        return { top: anchor.top - gap - tip.height, left: ax - tip.width / 2 };
+      case "below":
+        return { top: anchor.top + anchor.height + gap, left: ax - tip.width / 2 };
+      case "before":
+        return { top: ay - tip.height / 2, left: anchor.left - gap - tip.width };
+      case "after":
+        return { top: ay - tip.height / 2, left: anchor.left + anchor.width + gap };
+    }
+  }
+  function usageTipFits(pos, tip, vp, margin) {
+    return pos.top >= margin && pos.left >= margin && pos.top + tip.height <= vp.height - margin && pos.left + tip.width <= vp.width - margin;
+  }
+  function clampUsageTip(pos, tip, vp, margin) {
+    return {
+      top: Math.max(margin, Math.min(pos.top, vp.height - margin - tip.height)),
+      left: Math.max(margin, Math.min(pos.left, vp.width - margin - tip.width))
+    };
+  }
+  var USAGE_TIP_FLIP = {
+    above: ["above", "below", "after", "before"],
+    below: ["below", "above", "after", "before"],
+    before: ["before", "after", "above", "below"],
+    after: ["after", "before", "above", "below"]
+  };
+  function positionUsageTooltip(input) {
+    const { anchor, tip, viewport, gapPx, viewportMarginPx, preferred } = input;
+    const order = USAGE_TIP_FLIP[preferred];
+    for (const p of order) {
+      const raw = placeUsageTip(anchor, tip, gapPx, p);
+      if (usageTipFits(raw, tip, viewport, viewportMarginPx)) {
+        return { ...raw, placement: p };
+      }
+    }
+    const fallback = placeUsageTip(anchor, tip, gapPx, preferred);
+    const c = clampUsageTip(fallback, tip, viewport, viewportMarginPx);
+    return { ...c, placement: preferred };
+  }
+
+  // sites/gemini/plugins/usageDisplay/usageTooltipController.ts
+  function applyUsageTipTriggerA11y(el, opts, backup) {
+    const prior = backup ?? {
+      priorTitle: el.getAttribute("title"),
+      priorAriaLabel: el.getAttribute("aria-label"),
+      priorDescribedBy: el.getAttribute("aria-describedby")
+    };
+    el.setAttribute("title", "");
+    el.setAttribute("aria-label", opts.shortAriaLabel);
+    const existing = (el.getAttribute("aria-describedby") || "").split(/\s+/).filter((id) => id && id !== opts.descId);
+    el.setAttribute("aria-describedby", [...existing, opts.descId].join(" "));
+    return prior;
+  }
+  function restoreUsageTipTriggerA11y(el, prior, descId) {
+    if (prior.priorTitle == null) el.removeAttribute("title");
+    else el.setAttribute("title", prior.priorTitle);
+    if (prior.priorAriaLabel == null) el.removeAttribute("aria-label");
+    else el.setAttribute("aria-label", prior.priorAriaLabel);
+    if (prior.priorDescribedBy == null) {
+      const parts = (el.getAttribute("aria-describedby") || "").split(/\s+/).filter((id) => id && id !== descId);
+      if (parts.length) el.setAttribute("aria-describedby", parts.join(" "));
+      else el.removeAttribute("aria-describedby");
+    } else el.setAttribute("aria-describedby", prior.priorDescribedBy);
+  }
+  var DEFAULT_TRIGGER = '[data-ggpp-button="usageDisplay"]';
+  var DEFAULT_BAR = ".ggpp-chatbar";
+  function isElementNode(el) {
+    return !!el && typeof el.nodeType === "number" && el.nodeType === 1;
+  }
+  function isButtonElement(el) {
+    const tag = (el.tagName || el.localName || "").toUpperCase();
+    return tag === "BUTTON";
+  }
+  function closestTrigger(el, bar, selector) {
+    if (!isElementNode(el)) return null;
+    if (!bar.contains(el)) return null;
+    const t = el.closest(selector);
+    if (!t || !isButtonElement(t)) return null;
+    return t;
+  }
+  function createUsageTooltipController(config) {
+    const docMaybe = config.document ?? (typeof document !== "undefined" ? document : null);
+    const winMaybe = config.window ?? (typeof window !== "undefined" ? window : null);
+    if (!docMaybe || !winMaybe) {
+      return {
+        attach() {
+        },
+        detach() {
+        },
+        syncBars() {
+        },
+        isVisible() {
+          return false;
+        },
+        getTipElement() {
+          return null;
+        },
+        getDescId() {
+          return "";
+        }
+      };
+    }
+    const doc = docMaybe;
+    const win = winMaybe;
+    const clock = config.clock ?? {
+      setTimeout: (fn, ms) => win.setTimeout(fn, ms),
+      clearTimeout: (id) => win.clearTimeout(id)
+    };
+    const triggerSelector = config.triggerSelector ?? DEFAULT_TRIGGER;
+    const barSelector = config.barSelector ?? DEFAULT_BAR;
+    const scrollMode = config.onScroll ?? "hide";
+    const resizeMode = config.onResize ?? "reposition";
+    const idPrefix = config.idPrefix ?? "ggpp-ud-tip";
+    const tipId = `${idPrefix}-${Math.random().toString(36).slice(2, 10)}`;
+    const descId = `${tipId}-desc`;
+    let attached = false;
+    let tipEl = null;
+    let descEl = null;
+    let showTimer = null;
+    let hideTimer = null;
+    let visible = false;
+    let hoverInside = false;
+    let focusInside = false;
+    let escapeLatch = false;
+    let activeTrigger = null;
+    const patched = /* @__PURE__ */ new WeakMap();
+    let mo = null;
+    const bars = /* @__PURE__ */ new Set();
+    const clearShow = () => {
+      if (showTimer != null) clock.clearTimeout(showTimer);
+      showTimer = null;
+    };
+    const clearHide = () => {
+      if (hideTimer != null) clock.clearTimeout(hideTimer);
+      hideTimer = null;
+    };
+    function ensureNodes() {
+      if (!tipEl) {
+        tipEl = doc.createElement("div");
+        tipEl.id = tipId;
+        tipEl.setAttribute("role", "tooltip");
+        tipEl.style.cssText = config.panelCssText;
+        if (!config.interactive) tipEl.style.pointerEvents = "none";
+        tipEl.hidden = true;
+        tipEl.appendChild(doc.createTextNode(""));
+        doc.body.appendChild(tipEl);
+      }
+      if (!descEl) {
+        descEl = doc.createElement("div");
+        descEl.id = descId;
+        descEl.style.cssText = "position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;";
+        descEl.appendChild(doc.createTextNode(""));
+        doc.body.appendChild(descEl);
+      }
+    }
+    function setTipText(msg) {
+      ensureNodes();
+      const ensureText = (host) => {
+        let n = host.firstChild;
+        if (!n || n.nodeType !== 3) {
+          host.textContent = "";
+          n = doc.createTextNode("");
+          host.appendChild(n);
+        }
+        n.nodeValue = msg;
+      };
+      ensureText(tipEl);
+      ensureText(descEl);
+    }
+    function patchTrigger(btn) {
+      let st = patched.get(btn);
+      if (!st) {
+        const prior = applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId });
+        st = { el: btn, ...prior };
+        patched.set(btn, st);
+        return;
+      }
+      applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId }, st);
+    }
+    function restoreTrigger(st) {
+      restoreUsageTipTriggerA11y(st.el, st, descId);
+    }
+    function scanBar(bar) {
+      bar.querySelectorAll(triggerSelector).forEach(patchTrigger);
+    }
+    function placeTip(btn) {
+      ensureNodes();
+      const r = btn.getBoundingClientRect();
+      const tr = tipEl.getBoundingClientRect();
+      let tw = tr.width;
+      let th = tr.height;
+      if (tw < 1 || th < 1) {
+        tipEl.hidden = false;
+        tipEl.style.visibility = "hidden";
+        const m = tipEl.getBoundingClientRect();
+        tw = m.width;
+        th = m.height;
+        tipEl.style.visibility = "";
+        tipEl.hidden = true;
+      }
+      const pos = positionUsageTooltip({
+        anchor: { top: r.top, left: r.left, width: r.width, height: r.height },
+        tip: { width: tw || 1, height: th || 1 },
+        viewport: { width: win.innerWidth, height: win.innerHeight },
+        gapPx: config.gapPx,
+        viewportMarginPx: config.viewportMarginPx,
+        preferred: config.preferredPlacement
+      });
+      tipEl.style.position = "fixed";
+      tipEl.style.top = `${pos.top}px`;
+      tipEl.style.left = `${pos.left}px`;
+    }
+    function showNow(btn) {
+      if (escapeLatch) return;
+      clearHide();
+      ensureNodes();
+      patchTrigger(btn);
+      activeTrigger = patched.get(btn) ?? null;
+      const msg = config.getMessage() || "";
+      setTipText(msg);
+      placeTip(btn);
+      tipEl.hidden = false;
+      visible = true;
+    }
+    function hideNow() {
+      clearShow();
+      clearHide();
+      visible = false;
+      if (tipEl) tipEl.hidden = true;
+      activeTrigger = null;
+    }
+    function requestShow(btn) {
+      if (escapeLatch) return;
+      clearHide();
+      if (visible && activeTrigger?.el === btn) {
+        placeTip(btn);
+        return;
+      }
+      clearShow();
+      if (config.showDelayMs <= 0) {
+        showNow(btn);
+        return;
+      }
+      showTimer = clock.setTimeout(() => {
+        showTimer = null;
+        if (escapeLatch) return;
+        if (!hoverInside && !focusInside) return;
+        showNow(btn);
+      }, config.showDelayMs);
+    }
+    function requestHide() {
+      clearShow();
+      if (!visible && showTimer == null) return;
+      if (hoverInside || focusInside) return;
+      clearHide();
+      if (config.hideDelayMs <= 0) {
+        hideNow();
+        return;
+      }
+      hideTimer = clock.setTimeout(() => {
+        hideTimer = null;
+        if (hoverInside || focusInside) return;
+        hideNow();
+      }, config.hideDelayMs);
+    }
+    function onPointerEnter(e) {
+      const bar = e.currentTarget ?? null;
+      if (!bar) return;
+      const btn = closestTrigger(e.target, bar, triggerSelector);
+      if (!btn) return;
+      hoverInside = true;
+      if (escapeLatch && focusInside) {
+        return;
+      }
+      if (escapeLatch) return;
+      requestShow(btn);
+    }
+    function onPointerLeave(e) {
+      const bar = e.currentTarget;
+      const related = e.relatedTarget;
+      if (config.interactive && tipEl && related && tipEl.contains(related)) {
+        hoverInside = true;
+        return;
+      }
+      if (related && closestTrigger(related, bar, triggerSelector)) {
+        hoverInside = true;
+        return;
+      }
+      hoverInside = false;
+      if (escapeLatch && !focusInside) escapeLatch = false;
+      requestHide();
+    }
+    function onFocusIn(e) {
+      const bar = e.currentTarget;
+      const btn = closestTrigger(e.target, bar, triggerSelector);
+      if (!btn) return;
+      focusInside = true;
+      if (escapeLatch) return;
+      requestShow(btn);
+    }
+    function onFocusOut(e) {
+      const bar = e.currentTarget;
+      const related = e.relatedTarget;
+      if (related && closestTrigger(related, bar, triggerSelector)) {
+        focusInside = true;
+        return;
+      }
+      if (config.interactive && tipEl && related && tipEl.contains(related)) {
+        focusInside = true;
+        return;
+      }
+      focusInside = false;
+      if (escapeLatch && !hoverInside) escapeLatch = false;
+      requestHide();
+    }
+    function onTipPointerEnter() {
+      if (!config.interactive) return;
+      hoverInside = true;
+      clearHide();
+    }
+    function onTipPointerLeave(e) {
+      if (!config.interactive) return;
+      const related = e.relatedTarget;
+      if (related && activeTrigger && activeTrigger.el.contains(related)) {
+        hoverInside = true;
+        return;
+      }
+      hoverInside = false;
+      requestHide();
+    }
+    function onKeyDown(e) {
+      if (e.key !== "Escape") return;
+      if (!visible && showTimer == null) return;
+      e.stopPropagation();
+      escapeLatch = true;
+      hoverInside = false;
+      hideNow();
+    }
+    function onScroll() {
+      if (!visible) return;
+      if (scrollMode === "hide") hideNow();
+      else if (activeTrigger) placeTip(activeTrigger.el);
+    }
+    function onResize() {
+      if (!visible) return;
+      if (resizeMode === "hide") hideNow();
+      else if (activeTrigger) placeTip(activeTrigger.el);
+    }
+    function bindBar(bar) {
+      if (bars.has(bar)) {
+        scanBar(bar);
+        return;
+      }
+      bars.add(bar);
+      bar.addEventListener("pointerenter", onPointerEnter, true);
+      bar.addEventListener("pointerleave", onPointerLeave, true);
+      bar.addEventListener("focusin", onFocusIn, true);
+      bar.addEventListener("focusout", onFocusOut, true);
+      scanBar(bar);
+    }
+    function unbindBar(bar) {
+      bar.removeEventListener("pointerenter", onPointerEnter, true);
+      bar.removeEventListener("pointerleave", onPointerLeave, true);
+      bar.removeEventListener("focusin", onFocusIn, true);
+      bar.removeEventListener("focusout", onFocusOut, true);
+      bars.delete(bar);
+    }
+    function onMutations(muts) {
+      for (const m of muts) {
+        if (m.type !== "childList") continue;
+        let bar = null;
+        if (isElementNode(m.target)) {
+          if (bars.has(m.target)) bar = m.target;
+          else bar = m.target.closest(barSelector);
+        }
+        if (bar && bars.has(bar)) scanBar(bar);
+      }
+    }
+    function observeBar(bar) {
+      if (!mo) return;
+      mo.observe(bar, { childList: true, subtree: true });
+    }
+    function syncBars() {
+      if (!attached) return;
+      for (const bar of [...bars]) {
+        if (!bar.isConnected) unbindBar(bar);
+      }
+      doc.querySelectorAll(barSelector).forEach((b) => {
+        bindBar(b);
+        observeBar(b);
+      });
+    }
+    function attach() {
+      if (attached) return;
+      attached = true;
+      ensureNodes();
+      if (config.interactive && tipEl) {
+        tipEl.addEventListener("pointerenter", onTipPointerEnter);
+        tipEl.addEventListener("pointerleave", onTipPointerLeave);
+      }
+      const MO = config.MutationObserver ?? globalThis.MutationObserver;
+      mo = new MO(onMutations);
+      syncBars();
+      win.addEventListener("keydown", onKeyDown, true);
+      win.addEventListener("scroll", onScroll, true);
+      win.addEventListener("resize", onResize);
+    }
+    function detach() {
+      if (!attached) return;
+      attached = false;
+      clearShow();
+      clearHide();
+      hideNow();
+      escapeLatch = false;
+      hoverInside = false;
+      focusInside = false;
+      win.removeEventListener("keydown", onKeyDown, true);
+      win.removeEventListener("scroll", onScroll, true);
+      win.removeEventListener("resize", onResize);
+      mo?.disconnect();
+      mo = null;
+      for (const bar of [...bars]) unbindBar(bar);
+      doc.querySelectorAll(triggerSelector).forEach((btn) => {
+        const st = patched.get(btn);
+        if (st) restoreTrigger(st);
+      });
+      if (tipEl) {
+        tipEl.removeEventListener("pointerenter", onTipPointerEnter);
+        tipEl.removeEventListener("pointerleave", onTipPointerLeave);
+        tipEl.remove();
+        tipEl = null;
+      }
+      if (descEl) {
+        descEl.remove();
+        descEl = null;
+      }
+    }
+    return {
+      attach,
+      detach,
+      syncBars,
+      isVisible: () => visible,
+      getTipElement: () => tipEl,
+      getDescId: () => descId,
+      /** Test helpers */
+      _requestShow: (btn) => requestShow(btn),
+      _requestHide: () => requestHide(),
+      _setHover: (v) => {
+        hoverInside = v;
+      },
+      _setFocus: (v) => {
+        focusInside = v;
+      },
+      _escapeLatch: () => escapeLatch,
+      _clearEscapeLatch: () => {
+        escapeLatch = false;
+      }
+    };
+  }
+
   // sites/gemini/plugins/usageDisplay/index.ts
   var REFRESH_MS = 6e4;
   function parse(text) {
@@ -10281,10 +10766,27 @@ ${depth === 0 ? "\n" : ""}`;
           onClick: () => void refresh().then(openHistory)
         })
       );
+      const usageTip = createUsageTooltipController({
+        shortAriaLabel: hoverTitle(uiLang()),
+        getMessage: tooltip,
+        panelCssText: "position:fixed;z-index:2147483000;box-sizing:border-box;max-width:min(22rem,calc(100vw - 16px));padding:8px 10px;border-radius:12px;background:var(--ggpp-surface);color:var(--ggpp-fg);box-shadow:var(--ggpp-shadow);font:13px/18px var(--ggpp-font);white-space:pre-wrap;",
+        gapPx: 8,
+        viewportMarginPx: 8,
+        showDelayMs: 400,
+        hideDelayMs: 100,
+        preferredPlacement: "above",
+        interactive: false
+      });
+      usageTip.attach();
+      ctx.cleanup(() => usageTip.detach());
+      const refreshBar = () => {
+        bar.refresh();
+        usageTip.syncBars();
+      };
       const usageUrl = () => `${gemini.newChatUrl().replace(/\/app$/, "")}/usage`;
       ctx.on("settings:usageDisplay", () => {
         if (usage && Date.now() - usage.at < 36e5 && !log.some((d3) => d3.date === dayKey(Date.now()))) void snapshot(usage).then(() => historyView?.());
-        bar.refresh();
+        refreshBar();
         historyView?.();
       });
       const label = (date, short = false) => {
@@ -10460,7 +10962,7 @@ ${depth === 0 ? "\n" : ""}`;
         }
         void snapshot(stamped);
         ctx.log.info(`usage from ${source}: 5-hour ${stamped.window ?? "?"}%, weekly ${stamped.weekly ?? "?"}%`);
-        bar.refresh();
+        refreshBar();
         historyView?.();
         diagPanelDraw?.();
       }
@@ -10578,7 +11080,7 @@ ${depth === 0 ? "\n" : ""}`;
         liveVerified = false;
         usage = null;
         log = await ctx.data.get(statsKey(), []);
-        bar.refresh();
+        refreshBar();
         historyView?.();
         void refreshFromRpc("account-switch");
       }

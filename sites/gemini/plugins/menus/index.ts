@@ -162,6 +162,16 @@ export default definePlugin({
           (e) => {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if (typeof item.onSelect === "function") {
+              closeSub = null;
+              closeMenu(panel);
+              try {
+                item.onSelect(c);
+              } catch (err) {
+                ctx.log.error(`menu item ${item.id} failed`, err);
+              }
+              return;
+            }
             show();
           },
           true,

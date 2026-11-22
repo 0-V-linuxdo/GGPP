@@ -69,6 +69,7 @@ export default definePlugin({
         icon: I.ggpp,
         order: -100,
         submenu: entries,
+        onSelect: () => settingsUI.open(),
       }),
     );
 

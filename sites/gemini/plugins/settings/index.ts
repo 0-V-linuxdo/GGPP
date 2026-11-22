@@ -530,6 +530,18 @@ export default definePlugin({
     } catch (e) {
       ctx.log.warn("failed to register GG++ floating settings entry", e);
     }
+    const onPillPointer = (e: Event) => {
+      const path = typeof e.composedPath === "function" ? e.composedPath() : [];
+      const hit = path.some(
+        (n) => n instanceof Element && n.getAttribute("data-uspp-ggpp-floating-item") === "ggpp.settingsFloating",
+      );
+      if (!hit) return;
+      e.preventDefault();
+      e.stopPropagation();
+      openSettings();
+    };
+    document.addEventListener("pointerdown", onPillPointer, true);
+    ctx.cleanup(() => document.removeEventListener("pointerdown", onPillPointer, true));
 
     ctx.on("ggpp:open-settings", (p?: { tab?: string; plugin?: string }) => openSettings(p?.tab, p?.plugin));
 

@@ -23,6 +23,40 @@ import {
   composerButtonViewRows,
   sanitizeComposerAppearanceForView,
 } from "./composerAppearanceView";
+import {
+  buildHoverTooltip,
+  detectUsageUiLang,
+  formatResetLocal,
+  formatUsagePct,
+  formatWindowHoverLine,
+  formatWeeklyHoverLine,
+  resolveResetDisplayPhrase,
+  resetTime,
+  staleHint,
+  todayBaselineExplain,
+  modalTitle,
+  modalNoLive,
+  dayLabelToday,
+  statsToggleTitle,
+  statsToggleHint,
+  statsOffHint,
+  statsEmptyHint,
+  nothingThatDay,
+  detailTermBefore,
+  detailTermAfter,
+  detailTermUsed,
+  detailTermCurrent,
+  detailTermLast,
+  detailTermStart,
+  weeklyResetCaption,
+  hoverTitle,
+  type UsageUiLang,
+} from "./usageCopy";
+import { createUsageTooltipController } from "./usageTooltipController";
+
+/** Re-export for any callers/tests that imported resetTime from this module. */
+export { resetTime };
+
 
 /**
  * Gemini's usage limits (5-hour window and weekly) as a ring in the message box.
@@ -44,29 +78,6 @@ interface Usage {
   /** Voyager accountKey (`u/N` or default) — prevents cross-slot cache bleed. */
   accountKey?: string;
   at: number;
-}
-
-const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
-
-/** "Resets at 1:57 PM" / "Resets Oct 21 at 1:57 AM" → the next matching time after `from`. */
-export function resetTime(text: string | undefined, from: number): number | undefined {
-  const m = text?.match(/(?:([a-z]{3})[a-z]*\s+(\d{1,2})\s+)?at\s+(\d{1,2}):(\d{2})\s*(am|pm)?/i);
-  if (!m) return undefined;
-  let hour = Number(m[3]) % 12;
-  if (m[5]?.toLowerCase() === "pm") hour += 12;
-  if (!m[5] && Number(m[3]) === 12) hour = 12;
-  const d = new Date(from);
-  if (m[1]) {
-    const month = MONTHS.indexOf(m[1].toLowerCase());
-    if (month < 0) return undefined;
-    d.setMonth(month, Number(m[2]));
-  }
-  d.setHours(hour, Number(m[4]), 0, 0);
-  if (d.getTime() < from - 60_000) {
-    if (m[1]) d.setFullYear(d.getFullYear() + 1);
-    else d.setDate(d.getDate() + 1);
-  }
-  return d.getTime();
 }
 
 const REFRESH_MS = 60_000;
@@ -97,18 +108,9 @@ function parse(text: string): Usage {
 }
 
 
-function formatResetEpoch(epoch: number | undefined, now: number): string | undefined {
-  if (typeof epoch !== "number") return undefined;
-  try {
-    const r = new Date(epoch * 1000);
-    const o = new Date(now);
-    if (r.getFullYear() === o.getFullYear() && r.getMonth() === o.getMonth() && r.getDate() === o.getDate()) {
-      return `Resets at ${r.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
-    }
-    return `Resets ${r.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`;
-  } catch {
-    return undefined;
-  }
+/** Locale-aware reset label; browser local TZ via Date — not hard-coded Asia/Shanghai. */
+function formatResetEpoch(epoch: number | undefined, now: number, lang: UsageUiLang = detectUsageUiLang()): string | undefined {
+  return formatResetLocal(epoch, now, lang);
 }
 
 /** Map Voyager-parsed batchexecute metrics into GG++ Usage (real values only). */
@@ -291,24 +293,46 @@ export default definePlugin({
           }),
       );
     }
-    const fmt = (v?: number) => (v === undefined ? "—" : `${Math.round(v * 10) / 10}%`);
+    const uiLang = (): UsageUiLang => detectUsageUiLang();
+    const fmt = (v?: number) => formatUsagePct(v);
+    /**
+     * 5h / weekly **used** % + locale reset.
+     * Reset phrase: epochMs first; else parseable raw via resetTime; else omit
+     * (unparseable DOM English is not locale-safe — do not pass through).
+     */
     const lines = () => {
       if (!usage) return [];
+      const lang = uiLang();
+      const now = Date.now();
       const w = live(usage.window, usage.windowResetAt);
       const k = live(usage.weekly, usage.weeklyResetAt);
+      const wReset = resolveResetDisplayPhrase({
+        epochMs: usage.windowResetAt,
+        rawText: usage.windowReset,
+        nowMs: now,
+        lang,
+      });
+      const kReset = resolveResetDisplayPhrase({
+        epochMs: usage.weeklyResetAt,
+        rawText: usage.weeklyReset,
+        nowMs: now,
+        lang,
+      });
       return [
-        `5-hour: ${w === undefined && usage.window !== undefined ? "reset since last read" : `${fmt(w)}${usage.windowReset ? ` · ${usage.windowReset}` : ""}`}`,
-        `Weekly: ${k === undefined && usage.weekly !== undefined ? "reset since last read" : `${fmt(k)}${usage.weeklyReset ? ` · ${usage.weeklyReset}` : ""}`}`,
-        ...(stale() ? ["Open the usage page to refresh."] : []),
+        formatWindowHoverLine(w, usage.window !== undefined, wReset, lang),
+        formatWeeklyHoverLine(k, usage.weekly !== undefined, kReset, lang),
+        ...(stale() ? [staleHint(lang)] : []),
       ];
     };
     // Daily log of the weekly limit, kept per Google account slot (/u/N).
     const statsKey = () => `stats:${location.pathname.match(/^\/u\/(\d+)/)?.[1] ?? "0"}`;
     let log = await ctx.data.get<Log>(statsKey(), []);
-    const todayLine = () => {
-      if (!ctx.settings.usageStats) return [];
+    const todayDelta = (): number | undefined => {
+      if (!ctx.settings.usageStats) return undefined;
       const today = log.find((d) => d.date === dayKey(Date.now()));
-      return [`Today: ${signed(today ? used(today) : usage?.weekly === undefined ? undefined : 0)} of weekly limit`];
+      if (today) return used(today);
+      // Stats on but no sample today yet — show +0 once weekly is known (same as prior).
+      return usage?.weekly === undefined ? undefined : 0;
     };
     async function snapshot(u: Usage) {
       if (!ctx.settings.usageStats || u.weekly === undefined) return;
@@ -317,10 +341,28 @@ export default definePlugin({
       await ctx.data.set(statsKey(), log);
     }
 
-    const tooltip = () =>
-      liveVerified && usage
-        ? ["用量", ...todayLine(), ...lines(), "点击查看详情 / 刷新"].join("\n")
-        : "用量 — 等待本会话实时 RPC/DOM 读取（不显示缓存）";
+    /** Short title/hover; overlay wired. No extra RPC on hover/focus. */
+    const tooltip = () => {
+      const lang = uiLang();
+      const now = Date.now();
+      return buildHoverTooltip({
+        lang,
+        liveVerified,
+        hasUsage: !!usage,
+        todayDelta: todayDelta(),
+        statsEnabled: !!ctx.settings.usageStats,
+        windowUsed: usage ? live(usage.window, usage.windowResetAt) : undefined,
+        weeklyUsed: usage ? live(usage.weekly, usage.weeklyResetAt) : undefined,
+        hadWindow: !!usage && usage.window !== undefined,
+        hadWeekly: !!usage && usage.weekly !== undefined,
+        windowResetEpochMs: usage?.windowResetAt,
+        weeklyResetEpochMs: usage?.weeklyResetAt,
+        windowResetRaw: usage?.windowReset,
+        weeklyResetRaw: usage?.weeklyReset,
+        nowMs: now,
+        stale: stale(),
+      });
+    };
 
     ctx.cleanup(
       bar.register({
@@ -328,8 +370,7 @@ export default definePlugin({
         icon: I.clock,
         // Accessible name must stay explicit — not an anonymous icon.
         get title() {
-          const detail = tooltip();
-          return detail.startsWith("用量") ? detail : `用量 — ${detail}`;
+          return tooltip();
         },
         order: 1,
         render: ring,
@@ -338,17 +379,36 @@ export default definePlugin({
       }),
     );
 
+    const usageTip = createUsageTooltipController({
+      shortAriaLabel: hoverTitle(uiLang()),
+      getMessage: tooltip,
+      panelCssText:
+        "position:fixed;z-index:2147483000;box-sizing:border-box;max-width:min(22rem,calc(100vw - 16px));padding:8px 10px;border-radius:12px;background:var(--ggpp-surface);color:var(--ggpp-fg);box-shadow:var(--ggpp-shadow);font:13px/18px var(--ggpp-font);white-space:pre-wrap;",
+      gapPx: 8,
+      viewportMarginPx: 8,
+      showDelayMs: 400,
+      hideDelayMs: 100,
+      preferredPlacement: "above",
+      interactive: false,
+    });
+    usageTip.attach();
+    ctx.cleanup(() => usageTip.detach());
+    const refreshBar = () => {
+      bar.refresh();
+      usageTip.syncBars();
+    };
+
     const usageUrl = () => `${gemini.newChatUrl().replace(/\/app$/, "")}/usage`;
 
     ctx.on("settings:usageDisplay", () => {
       // Turning stats on starts the log from the latest reading, if it is recent.
       if (usage && Date.now() - usage.at < 3_600_000 && !log.some((d) => d.date === dayKey(Date.now()))) void snapshot(usage).then(() => historyView?.());
-      bar.refresh();
+      refreshBar();
       historyView?.();
     });
 
     const label = (date: string, short = false) => {
-      if (date === dayKey(Date.now())) return "Today";
+      if (date === dayKey(Date.now())) return dayLabelToday(uiLang());
       const [y, m, d] = date.split("-").map(Number);
       const t = new Date(y, m - 1, d);
       return short ? String(d) : t.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -365,21 +425,21 @@ export default definePlugin({
       const toggle = h(
         "div",
         { class: "ggpp-ud-toggle" },
-        h("div", null, h("div", { class: "ggpp-ud-strong" }, "Daily usage stats"), h("div", { class: "ggpp-muted" }, "Record local daily usage on this device.")),
+        h("div", null, h("div", { class: "ggpp-ud-strong" }, statsToggleTitle(uiLang())), h("div", { class: "ggpp-muted" }, statsToggleHint(uiLang()))),
         ui.switch(ctx.settings.usageStats, (on) => ctx.setSetting("usageStats", on)),
       );
 
       const render = () => {
         current.replaceChildren(
-          ...(liveVerified && usage ? lines() : ["No live usage read yet this session. Open /usage or wait for RPC replay."]).map((l) => h("div", null, l)),
+          ...(liveVerified && usage ? lines() : [modalNoLive(uiLang())]).map((l) => h("div", null, l)),
           h("div", null, ui.button("Open usage page", () => (m.close(), gemini.navigate(usageUrl())), "ghost")),
         );
         if (!ctx.settings.usageStats) {
-          body.replaceChildren(h("p", { class: "ggpp-muted" }, "Turn on daily usage stats to keep a per-day log of the weekly limit."));
+          body.replaceChildren(h("p", { class: "ggpp-muted" }, statsOffHint(uiLang())));
           return;
         }
         if (!log.length) {
-          body.replaceChildren(h("p", { class: "ggpp-muted" }, "No days recorded yet. Stats start from the moment you enable tracking, each time the usage page is read."));
+          body.replaceChildren(h("p", { class: "ggpp-muted" }, statsEmptyHint(uiLang())));
           return;
         }
         const days = calendar(log, Date.now());
@@ -437,21 +497,40 @@ export default definePlugin({
         const term = (name: string, v: string) => h("div", { class: "ggpp-ud-term" }, h("small", null, name), h("span", null, v));
         const pct = (v: number) => `${Math.round(v * 10) / 10}%`;
         const isToday = date === dayKey(Date.now());
-        if (!day) return h("div", { class: "ggpp-ud-detail" }, h("div", { class: "ggpp-ud-strong" }, label(date)), h("p", { class: "ggpp-muted" }, "Nothing recorded on this day."));
+        if (!day) return h("div", { class: "ggpp-ud-detail" }, h("div", { class: "ggpp-ud-strong" }, label(date)), h("p", { class: "ggpp-muted" }, nothingThatDay(uiLang())));
+        const lang = uiLang();
         const formula = day.before
-          ? [term("Before", signed(day.accrued)), h("span", null, "+"), term("After", signed(Math.max(0, day.last - day.start))), h("span", null, "="), term("Used", signed(used(day)))]
-          : [term(isToday ? "Current" : "Last", pct(day.last)), h("span", null, "−"), term("Start", pct(day.start)), h("span", null, "="), term("Used", signed(used(day)))];
+          ? [
+              term(detailTermBefore(lang), signed(day.accrued)),
+              h("span", null, "+"),
+              term(detailTermAfter(lang), signed(Math.max(0, day.last - day.start))),
+              h("span", null, "="),
+              term(detailTermUsed(lang), signed(used(day))),
+            ]
+          : [
+              term(isToday ? detailTermCurrent(lang) : detailTermLast(lang), pct(day.last)),
+              h("span", null, "−"),
+              term(detailTermStart(lang), pct(day.start)),
+              h("span", null, "="),
+              term(detailTermUsed(lang), signed(used(day))),
+            ];
         return h(
           "div",
           { class: "ggpp-ud-detail" },
           h("div", { class: "ggpp-ud-strong" }, label(date)),
           h("div", { class: "ggpp-ud-formula" }, formula),
-          day.before && h("div", { class: "ggpp-muted" }, `Weekly limit reset: ${pct(day.before.start)} → ${pct(day.before.end)}  +  0% → ${pct(day.last)}`),
+          day.before &&
+            h(
+              "div",
+              { class: "ggpp-muted" },
+              weeklyResetCaption(lang, pct(day.before.start), pct(day.before.end), pct(day.last)),
+            ),
+          isToday && h("p", { class: "ggpp-muted" }, todayBaselineExplain(lang)),
         );
       }
 
       const m = ui.modal({
-        title: "Gemini usage",
+        title: modalTitle(uiLang()),
         icon: I.clock,
         width: 460,
         content: [current, toggle, body],
@@ -519,7 +598,7 @@ export default definePlugin({
       } catch {}
       void snapshot(stamped);
       ctx.log.info(`usage from ${source}: 5-hour ${stamped.window ?? "?"}%, weekly ${stamped.weekly ?? "?"}%`);
-      bar.refresh();
+      refreshBar();
       historyView?.();
       diagPanelDraw?.();
     }
@@ -654,7 +733,7 @@ export default definePlugin({
       liveVerified = false;
       usage = null; // unknown until this slot's live capture/replay/DOM
       log = await ctx.data.get<Log>(statsKey(), []);
-      bar.refresh();
+      refreshBar();
       historyView?.();
       void refreshFromRpc("account-switch");
     }
