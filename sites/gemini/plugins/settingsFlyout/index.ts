@@ -27,7 +27,12 @@ export default definePlugin({
     pluginShortcuts: { type: "boolean", label: "Plugin settings", description: "Show a submenu that opens a plugin's settings directly. Pick the plugins below.", default: true },
   },
   async start(ctx) {
-    const settingsUI = ctx.use<SettingsUiApi>("settingsUI");
+    let settingsUI = ctx.tryUse<SettingsUiApi>("settingsUI");
+    while (!settingsUI || typeof settingsUI.open !== "function") {
+      if (ctx.signal.aborted) throw new Error('Service "settingsUI" is not available');
+      await new Promise<void>((resolve) => ctx.setTimeout(resolve, 0));
+      settingsUI = ctx.tryUse<SettingsUiApi>("settingsUI");
+    }
     const ui = ctx.use<UiApi>("ui");
     /** Explicit choices; a plugin not listed is shown when it has settings. */
     let chosen = await ctx.data.get<Record<string, boolean>>("menuPlugins", {});

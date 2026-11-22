@@ -68,6 +68,8 @@ export default definePlugin({
     ctx.css(css);
 
     const tabs = new Map<string, SettingsTab>();
+    const settingsUIApi = {} as SettingsUiApi;
+    ctx.provide("settingsUI", settingsUIApi);
     let favorites = await ctx.data.get<string[]>("favorites", []);
     let pins = await ctx.data.get<string[]>("pins", []);
     const firstSeen = await ctx.data.get<Record<string, number>>("firstSeen", {});
@@ -478,7 +480,7 @@ export default definePlugin({
       if (pluginId) openPluginDialog(pluginId);
     }
 
-    ctx.provide("settingsUI", {
+    Object.assign(settingsUIApi, {
       open: openSettings,
       close: () => open?.close(),
       openPluginDialog,

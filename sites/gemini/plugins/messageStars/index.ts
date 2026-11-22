@@ -18,6 +18,43 @@ interface Star {
 
 const ORANGE = "#ff7a17";
 
+/** Host picker shape for tests / Element.querySelector. */
+export type StarHostLike = {
+  querySelector(selectors: string): StarHostLike | null;
+  readonly firstElementChild: StarHostLike | null;
+};
+
+/** Prefer native button row; else legacy hosts in document order. */
+export function pickModelStarHost<T extends StarHostLike>(row: T): StarHostLike {
+  return (
+    row.querySelector(".buttons-container-v2") ??
+    row.querySelector(".actions-container-v2, .response-actions") ??
+    row.firstElementChild ??
+    row
+  );
+}
+
+/** Remove btn; delete map entry only if it still references this btn. */
+export function releaseStarButton<M, B extends { remove(): void }>(
+  buttons: Map<M, B>,
+  msg: M,
+  btn: B,
+): void {
+  btn.remove();
+  if (buttons.get(msg) === btn) buttons.delete(msg);
+}
+
+/** Place the model star before Gemini's trailing flex spacer so it stays in the button cluster. */
+export function insertModelStarButton<
+  B,
+  S extends { before(node: B): void },
+  H extends { querySelector(selectors: string): S | null; append(node: B): void },
+>(host: H, btn: B): void {
+  const spacer = host.querySelector(".spacer");
+  if (spacer) spacer.before(btn);
+  else host.append(btn);
+}
+
 export default definePlugin({
   id: "messageStars",
   name: "MessageStars",
@@ -120,13 +157,10 @@ export default definePlugin({
     ctx.cleanup(
       gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
         const msg = row.closest<HTMLElement>(gemini.SEL.modelResponse)!;
-        const host = row.querySelector(".actions-container-v2, .buttons-container-v2, .response-actions") ?? row.firstElementChild ?? row;
+        const host = pickModelStarHost(row) as HTMLElement;
         const btn = starButton(msg);
-        host.append(btn);
-        return () => {
-          btn.remove();
-          buttons.delete(msg);
-        };
+        insertModelStarButton(host, btn);
+        return () => releaseStarButton(buttons, msg, btn);
       }),
     );
     // Your prompts: the hover actions next to the bubble.
@@ -136,10 +170,7 @@ export default definePlugin({
         if (buttons.has(msg)) return;
         const btn = starButton(msg);
         row.append(btn);
-        return () => {
-          btn.remove();
-          buttons.delete(msg);
-        };
+        return () => releaseStarButton(buttons, msg, btn);
       }),
     );
 

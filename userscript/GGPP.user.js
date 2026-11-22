@@ -7056,7 +7056,9 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
           const msg = row.closest(gemini.SEL.modelResponse);
           const host2 = pickModelStarHost(row);
           const btn = starButton(msg);
-          host2.append(btn);
+          const spacer = host2.querySelector(".spacer");
+          if (spacer) spacer.before(btn);
+          else host2.append(btn);
           return () => releaseStarButton(buttons, msg, btn);
         })
       );
@@ -8102,6 +8104,8 @@ ${depth === 0 ? "\n" : ""}`;
       const ui = ctx.use("ui");
       ctx.css(settings_default);
       const tabs = /* @__PURE__ */ new Map();
+      const settingsUIApi = {};
+      ctx.provide("settingsUI", settingsUIApi);
       let favorites = await ctx.data.get("favorites", []);
       let pins = await ctx.data.get("pins", []);
       const firstSeen = await ctx.data.get("firstSeen", {});
@@ -8478,7 +8482,7 @@ ${depth === 0 ? "\n" : ""}`;
           status: () => view.session.failed ? "failed" : view.session.closed ? "dismissed" : ctx.signal.aborted ? "failed" : view.root.isConnected === true ? "open" : "pending"
         };
       }
-      ctx.provide("settingsUI", {
+      Object.assign(settingsUIApi, {
         open: openSettings3,
         openRequest,
         isOpen: () => open?.root.isConnected === true,
@@ -8560,7 +8564,12 @@ ${depth === 0 ? "\n" : ""}`;
       pluginShortcuts: { type: "boolean", label: "Plugin settings", description: "Show a submenu that opens a plugin's settings directly. Pick the plugins below.", default: true }
     },
     async start(ctx) {
-      const settingsUI = ctx.use("settingsUI");
+      let settingsUI = ctx.tryUse("settingsUI");
+      while (!(settingsUI && typeof settingsUI.open === "function")) {
+        if (ctx.signal.aborted) throw new Error(`Service "settingsUI" is not available`);
+        await new Promise((resolve) => ctx.setTimeout(resolve, 0));
+        settingsUI = ctx.tryUse("settingsUI");
+      }
       const ui = ctx.use("ui");
       let chosen = await ctx.data.get("menuPlugins", {});
       const inMenu = () => settingsUI.configurable().filter((p3) => chosen[p3.def.id] ?? true);

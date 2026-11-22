@@ -1,0 +1,82 @@
+GG++ 258b-star-spacer surgical userscript patch
+==============================================
+
+Artifact: userscript/GGPP.user.js
+Branch:   258b-star-spacer (from 258b-mini @ 9758b831d6a400e2ce12039756e70baa32096775)
+No prod rebuild (no `node scripts/build.mjs --prod`).
+
+Before (verified 258b):
+  bytes  892107
+  sha256 258b849fbe6d9d49b3b095bfd3ad5b8f4f609a8e686e1dd392dae2f74ab0de97
+
+After (this patch):
+  bytes  892579
+  sha256 a3c8554a9da7f1e918434cf5f5e268638448125dc504dad889077b70ee811201
+
+Header still:
+  // ==UserScript==
+  @name         GG++
+  @namespace    ggpp
+  @version      0.2.0
+
+Checks:
+  host2.append(btn) only in the else branch (spacer missing)
+  ctx.provide("settingsUI", settingsUIApi) present once
+  ctx.provide("settingsUI", { absent
+  Object.assign(settingsUIApi present
+  settingsFlyout start uses ctx.tryUse("settingsUI") + wait for open
+  remaining ctx.use("settingsUI") are themes/quickcss registerTab (not the flyout race)
+
+Four unique-string replacements
+--------------------------------
+
+A. Star insert (model watch). Replaced unique:
+          const host2 = pickModelStarHost(row);
+          const btn = starButton(msg);
+          host2.append(btn);
+   with:
+          const host2 = pickModelStarHost(row);
+          const btn = starButton(msg);
+          const spacer = host2.querySelector(".spacer");
+          if (spacer) spacer.before(btn);
+          else host2.append(btn);
+
+B. Provide stub before first settings await. After unique:
+      const tabs = /* @__PURE__ */ new Map();
+      let favorites = await ctx.data.get("favorites", []);
+   made:
+      const tabs = /* @__PURE__ */ new Map();
+      const settingsUIApi = {};
+      ctx.provide("settingsUI", settingsUIApi);
+      let favorites = await ctx.data.get("favorites", []);
+
+C. Same object assign. Replaced unique:
+      ctx.provide("settingsUI", {
+        open: openSettings3,
+   with:
+      Object.assign(settingsUIApi, {
+        open: openSettings3,
+   (closing }); left as Object.assign closer)
+
+D. settingsFlyout wait. Replaced unique:
+    async start(ctx) {
+      const settingsUI = ctx.use("settingsUI");
+      const ui = ctx.use("ui");
+      let chosen = await ctx.data.get("menuPlugins", {});
+   with:
+    async start(ctx) {
+      let settingsUI = ctx.tryUse("settingsUI");
+      while (!(settingsUI && typeof settingsUI.open === "function")) {
+        if (ctx.signal.aborted) throw new Error(`Service "settingsUI" is not available`);
+        await new Promise((resolve) => ctx.setTimeout(resolve, 0));
+        settingsUI = ctx.tryUse("settingsUI");
+      }
+      const ui = ctx.use("ui");
+      let chosen = await ctx.data.get("menuPlugins", {});
+
+Tests
+-----
+bun test sites/gemini/plugins/messageStars
+  17 pass / 0 fail / 46 expect() calls
+a3c8554a9da7f1e918434cf5f5e268638448125dc504dad889077b70ee811201  userscript/GGPP.user.js
+  892579 userscript/GGPP.user.js
