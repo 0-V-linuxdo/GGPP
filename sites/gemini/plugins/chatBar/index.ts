@@ -94,6 +94,18 @@ export default definePlugin({
         render(bar);
         const mo = new MutationObserver(place);
         mo.observe(composer, { childList: true, subtree: true });
+        const doc = composer.ownerDocument ?? document;
+        const headerWatch =
+          doc.querySelector("top-bar-actions")?.parentElement ??
+          doc.querySelector("bard-mode-switcher")?.parentElement ??
+          doc.body;
+        if (headerWatch && headerWatch !== composer && !composer.contains(headerWatch)) {
+          try {
+            mo.observe(headerWatch, { childList: true, subtree: true });
+          } catch {
+            /* ignore disconnected or duplicate observe targets */
+          }
+        }
         return () => {
           mo.disconnect();
           bars.delete(bar);

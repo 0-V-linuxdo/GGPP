@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.2
+// @version      0.2.3
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -4673,12 +4673,28 @@
   });
 
 
-  function placeComposerChatBar(bar, composer) {
-    const mode = composer.querySelector("[data-test-id='bard-mode-menu-button']");
-    const host2 = mode ? mode.closest("bard-mode-switcher") ?? mode.closest(".model-picker-container") ?? mode : null;
-    if (host2 && composer.contains(host2)) {
-      if (host2.previousElementSibling !== bar) host2.before(bar);
+  function placeComposerChatBar(bar, composer, searchRoot) {
+    const modeButton = "[data-test-id='bard-mode-menu-button']";
+    const modeHost = (root) => {
+      const mode = root?.querySelector?.(modeButton) ?? null;
+      if (!mode) return null;
+      return mode.closest("bard-mode-switcher") ?? mode.closest(".model-picker-container") ?? mode;
+    };
+    const inComposer = modeHost(composer);
+    if (inComposer && composer.contains(inComposer)) {
+      if (inComposer.previousElementSibling !== bar) inComposer.before(bar);
       return;
+    }
+    const root = searchRoot ?? composer.ownerDocument ?? (typeof document !== "undefined" ? document : null);
+    const headerHost = modeHost(root);
+    if (headerHost && !composer.contains(headerHost)) {
+      const otherComposer = headerHost.closest("input-container");
+      const prev = headerHost.previousElementSibling;
+      const taken = prev && prev !== bar && prev.classList?.contains("ggpp-chatbar");
+      if (!otherComposer && !taken) {
+        if (headerHost.previousElementSibling !== bar) headerHost.before(bar);
+        return;
+      }
     }
     const sendBox = composer.querySelector("[data-test-id='send-button-container']");
     const sendIcon = composer.querySelector("gem-icon-button.send-button");
@@ -4756,6 +4772,14 @@
           render(bar);
           const mo3 = new MutationObserver(place);
           mo3.observe(composer, { childList: true, subtree: true });
+          const doc = composer.ownerDocument ?? document;
+          const headerWatch = doc.querySelector("top-bar-actions")?.parentElement ?? doc.querySelector("bard-mode-switcher")?.parentElement ?? doc.body;
+          if (headerWatch && headerWatch !== composer && !composer.contains(headerWatch)) {
+            try {
+              mo3.observe(headerWatch, { childList: true, subtree: true });
+            } catch {
+            }
+          }
           return () => {
             mo3.disconnect();
             bars.delete(bar);

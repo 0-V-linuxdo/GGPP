@@ -37,6 +37,11 @@ class FakeEl {
     return false;
   }
 
+  ownerDocument: { querySelector(sel: string): FakeEl | null } | null = null;
+  get classList() {
+    return { contains: (c: string) => this.className.split(/\s+/).includes(c) };
+  }
+
   getAttribute(name: string) {
     if (name === "class") return this.className || null;
     return this.attrs[name] ?? null;
@@ -166,5 +171,85 @@ describe("placeComposerChatBar", () => {
     placeComposerChatBar(bar as unknown as HTMLElement, composer as unknown as HTMLElement);
     expect(bar.parent).toBe(trailing);
     expect(trailing.kids[0]).toBe(bar);
+  });
+
+  function pageDoc(page: FakeEl) {
+    return {
+      querySelector(sel: string) {
+        if (page.matches(sel)) return page;
+        return page.querySelector(sel);
+      },
+    };
+  }
+
+  test("puts the bar before a header Hydrogen picker even when trailing actions exist", () => {
+    const host = el("bard-mode-switcher", {
+      kids: [el("button", { attrs: { "data-test-id": "bard-mode-menu-button" } })],
+    });
+    const header = el("top-bar-actions", { kids: [host] });
+    const trailing = el("div", { className: "trailing-actions-wrapper", kids: [el("button")] });
+    const composer = el("input-container", { kids: [trailing] });
+    const page = connected(el("div", { kids: [header, composer] }));
+    composer.ownerDocument = pageDoc(page);
+    const bar = el("div", { className: "ggpp-chatbar" });
+    placeComposerChatBar(bar as unknown as HTMLElement, composer as unknown as HTMLElement);
+    expect(host.previousElementSibling).toBe(bar);
+    expect(bar.parent).toBe(header);
+    expect(trailing.kids[0].className).not.toBe("ggpp-chatbar");
+  });
+
+  test("moves the bar from trailing actions once a late header picker appears", () => {
+    const trailing = el("div", { className: "trailing-actions-wrapper" });
+    const composer = el("input-container", { kids: [trailing] });
+    const page = connected(el("div", { kids: [composer] }));
+    composer.ownerDocument = pageDoc(page);
+    const bar = el("div", { className: "ggpp-chatbar" });
+    placeComposerChatBar(bar as unknown as HTMLElement, composer as unknown as HTMLElement);
+    expect(bar.parent).toBe(trailing);
+
+    const host = el("bard-mode-switcher", {
+      kids: [el("button", { attrs: { "data-test-id": "bard-mode-menu-button" } })],
+    });
+    const header = el("top-bar-actions", { kids: [host] });
+    page.prepend(header);
+    placeComposerChatBar(bar as unknown as HTMLElement, composer as unknown as HTMLElement);
+    expect(host.previousElementSibling).toBe(bar);
+    expect(bar.parent).toBe(header);
+  });
+
+  test("does not steal a second composer's picker; extra bar stays in trailing actions", () => {
+    const host = el("bard-mode-switcher", {
+      kids: [el("button", { attrs: { "data-test-id": "bard-mode-menu-button" } })],
+    });
+    const header = el("top-bar-actions", { kids: [host] });
+    const trailingA = el("div", { className: "trailing-actions-wrapper" });
+    const trailingB = el("div", { className: "trailing-actions-wrapper" });
+    const composerA = el("input-container", { kids: [trailingA] });
+    const composerB = el("input-container", { kids: [trailingB] });
+    const page = connected(el("div", { kids: [header, composerA, composerB] }));
+    composerA.ownerDocument = pageDoc(page);
+    composerB.ownerDocument = pageDoc(page);
+    const barA = el("div", { className: "ggpp-chatbar" });
+    const barB = el("div", { className: "ggpp-chatbar" });
+    placeComposerChatBar(barA as unknown as HTMLElement, composerA as unknown as HTMLElement);
+    placeComposerChatBar(barB as unknown as HTMLElement, composerB as unknown as HTMLElement);
+    expect(host.previousElementSibling).toBe(barA);
+    expect(barB.parent).toBe(trailingB);
+    expect(trailingB.kids[0]).toBe(barB);
+  });
+
+  test("does not steal a model picker that belongs to another composer", () => {
+    const host = el("bard-mode-switcher", {
+      kids: [el("button", { attrs: { "data-test-id": "bard-mode-menu-button" } })],
+    });
+    const composerA = connected(el("input-container", { kids: [host] }));
+    const trailingB = el("div", { className: "trailing-actions-wrapper" });
+    const composerB = el("input-container", { kids: [trailingB] });
+    const page = connected(el("div", { kids: [composerA, composerB] }));
+    composerB.ownerDocument = pageDoc(page);
+    const barB = el("div", { className: "ggpp-chatbar" });
+    placeComposerChatBar(barB as unknown as HTMLElement, composerB as unknown as HTMLElement);
+    expect(host.previousElementSibling).toBe(null);
+    expect(barB.parent).toBe(trailingB);
   });
 });
