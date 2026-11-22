@@ -370,7 +370,7 @@ export default definePlugin({
         icon: I.clock,
         // Accessible name must stay explicit — not an anonymous icon.
         get title() {
-          return tooltip();
+          return hoverTitle(uiLang());
         },
         order: 1,
         render: ring,
@@ -393,6 +393,7 @@ export default definePlugin({
     });
     usageTip.attach();
     ctx.cleanup(() => usageTip.detach());
+    ctx.cleanup(gemini.watch(".ggpp-chatbar", () => usageTip.syncBars()));
     const refreshBar = () => {
       bar.refresh();
       usageTip.syncBars();

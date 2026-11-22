@@ -161,8 +161,13 @@ export default definePlugin({
         o.footer && h("footer", { class: "ggpp-modal-foot" }, o.footer as any),
       );
       const backdrop = h("div", { class: "ggpp-backdrop" }, dialog);
-      backdrop.addEventListener("mousedown", (e) => {
-        if (e.target === backdrop) close();
+      let backdropGesture = false;
+      backdrop.addEventListener("pointerdown", (e) => {
+        backdropGesture = e.target === backdrop;
+      });
+      backdrop.addEventListener("click", (e) => {
+        if (backdropGesture && e.target === backdrop) close();
+        backdropGesture = false;
       });
       window.addEventListener("keydown", onKey, true);
       root.append(backdrop);

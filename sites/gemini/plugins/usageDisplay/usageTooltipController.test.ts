@@ -223,5 +223,8 @@ describe("createUsageTooltipController — behavioral (mini DOM)", () => {
     const index = await Bun.file(new URL("./index.ts", import.meta.url)).text();
     expect(index.includes("usageTooltipController")).toBe(true);
     expect(index.includes("createUsageTooltipController")).toBe(true);
+    expect(index.includes('gemini.watch(".ggpp-chatbar"')).toBe(true);
+    expect(index.includes("return hoverTitle(uiLang())")).toBe(true);
+    expect(index.includes("return tooltip();")).toBe(false);
   });
 });

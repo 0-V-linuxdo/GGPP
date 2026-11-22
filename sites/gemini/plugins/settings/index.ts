@@ -70,6 +70,14 @@ export default definePlugin({
     const tabs = new Map<string, SettingsTab>();
     const settingsUIApi = {} as SettingsUiApi;
     ctx.provide("settingsUI", settingsUIApi);
+    settingsUIApi.registerTab = (tab) => {
+      tabs.set(tab.id, tab);
+      kernel.emit("settings:tabs-changed", tab.id);
+      return () => {
+        tabs.delete(tab.id);
+        kernel.emit("settings:tabs-changed", tab.id);
+      };
+    };
     let favorites = await ctx.data.get<string[]>("favorites", []);
     let pins = await ctx.data.get<string[]>("pins", []);
     const firstSeen = await ctx.data.get<Record<string, number>>("firstSeen", {});

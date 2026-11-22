@@ -125,6 +125,21 @@ export default definePlugin({
       el.classList.add("ggpp-native-item");
       el.setAttribute("role", "menuitem");
       el.dataset.ggppItem = item.id;
+      let selected = false;
+      const activateSelect = (e: Event) => {
+        if ("button" in e && (e as PointerEvent).button !== 0) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (selected) return;
+        selected = true;
+        closeSub = null;
+        closeMenu(panel);
+        try {
+          item.onSelect?.(c);
+        } catch (err) {
+          ctx.log.error(`menu item ${item.id} failed`, err);
+        }
+      };
       if (item.submenu) {
         el.setAttribute("aria-haspopup", "menu");
         el.append(h("span", { class: "ggpp-native-more" }, icon(I.chevronRight, 18)));
@@ -157,25 +172,20 @@ export default definePlugin({
           closeSub = ui.menu(el, wrap(item.submenu!(c)), { side: "right", onClose: () => (closeSub = null) });
         };
         el.addEventListener("pointerenter", show);
-        el.addEventListener(
-          "click",
-          (e) => {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            if (typeof item.onSelect === "function") {
-              closeSub = null;
-              closeMenu(panel);
-              try {
-                item.onSelect(c);
-              } catch (err) {
-                ctx.log.error(`menu item ${item.id} failed`, err);
-              }
-              return;
-            }
-            show();
-          },
-          true,
-        );
+        if (typeof item.onSelect === "function") {
+          el.addEventListener("pointerdown", activateSelect, true);
+          el.addEventListener("click", activateSelect, true);
+        } else {
+          el.addEventListener(
+            "click",
+            (e) => {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              show();
+            },
+            true,
+          );
+        }
         el.addEventListener("keydown", (e) => {
           if (e.key !== "ArrowRight" && e.key !== "Enter" && e.key !== " ") return;
           e.preventDefault();
@@ -185,20 +195,8 @@ export default definePlugin({
         }, true);
         return el;
       }
-      el.addEventListener(
-        "click",
-        (e) => {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          closeMenu(panel);
-          try {
-            item.onSelect?.(c);
-          } catch (err) {
-            ctx.log.error(`menu item ${item.id} failed`, err);
-          }
-        },
-        true,
-      );
+      el.addEventListener("pointerdown", activateSelect, true);
+      el.addEventListener("click", activateSelect, true);
       return el;
     }
 

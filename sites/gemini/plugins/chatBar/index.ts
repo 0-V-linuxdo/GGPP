@@ -1,6 +1,7 @@
 import { definePlugin } from "../../shims/types";
 import { h, icon } from "../../../../src/lib/dom";
 import type { GeminiApi } from "../gemini";
+import { placeComposerChatBar } from "./placeComposerChatBar";
 
 /** A button slot in Gemini's composer toolbar that other plugins fill. */
 
@@ -23,7 +24,6 @@ export interface ChatBarApi {
   refresh(): void;
 }
 
-const MODE_BUTTON = "[data-test-id='bard-mode-menu-button']";
 
 export default definePlugin({
   id: "chatBar",
@@ -88,15 +88,7 @@ export default definePlugin({
       gemini.watch(gemini.SEL.composer, (composer) => {
         if (composer.parentElement?.closest(gemini.SEL.composer)) return;
         const bar = h("div", { class: "ggpp-chatbar" });
-        const place = () => {
-          const mode = composer.querySelector<HTMLElement>(MODE_BUTTON);
-          const host = mode ? (mode.closest("bard-mode-switcher, .model-picker-container") ?? mode) : null;
-          if (host) {
-            if (host.previousElementSibling !== bar) host.before(bar);
-          } else if (!bar.isConnected) {
-            composer.querySelector(gemini.SEL.trailingActions)?.prepend(bar);
-          }
-        };
+        const place = () => placeComposerChatBar(bar, composer);
         place();
         bars.add(bar);
         render(bar);

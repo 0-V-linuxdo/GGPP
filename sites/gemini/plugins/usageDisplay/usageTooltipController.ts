@@ -234,6 +234,11 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
       const prior = applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId });
       st = { el: btn, ...prior };
       patched.set(btn, st);
+      // pointerenter on the bar does not see child enters in real browsers; bind the trigger too.
+      btn.addEventListener("pointerenter", onPointerEnter);
+      btn.addEventListener("pointerleave", onPointerLeave);
+      btn.addEventListener("focusin", onFocusIn);
+      btn.addEventListener("focusout", onFocusOut);
       return;
     }
     applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId }, st);
@@ -241,6 +246,10 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
 
   function restoreTrigger(st: TriggerState) {
     restoreUsageTipTriggerA11y(st.el, st, descId);
+    st.el.removeEventListener("pointerenter", onPointerEnter);
+    st.el.removeEventListener("pointerleave", onPointerLeave);
+    st.el.removeEventListener("focusin", onFocusIn);
+    st.el.removeEventListener("focusout", onFocusOut);
   }
 
   function scanBar(bar: Element) {
@@ -333,10 +342,25 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
     }, config.hideDelayMs);
   }
 
+  function eventBar(current: EventTarget | null): Element | null {
+    if (!isElementNode(current)) return null;
+    if (current.matches(barSelector)) return current;
+    return current.closest(barSelector);
+  }
+
+  function eventTrigger(e: Event): HTMLButtonElement | null {
+    const current = e.currentTarget;
+    const bar = eventBar(current);
+    const scope = bar ?? (isElementNode(current) ? current : null);
+    if (!scope) return null;
+    return (
+      closestTrigger(e.target, scope, triggerSelector) ??
+      (isTrigger(current, triggerSelector) ? current : null)
+    );
+  }
+
   function onPointerEnter(e: Event) {
-    const bar = (e.currentTarget as Element) ?? null;
-    if (!bar) return;
-    const btn = closestTrigger(e.target, bar, triggerSelector);
+    const btn = eventTrigger(e);
     if (!btn) return;
     hoverInside = true;
     if (escapeLatch && focusInside) {
@@ -348,14 +372,18 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
   }
 
   function onPointerLeave(e: Event) {
-    const bar = e.currentTarget as Element;
+    const bar = eventBar(e.currentTarget);
     const related = (e as PointerEvent).relatedTarget as Node | null;
     if (config.interactive && tipEl && related && tipEl.contains(related)) {
       hoverInside = true;
       return;
     }
     // Leaving to elsewhere inside same trigger counts as still hovering.
-    if (related && closestTrigger(related, bar, triggerSelector)) {
+    if (related && bar && closestTrigger(related, bar, triggerSelector)) {
+      hoverInside = true;
+      return;
+    }
+    if (related && isTrigger(e.currentTarget, triggerSelector) && isElementNode(e.currentTarget) && e.currentTarget.contains(related)) {
       hoverInside = true;
       return;
     }
@@ -365,8 +393,7 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
   }
 
   function onFocusIn(e: Event) {
-    const bar = e.currentTarget as Element;
-    const btn = closestTrigger(e.target, bar, triggerSelector);
+    const btn = eventTrigger(e);
     if (!btn) return;
     focusInside = true;
     if (escapeLatch) return;
@@ -374,9 +401,9 @@ export function createUsageTooltipController(config: UsageTooltipControllerConfi
   }
 
   function onFocusOut(e: Event) {
-    const bar = e.currentTarget as Element;
+    const bar = eventBar(e.currentTarget);
     const related = (e as FocusEvent).relatedTarget as Node | null;
-    if (related && closestTrigger(related, bar, triggerSelector)) {
+    if (related && bar && closestTrigger(related, bar, triggerSelector)) {
       focusInside = true;
       return;
     }

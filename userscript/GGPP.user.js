@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.1
+// @version      0.2.2
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -4672,8 +4672,26 @@
     }
   });
 
+
+  function placeComposerChatBar(bar, composer) {
+    const mode = composer.querySelector("[data-test-id='bard-mode-menu-button']");
+    const host2 = mode ? mode.closest("bard-mode-switcher") ?? mode.closest(".model-picker-container") ?? mode : null;
+    if (host2 && composer.contains(host2)) {
+      if (host2.previousElementSibling !== bar) host2.before(bar);
+      return;
+    }
+    const sendBox = composer.querySelector("[data-test-id='send-button-container']");
+    const sendIcon = composer.querySelector("gem-icon-button.send-button");
+    const sendBtn = sendBox?.querySelector("button") ?? sendIcon?.querySelector("button");
+    const trailing = composer.querySelector(".trailing-actions-wrapper") ?? composer.querySelector("[class*='trailing-actions']") ?? sendBtn?.parentElement ?? sendBox ?? sendIcon ?? null;
+    if (trailing && trailing !== bar && composer.contains(trailing)) {
+      if (trailing.firstElementChild !== bar) trailing.prepend(bar);
+      return;
+    }
+    if (!bar.isConnected || !composer.contains(bar)) composer.append(bar);
+  }
+
   // sites/gemini/plugins/chatBar/index.ts
-  var MODE_BUTTON = "[data-test-id='bard-mode-menu-button']";
   var chatBar_default = definePlugin({
     id: "chatBar",
     name: "Composer Buttons",
@@ -4732,15 +4750,7 @@
         gemini.watch(gemini.SEL.composer, (composer) => {
           if (composer.parentElement?.closest(gemini.SEL.composer)) return;
           const bar = h4("div", { class: "ggpp-chatbar" });
-          const place = () => {
-            const mode = composer.querySelector(MODE_BUTTON);
-            const host2 = mode ? mode.closest("bard-mode-switcher, .model-picker-container") ?? mode : null;
-            if (host2) {
-              if (host2.previousElementSibling !== bar) host2.before(bar);
-            } else if (!bar.isConnected) {
-              composer.querySelector(gemini.SEL.trailingActions)?.prepend(bar);
-            }
-          };
+          const place = () => placeComposerChatBar(bar, composer);
           place();
           bars.add(bar);
           render(bar);
@@ -5037,8 +5047,8 @@
       "[data-test-id^='bard-mode-option-']:has([data-test-id*='upsell' i], [fonticon='lock'])",
       "[data-test-id^='bard-mode-option-'][aria-disabled='true']"
     ],
-    /** Composer-only (acceptance/dom: tag under input-container). */
-    hideDisclaimer: ["input-container hallucination-disclaimer"]
+    /** Composer-only (acceptance/dom: tag under input-container) plus unscoped live line. */
+    hideDisclaimer: ["input-container hallucination-disclaimer", "hallucination-disclaimer"]
   };
   function buildCleanerHideCss(settings2) {
     const on3 = Object.keys(RULES).filter((k4) => settings2[k4]);
@@ -6829,6 +6839,21 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
         el.classList.add("ggpp-native-item");
         el.setAttribute("role", "menuitem");
         el.dataset.ggppItem = item.id;
+        let selected = false;
+        const activateSelect = (e3) => {
+          if ("button" in e3 && e3.button !== 0) return;
+          e3.preventDefault();
+          e3.stopImmediatePropagation();
+          if (selected) return;
+          selected = true;
+          closeSub = null;
+          closeMenu(panel);
+          try {
+            item.onSelect?.(c3);
+          } catch (err) {
+            ctx.log.error(`menu item ${item.id} failed`, err);
+          }
+        };
         if (item.submenu) {
           el.setAttribute("aria-haspopup", "menu");
           el.append(h4("span", { class: "ggpp-native-more" }, icon(I3.chevronRight, 18)));
@@ -6859,25 +6884,20 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
             closeSub = ui.menu(el, wrap2(item.submenu(c3)), { side: "right", onClose: () => closeSub = null });
           };
           el.addEventListener("pointerenter", show);
-          el.addEventListener(
-            "click",
-            (e3) => {
-              e3.preventDefault();
-              e3.stopImmediatePropagation();
-              if (typeof item.onSelect === "function") {
-                closeSub = null;
-                closeMenu(panel);
-                try {
-                  item.onSelect(c3);
-                } catch (err) {
-                  ctx.log.error(`menu item ${item.id} failed`, err);
-                }
-                return;
-              }
-              show();
-            },
-            true
-          );
+          if (typeof item.onSelect === "function") {
+            el.addEventListener("pointerdown", activateSelect, true);
+            el.addEventListener("click", activateSelect, true);
+          } else {
+            el.addEventListener(
+              "click",
+              (e3) => {
+                e3.preventDefault();
+                e3.stopImmediatePropagation();
+                show();
+              },
+              true
+            );
+          }
           el.addEventListener("keydown", (e3) => {
             if (e3.key !== "ArrowRight" && e3.key !== "Enter" && e3.key !== " ") return;
             e3.preventDefault();
@@ -6887,20 +6907,8 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
           }, true);
           return el;
         }
-        el.addEventListener(
-          "click",
-          (e3) => {
-            e3.preventDefault();
-            e3.stopImmediatePropagation();
-            closeMenu(panel);
-            try {
-              item.onSelect?.(c3);
-            } catch (err) {
-              ctx.log.error(`menu item ${item.id} failed`, err);
-            }
-          },
-          true
-        );
+        el.addEventListener("pointerdown", activateSelect, true);
+        el.addEventListener("click", activateSelect, true);
         return el;
       }
       function fill(panel, trigger) {
@@ -8137,6 +8145,14 @@ ${depth === 0 ? "\n" : ""}`;
       const tabs = /* @__PURE__ */ new Map();
       const settingsUIApi = {};
       ctx.provide("settingsUI", settingsUIApi);
+      settingsUIApi.registerTab = (tab) => {
+        tabs.set(tab.id, tab);
+        kernel.emit("settings:tabs-changed", tab.id);
+        return () => {
+          tabs.delete(tab.id);
+          kernel.emit("settings:tabs-changed", tab.id);
+        };
+      };
       let favorites = await ctx.data.get("favorites", []);
       let pins = await ctx.data.get("pins", []);
       const firstSeen = await ctx.data.get("firstSeen", {});
@@ -9152,8 +9168,13 @@ ${depth === 0 ? "\n" : ""}`;
           o3.footer && h4("footer", { class: "ggpp-modal-foot" }, o3.footer)
         );
         const backdrop = h4("div", { class: "ggpp-backdrop" }, dialog);
-        backdrop.addEventListener("mousedown", (e3) => {
-          if (e3.target === backdrop) close("user");
+        let backdropGesture = false;
+        backdrop.addEventListener("pointerdown", (e3) => {
+          backdropGesture = e3.target === backdrop;
+        });
+        backdrop.addEventListener("click", (e3) => {
+          if (backdropGesture && e3.target === backdrop) close("user");
+          backdropGesture = false;
         });
         window.addEventListener("keydown", onKey, true);
         root2.append(backdrop);
@@ -10116,6 +10137,9 @@ ${depth === 0 ? "\n" : ""}`;
     const tag = (el.tagName || el.localName || "").toUpperCase();
     return tag === "BUTTON";
   }
+  function isTrigger(el, selector) {
+    return isElementNode(el) && isButtonElement(el) && el.matches(selector);
+  }
   function closestTrigger(el, bar, selector) {
     if (!isElementNode(el)) return null;
     if (!bar.contains(el)) return null;
@@ -10218,12 +10242,20 @@ ${depth === 0 ? "\n" : ""}`;
         const prior = applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId });
         st = { el: btn, ...prior };
         patched.set(btn, st);
+        btn.addEventListener("pointerenter", onPointerEnter);
+        btn.addEventListener("pointerleave", onPointerLeave);
+        btn.addEventListener("focusin", onFocusIn);
+        btn.addEventListener("focusout", onFocusOut);
         return;
       }
       applyUsageTipTriggerA11y(btn, { shortAriaLabel: config.shortAriaLabel, descId }, st);
     }
     function restoreTrigger(st) {
       restoreUsageTipTriggerA11y(st.el, st, descId);
+      st.el.removeEventListener("pointerenter", onPointerEnter);
+      st.el.removeEventListener("pointerleave", onPointerLeave);
+      st.el.removeEventListener("focusin", onFocusIn);
+      st.el.removeEventListener("focusout", onFocusOut);
     }
     function scanBar(bar) {
       bar.querySelectorAll(triggerSelector).forEach(patchTrigger);
@@ -10308,10 +10340,20 @@ ${depth === 0 ? "\n" : ""}`;
         hideNow();
       }, config.hideDelayMs);
     }
+    function eventBar(current) {
+      if (!isElementNode(current)) return null;
+      if (current.matches(barSelector)) return current;
+      return current.closest(barSelector);
+    }
+    function eventTrigger(e) {
+      const current = e.currentTarget;
+      const bar = eventBar(current);
+      const scope = bar ?? (isElementNode(current) ? current : null);
+      if (!scope) return null;
+      return closestTrigger(e.target, scope, triggerSelector) ?? (isTrigger(current, triggerSelector) ? current : null);
+    }
     function onPointerEnter(e) {
-      const bar = e.currentTarget ?? null;
-      if (!bar) return;
-      const btn = closestTrigger(e.target, bar, triggerSelector);
+      const btn = eventTrigger(e);
       if (!btn) return;
       hoverInside = true;
       if (escapeLatch && focusInside) {
@@ -10321,13 +10363,17 @@ ${depth === 0 ? "\n" : ""}`;
       requestShow(btn);
     }
     function onPointerLeave(e) {
-      const bar = e.currentTarget;
+      const bar = eventBar(e.currentTarget);
       const related = e.relatedTarget;
       if (config.interactive && tipEl && related && tipEl.contains(related)) {
         hoverInside = true;
         return;
       }
-      if (related && closestTrigger(related, bar, triggerSelector)) {
+      if (related && bar && closestTrigger(related, bar, triggerSelector)) {
+        hoverInside = true;
+        return;
+      }
+      if (related && isTrigger(e.currentTarget, triggerSelector) && isElementNode(e.currentTarget) && e.currentTarget.contains(related)) {
         hoverInside = true;
         return;
       }
@@ -10336,17 +10382,16 @@ ${depth === 0 ? "\n" : ""}`;
       requestHide();
     }
     function onFocusIn(e) {
-      const bar = e.currentTarget;
-      const btn = closestTrigger(e.target, bar, triggerSelector);
+      const btn = eventTrigger(e);
       if (!btn) return;
       focusInside = true;
       if (escapeLatch) return;
       requestShow(btn);
     }
     function onFocusOut(e) {
-      const bar = e.currentTarget;
+      const bar = eventBar(e.currentTarget);
       const related = e.relatedTarget;
-      if (related && closestTrigger(related, bar, triggerSelector)) {
+      if (related && bar && closestTrigger(related, bar, triggerSelector)) {
         focusInside = true;
         return;
       }
@@ -10758,7 +10803,7 @@ ${depth === 0 ? "\n" : ""}`;
           icon: I3.clock,
           // Accessible name must stay explicit — not an anonymous icon.
           get title() {
-            return tooltip();
+            return hoverTitle(uiLang());
           },
           order: 1,
           render: ring,
@@ -10779,6 +10824,7 @@ ${depth === 0 ? "\n" : ""}`;
       });
       usageTip.attach();
       ctx.cleanup(() => usageTip.detach());
+      ctx.cleanup(gemini.watch(".ggpp-chatbar", () => usageTip.syncBars()));
       const refreshBar = () => {
         bar.refresh();
         usageTip.syncBars();
