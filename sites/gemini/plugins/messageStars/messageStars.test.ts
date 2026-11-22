@@ -3,7 +3,7 @@
  * Box lacks shims/dom — run on Mac after gated copy (see PATCH.md).
  */
 import { describe, expect, test } from "bun:test";
-import { insertModelStarButton, pickModelStarHost, releaseStarButton, type StarHostLike } from "./index";
+import { insertModelStarButton, pickModelStarHost, pickUserStarHost, releaseStarButton, type StarHostLike } from "./index";
 
 /** Test-only: baseline comma list (not a product export). */
 const LEGACY_MODEL_HOST_SELECTOR_LIST =
@@ -261,31 +261,88 @@ describe("model watch body + releaseStarButton", () => {
   });
 });
 
-describe("user dispose wiring (no user inject refactor)", () => {
+function nestUserActions(): Node {
+  return node("user-query", [], [
+    node("div", ["query-content-actions"], [node("div", ["luminous-actions-container"], [node("button", ["copy"])])]),
+  ]);
+}
+
+function nestUserActionsWithSpacer(): Node {
+  return node("user-query", [], [
+    node("div", ["query-content-actions"], [
+      node("div", ["luminous-actions-container"], [node("button", ["copy"]), node("div", ["spacer"])]),
+    ]),
+  ]);
+}
+
+function userWatchBody(row: ReturnType<typeof asHost>, msg: object, buttons: Map<object, FakeBtn>, id: string) {
+  if (buttons.has(msg)) return;
+  const host = pickUserStarHost(row) as ReturnType<typeof asHost>;
+  const btn = makeBtn(id);
+  buttons.set(msg, btn);
+  insertModelStarButton(host, btn);
+  return () => releaseStarButton(buttons, msg, btn);
+}
+
+describe("pickUserStarHost", () => {
+  test("nested → luminous-actions-container", () => {
+    const outer = qs(nestUserActions(), ".query-content-actions")!;
+    const host = pickUserStarHost(asHost(outer));
+    expect((host as ReturnType<typeof asHost>).classes).toContain("luminous-actions-container");
+  });
+
+  test("inner luminous row stays inner", () => {
+    const inner = qs(nestUserActions(), ".luminous-actions-container")!;
+    const host = pickUserStarHost(asHost(inner));
+    expect((host as ReturnType<typeof asHost>).classes).toContain("luminous-actions-container");
+  });
+
+  test("only query-content-actions → row", () => {
+    const row = asHost(node("div", ["query-content-actions"], [node("button", ["copy"])]));
+    const host = pickUserStarHost(row) as ReturnType<typeof asHost>;
+    expect(host.classes).toContain("query-content-actions");
+  });
+});
+
+describe("user watch body + spacer", () => {
   test("early-return + ownership release only", () => {
     const msg = {};
     const buttons = new Map<object, FakeBtn>();
-    const appends: string[] = [];
-    const create = (id: string) => {
-      const b = makeBtn(id);
-      buttons.set(msg, b);
-      return b;
-    };
-    // Mirrors product user watch: has → return; else append + releaseStarButton dispose
-    const run = (label: string) => {
-      if (buttons.has(msg)) return;
-      const btn = create(label);
-      appends.push(label);
-      return () => releaseStarButton(buttons, msg, btn);
-    };
-    const dA = run("A");
-    const dB = run("B");
-    expect(appends).toEqual(["A"]);
+    const row = asHost(qs(nestUserActions(), ".query-content-actions")!);
+    const dA = userWatchBody(row, msg, buttons, "A");
+    const dB = userWatchBody(row, msg, buttons, "B");
     expect(dB).toBeUndefined();
+    expect(buttons.get(msg)?.id).toBe("A");
     const btnB = makeBtn("B2");
     buttons.set(msg, btnB);
     dA!();
     expect(buttons.get(msg)).toBe(btnB);
+  });
+
+  test("outer wrapper inserts on inner luminous host", () => {
+    const tree = nestUserActions();
+    const outer = asHost(qs(tree, ".query-content-actions")!);
+    const msg = {};
+    const buttons = new Map<object, FakeBtn>();
+    userWatchBody(outer, msg, buttons, "s1");
+    const inner = qs(tree, ".luminous-actions-container")!;
+    expect(inner.btn?.id).toBe("s1");
+    expect(inner.inserted).toEqual([{ id: "s1", via: "append" }]);
+    expect(qs(tree, ".query-content-actions")!.inserted).toEqual([]);
+  });
+
+  test("spacer → before on inner luminous host", () => {
+    const tree = nestUserActionsWithSpacer();
+    const outer = asHost(qs(tree, ".query-content-actions")!);
+    const msg = {};
+    const buttons = new Map<object, FakeBtn>();
+    userWatchBody(outer, msg, buttons, "s1");
+    const inner = qs(tree, ".luminous-actions-container")!;
+    const spacer = qs(tree, ".spacer")!;
+    expect(inner.inserted).toEqual([{ id: "s1", via: "before" }]);
+    expect(inner.btn?.id).toBe("s1");
+    expect(spacer.inserted).toEqual([]);
+    expect(qs(tree, ".query-content-actions")!.inserted).toEqual([]);
   });
 });
 
@@ -307,5 +364,7 @@ describe("product source markers", () => {
     expect(src).toContain("insertModelStarButton");
     expect(src).toContain("spacer.before");
     expect(src).toContain(".spacer");
+    expect(src).toContain("pickUserStarHost(row)");
+    expect(src).not.toMatch(/row\.append\(btn\)/);
   });
 });

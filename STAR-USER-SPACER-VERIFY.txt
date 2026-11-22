@@ -1,0 +1,27 @@
+GG++ 258b-star-spacer user-toolbar follow-up
+===========================================
+
+Artifact: userscript/GGPP.user.js
+Branch:   258b-star-spacer
+No prod rebuild (no `node scripts/build.mjs --prod`).
+
+Before this follow-up (model spacer only):
+  bytes  892579
+  sha256 a3c8554a9da7f1e918434cf5f5e268638448125dc504dad889077b70ee811201
+
+After (user host picker + spacer insert):
+  bytes  892886
+  sha256 419b44e4fe4d345a9c8efdb3f5033911e7ddaa51d14facfe1d2d63bb83fe1609
+
+Header still:
+  @name         GG++
+  @namespace    ggpp
+  @version      0.2.0
+
+User toolbar:
+  pickUserStarHost prefers .luminous-actions-container over wrapping .query-content-actions
+  insert before .spacer when present, else append
+
+Tests:
+  bun test sites/gemini/plugins/messageStars
+  22 pass / 0 fail / 58 expect() calls

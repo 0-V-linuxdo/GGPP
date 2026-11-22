@@ -6955,6 +6955,9 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
   function pickModelStarHost(row) {
     return row.querySelector(".buttons-container-v2") ?? row.querySelector(".actions-container-v2, .response-actions") ?? row.firstElementChild ?? row;
   }
+  function pickUserStarHost(row) {
+    return row.querySelector(".luminous-actions-container") ?? row.querySelector(".query-content-actions") ?? row;
+  }
   function releaseStarButton(buttons, msg, btn) {
     btn.remove();
     if (buttons.get(msg) === btn) buttons.delete(msg);
@@ -7066,8 +7069,11 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
         gemini.watch(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`, (row) => {
           const msg = row.closest(gemini.SEL.userQuery);
           if (buttons.has(msg)) return;
+          const host2 = pickUserStarHost(row);
           const btn = starButton(msg);
-          row.append(btn);
+          const spacer = host2.querySelector(".spacer");
+          if (spacer) spacer.before(btn);
+          else host2.append(btn);
           return () => releaseStarButton(buttons, msg, btn);
         })
       );

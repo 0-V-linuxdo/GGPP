@@ -44,7 +44,16 @@ export function releaseStarButton<M, B extends { remove(): void }>(
   if (buttons.get(msg) === btn) buttons.delete(msg);
 }
 
-/** Place the model star before Gemini's trailing flex spacer so it stays in the button cluster. */
+/** Prefer the inner hover toolbar (copy/edit) over a wrapping actions row. */
+export function pickUserStarHost<T extends StarHostLike>(row: T): StarHostLike {
+  return (
+    row.querySelector(".luminous-actions-container") ??
+    row.querySelector(".query-content-actions") ??
+    row
+  );
+}
+
+/** Place the star before Gemini's trailing flex spacer so it stays in the button cluster. */
 export function insertModelStarButton<
   B,
   S extends { before(node: B): void },
@@ -168,8 +177,9 @@ export default definePlugin({
       gemini.watch(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`, (row) => {
         const msg = row.closest<HTMLElement>(gemini.SEL.userQuery)!;
         if (buttons.has(msg)) return;
+        const host = pickUserStarHost(row) as HTMLElement;
         const btn = starButton(msg);
-        row.append(btn);
+        insertModelStarButton(host, btn);
         return () => releaseStarButton(buttons, msg, btn);
       }),
     );
