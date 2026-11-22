@@ -64,6 +64,16 @@ export function insertModelStarButton<
   else host.append(btn);
 }
 
+/** Re-home an existing star when a better inner toolbar appears later. */
+export function placeStarOnHost<
+  B extends { parentElement?: H | null },
+  S extends { before(node: B): void },
+  H extends { querySelector(selectors: string): S | null; append(node: B): void },
+>(host: H, btn: B): void {
+  if (btn.parentElement === host) return;
+  insertModelStarButton(host, btn);
+}
+
 export default definePlugin({
   id: "messageStars",
   name: "MessageStars",
@@ -89,6 +99,9 @@ export default definePlugin({
 
     ctx.css(`
       .ggpp-star-btn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--gem-sys-color--on-surface-variant, currentColor); }
+      user-query .ggpp-star-btn { opacity: 0; pointer-events: none; }
+      user-query:hover .ggpp-star-btn, user-query:focus-within .ggpp-star-btn { opacity: 1; pointer-events: auto; }
+      @media (hover: none) { user-query .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
       .ggpp-star-btn:hover, .ggpp-star-btn:focus-visible { background: rgb(127 127 127 / 14%); }
       .ggpp-star-btn[aria-pressed="true"] { color: ${ORANGE}; background: color-mix(in srgb, ${ORANGE} 14%, transparent); }
       .ggpp-star-btn[aria-pressed="true"] svg { fill: currentColor; }
@@ -162,25 +175,34 @@ export default definePlugin({
       btn.setAttribute("aria-label", btn.title);
     }
 
+    function mountStar(msg: HTMLElement, host: HTMLElement) {
+      let btn = buttons.get(msg);
+      if (!btn) btn = starButton(msg);
+      placeStarOnHost(host, btn);
+      return btn;
+    }
+
     // Model replies: the action row under each reply.
     ctx.cleanup(
       gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
         const msg = row.closest<HTMLElement>(gemini.SEL.modelResponse)!;
         const host = pickModelStarHost(row) as HTMLElement;
-        const btn = starButton(msg);
-        insertModelStarButton(host, btn);
-        return () => releaseStarButton(buttons, msg, btn);
+        const btn = mountStar(msg, host);
+        return () => {
+          if (btn.parentElement === host) releaseStarButton(buttons, msg, btn);
+        };
       }),
     );
     // Your prompts: the hover actions next to the bubble.
+    // Re-home if Gemini stamps the inner copy/edit bar after the outer wrap.
     ctx.cleanup(
       gemini.watch(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`, (row) => {
         const msg = row.closest<HTMLElement>(gemini.SEL.userQuery)!;
-        if (buttons.has(msg)) return;
         const host = pickUserStarHost(row) as HTMLElement;
-        const btn = starButton(msg);
-        insertModelStarButton(host, btn);
-        return () => releaseStarButton(buttons, msg, btn);
+        const btn = mountStar(msg, host);
+        return () => {
+          if (btn.parentElement === host) releaseStarButton(buttons, msg, btn);
+        };
       }),
     );
 

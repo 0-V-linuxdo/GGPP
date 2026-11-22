@@ -6958,6 +6958,15 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
   function pickUserStarHost(row) {
     return row.querySelector(".luminous-actions-container") ?? row.querySelector(".query-content-actions") ?? row;
   }
+  function insertModelStarButton(host, btn) {
+    const spacer = host.querySelector(".spacer");
+    if (spacer) spacer.before(btn);
+    else host.append(btn);
+  }
+  function placeStarOnHost(host, btn) {
+    if (btn.parentElement === host) return;
+    insertModelStarButton(host, btn);
+  }
   function releaseStarButton(buttons, msg, btn) {
     btn.remove();
     if (buttons.get(msg) === btn) buttons.delete(msg);
@@ -6985,6 +6994,9 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       const nav = () => ctx.tryUse("navigator");
       ctx.css(`
       .ggpp-star-btn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--gem-sys-color--on-surface-variant, currentColor); }
+      user-query .ggpp-star-btn { opacity: 0; pointer-events: none; }
+      user-query:hover .ggpp-star-btn, user-query:focus-within .ggpp-star-btn { opacity: 1; pointer-events: auto; }
+      @media (hover: none) { user-query .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
       .ggpp-star-btn:hover, .ggpp-star-btn:focus-visible { background: rgb(127 127 127 / 14%); }
       .ggpp-star-btn[aria-pressed="true"] { color: ${ORANGE}; background: color-mix(in srgb, ${ORANGE} 14%, transparent); }
       .ggpp-star-btn[aria-pressed="true"] svg { fill: currentColor; }
@@ -7054,27 +7066,30 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
         btn.title = on3 ? "Unstar" : "Star";
         btn.setAttribute("aria-label", btn.title);
       }
+      function mountStar(msg, host2) {
+        let btn = buttons.get(msg);
+        if (!btn) btn = starButton(msg);
+        placeStarOnHost(host2, btn);
+        return btn;
+      }
       ctx.cleanup(
         gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
           const msg = row.closest(gemini.SEL.modelResponse);
           const host2 = pickModelStarHost(row);
-          const btn = starButton(msg);
-          const spacer = host2.querySelector(".spacer");
-          if (spacer) spacer.before(btn);
-          else host2.append(btn);
-          return () => releaseStarButton(buttons, msg, btn);
+          const btn = mountStar(msg, host2);
+          return () => {
+            if (btn.parentElement === host2) releaseStarButton(buttons, msg, btn);
+          };
         })
       );
       ctx.cleanup(
         gemini.watch(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`, (row) => {
           const msg = row.closest(gemini.SEL.userQuery);
-          if (buttons.has(msg)) return;
           const host2 = pickUserStarHost(row);
-          const btn = starButton(msg);
-          const spacer = host2.querySelector(".spacer");
-          if (spacer) spacer.before(btn);
-          else host2.append(btn);
-          return () => releaseStarButton(buttons, msg, btn);
+          const btn = mountStar(msg, host2);
+          return () => {
+            if (btn.parentElement === host2) releaseStarButton(buttons, msg, btn);
+          };
         })
       );
       const list2 = h4("div", { class: "ggpp-stars-list", hidden: true, role: "dialog", "aria-label": "Starred messages" });

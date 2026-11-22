@@ -3,7 +3,7 @@
  * Box lacks shims/dom — run on Mac after gated copy (see PATCH.md).
  */
 import { describe, expect, test } from "bun:test";
-import { insertModelStarButton, pickModelStarHost, pickUserStarHost, releaseStarButton, type StarHostLike } from "./index";
+import { insertModelStarButton, pickModelStarHost, pickUserStarHost, placeStarOnHost, releaseStarButton, type StarHostLike } from "./index";
 
 /** Test-only: baseline comma list (not a product export). */
 const LEGACY_MODEL_HOST_SELECTOR_LIST =
@@ -11,7 +11,9 @@ const LEGACY_MODEL_HOST_SELECTOR_LIST =
 
 type Insert = { id: string; via: "append" | "before" };
 type Node = { id: string; classes: string[]; children: Node[]; btn?: FakeBtn; inserted: Insert[] };
-type FakeBtn = { id: string; removed: boolean; remove(): void };
+type FakeBtn = { id: string; removed: boolean; parentElement: Host | null; remove(): void };
+
+type Host = StarHostLike & { append(c: FakeBtn): void; before(c: FakeBtn): void; classes: string[]; _node: Node };
 
 function walk(n: Node, visit: (n: Node) => void) {
   visit(n);
@@ -37,8 +39,12 @@ function parentOf(root: Node, child: Node): Node | undefined {
   return undefined;
 }
 
-function asHost(root: Node, parent?: Node): StarHostLike & { append(c: FakeBtn): void; before(c: FakeBtn): void; classes: string[]; _node: Node } {
-  return {
+const hostCache = new WeakMap<Node, Host>();
+
+function asHost(root: Node, parent?: Node): Host {
+  const cached = hostCache.get(root);
+  if (cached) return cached;
+  const host: Host = {
     _node: root,
     get classes() {
       return root.classes;
@@ -53,13 +59,17 @@ function asHost(root: Node, parent?: Node): StarHostLike & { append(c: FakeBtn):
     append(c: FakeBtn) {
       root.inserted.push({ id: c.id, via: "append" });
       root.btn = c;
+      c.parentElement = host;
     },
     before(c: FakeBtn) {
       if (!parent) throw new Error("before() without parent");
       parent.inserted.push({ id: c.id, via: "before" });
       parent.btn = c;
+      c.parentElement = asHost(parent);
     },
   };
+  hostCache.set(root, host);
+  return host;
 }
 
 function node(id: string, classes: string[], children: Node[] = []): Node {
@@ -95,6 +105,7 @@ function makeBtn(id: string): FakeBtn {
   return {
     id,
     removed: false,
+    parentElement: null,
     remove() {
       this.removed = true;
     },
@@ -104,10 +115,15 @@ function makeBtn(id: string): FakeBtn {
 /** Same sequence as product model watch body (no mount* wrapper). */
 function modelWatchBody(row: ReturnType<typeof asHost>, msg: object, buttons: Map<object, FakeBtn>, id: string) {
   const host = pickModelStarHost(row) as ReturnType<typeof asHost>;
-  const btn = makeBtn(id);
-  buttons.set(msg, btn);
-  insertModelStarButton(host, btn);
-  return () => releaseStarButton(buttons, msg, btn);
+  let btn = buttons.get(msg);
+  if (!btn) {
+    btn = makeBtn(id);
+    buttons.set(msg, btn);
+  }
+  placeStarOnHost(host, btn);
+  return () => {
+    if (btn.parentElement === host) releaseStarButton(buttons, msg, btn);
+  };
 }
 
 function runTick(
@@ -233,8 +249,8 @@ describe("model watch body + releaseStarButton", () => {
     runTick(seen, [{ el: rowA, run: () => modelWatchBody(rowA, msg, buttons, "A") }], []);
     const btnA = buttons.get(msg)!;
     runTick(seen, [{ el: rowB, run: () => modelWatchBody(rowB, msg, buttons, "B") }], [rowA]);
-    expect(btnA.removed).toBe(true);
-    expect(buttons.get(msg)?.id).toBe("B");
+    expect(btnA.removed).toBe(false);
+    expect(buttons.get(msg)?.id).toBe("A");
     expect(buttons.get(msg)?.removed).toBe(false);
   });
 
@@ -276,12 +292,16 @@ function nestUserActionsWithSpacer(): Node {
 }
 
 function userWatchBody(row: ReturnType<typeof asHost>, msg: object, buttons: Map<object, FakeBtn>, id: string) {
-  if (buttons.has(msg)) return;
   const host = pickUserStarHost(row) as ReturnType<typeof asHost>;
-  const btn = makeBtn(id);
-  buttons.set(msg, btn);
-  insertModelStarButton(host, btn);
-  return () => releaseStarButton(buttons, msg, btn);
+  let btn = buttons.get(msg);
+  if (!btn) {
+    btn = makeBtn(id);
+    buttons.set(msg, btn);
+  }
+  placeStarOnHost(host, btn);
+  return () => {
+    if (btn.parentElement === host) releaseStarButton(buttons, msg, btn);
+  };
 }
 
 describe("pickUserStarHost", () => {
@@ -305,18 +325,32 @@ describe("pickUserStarHost", () => {
 });
 
 describe("user watch body + spacer", () => {
-  test("early-return + ownership release only", () => {
+  test("same host second watch reuses the button", () => {
     const msg = {};
     const buttons = new Map<object, FakeBtn>();
     const row = asHost(qs(nestUserActions(), ".query-content-actions")!);
     const dA = userWatchBody(row, msg, buttons, "A");
     const dB = userWatchBody(row, msg, buttons, "B");
-    expect(dB).toBeUndefined();
+    expect(dB).toBeDefined();
     expect(buttons.get(msg)?.id).toBe("A");
     const btnB = makeBtn("B2");
     buttons.set(msg, btnB);
     dA!();
     expect(buttons.get(msg)).toBe(btnB);
+  });
+
+  test("outer wrap first, then inner bar → star moves onto luminous", () => {
+    const outerNode = node("div", ["query-content-actions"], [node("button", ["copy"])]);
+    const tree = node("user-query", [], [outerNode]);
+    const msg = {};
+    const buttons = new Map<object, FakeBtn>();
+    userWatchBody(asHost(outerNode), msg, buttons, "s1");
+    expect(outerNode.inserted).toEqual([{ id: "s1", via: "append" }]);
+    const innerNode = node("div", ["luminous-actions-container"], [node("button", ["copy"]), node("div", ["spacer"])]);
+    outerNode.children.push(innerNode);
+    userWatchBody(asHost(outerNode), msg, buttons, "s2");
+    expect(buttons.get(msg)?.id).toBe("s1");
+    expect(innerNode.inserted).toEqual([{ id: "s1", via: "before" }]);
   });
 
   test("outer wrapper inserts on inner luminous host", () => {
@@ -365,6 +399,9 @@ describe("product source markers", () => {
     expect(src).toContain("spacer.before");
     expect(src).toContain(".spacer");
     expect(src).toContain("pickUserStarHost(row)");
+    expect(src).toContain("placeStarOnHost");
+    expect(src).toContain("user-query:hover .ggpp-star-btn");
+    expect(src).not.toMatch(/if \(buttons\.has\(msg\)\) return/);
     expect(src).not.toMatch(/row\.append\(btn\)/);
   });
 });
