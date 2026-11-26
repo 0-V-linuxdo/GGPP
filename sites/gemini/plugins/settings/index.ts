@@ -1,6 +1,7 @@
 import type { Kernel, PluginInfo } from "../../shims/kernel";
 import { definePlugin, TAGS, type Tag } from "../../shims/types";
 import { h, icon, isEditable } from "../../../../src/lib/dom";
+import { brandMark } from "../../../../src/lib/brandMark";
 import { I } from "../../../../src/lib/icons";
 import type { GeminiApi } from "../gemini";
 import type { MenusApi } from "../menus";
@@ -533,7 +534,6 @@ export default definePlugin({
         title: "GG++",
         "aria-label": "GG++ settings",
         onpointerdown: (e: Event) => {
-          e.preventDefault();
           e.stopPropagation();
         },
         onclick: (e: Event) => {
@@ -542,7 +542,7 @@ export default definePlugin({
           openSettings();
         },
       },
-      icon(I.ggpp, 18),
+      brandMark(20),
     );
     ctx.cleanup(
       gemini.watch(gemini.SEL.accountFooter, (footer) => {

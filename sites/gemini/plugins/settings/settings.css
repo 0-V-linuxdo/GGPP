@@ -222,8 +222,17 @@
   cursor: pointer;
   color: inherit;
   flex: none;
+  position: relative;
+}
+.ggpp-sidenav-settings .ggpp-brand-mark {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  pointer-events: none;
 }
 .ggpp-sidenav-settings:hover { background: rgb(127 127 127 / 14%); }
 .ggpp-sidenav-settings:focus-visible { outline: 2px solid #0b57d0; outline-offset: 2px; }
 .mavatar-settings-button-wrapper:has(.ggpp-sidenav-settings) { display: inline-flex; align-items: center; }
 side-navigation-content.rail .ggpp-sidenav-settings { width: 32px; height: 32px; }
+side-navigation-content.rail .ggpp-sidenav-settings .ggpp-brand-mark { width: 16px; height: 16px; }
