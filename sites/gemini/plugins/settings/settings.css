@@ -209,3 +209,21 @@
 .ggpp-css-editor:disabled { opacity: 0.5; }
 .ggpp-theme-section { padding-bottom: 12px; border-bottom: 1px solid var(--ggpp-border-soft); }
 .ggpp-searchbar[hidden] { display: none; }
+
+.ggpp-sidenav-settings {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: inherit;
+  flex: none;
+}
+.ggpp-sidenav-settings:hover { background: rgb(127 127 127 / 14%); }
+.ggpp-sidenav-settings:focus-visible { outline: 2px solid #0b57d0; outline-offset: 2px; }
+.mavatar-settings-button-wrapper:has(.ggpp-sidenav-settings) { display: inline-flex; align-items: center; }
+side-navigation-content.rail .ggpp-sidenav-settings { width: 32px; height: 32px; }

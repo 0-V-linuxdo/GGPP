@@ -1,10 +1,11 @@
 import type { Kernel, PluginInfo } from "../../shims/kernel";
 import { definePlugin, TAGS, type Tag } from "../../shims/types";
-import { getU } from "../../runtime";
 import { h, icon, isEditable } from "../../../../src/lib/dom";
 import { I } from "../../../../src/lib/icons";
+import type { GeminiApi } from "../gemini";
 import type { MenusApi } from "../menus";
 import type { UiApi } from "../ui";
+import { placeSidenavSettingsEntry } from "./placeSidenavSettingsEntry";
 import { settingField } from "./fields";
 import {
   formatRuntimeFingerprint,
@@ -521,35 +522,38 @@ export default definePlugin({
       }),
     );
 
-    // USPP core only adds a floating settings button when !GM.menu (AdGuard-like).
-    // Violentmonkey provides GM.menu, so the framework floating entry is skipped —
-    // register GG++'s own floating slot so the on-page 悬浮入口 always exists.
-    try {
-      const U = getU();
-      // FloatingHost expects a Preact icon component; GG++ I.* are path arrays — use label text.
-      const offFloat = U.addSlotItem?.("floating", "ggpp.settingsFloating", {
-        label: "GG++",
-        showLabel: true,
-        order: -1000,
-        onSelect: () => openSettings(),
-      });
-      if (typeof offFloat === "function") ctx.cleanup(offFloat);
-      else ctx.cleanup(() => U.removeSlotItem?.("floating", "ggpp.settingsFloating"));
-    } catch (e) {
-      ctx.log.warn("failed to register GG++ floating settings entry", e);
-    }
-    const onPillPointer = (e: Event) => {
-      const path = typeof e.composedPath === "function" ? e.composedPath() : [];
-      const hit = path.some(
-        (n) => n instanceof Element && n.getAttribute("data-uspp-ggpp-floating-item") === "ggpp.settingsFloating",
-      );
-      if (!hit) return;
-      e.preventDefault();
-      e.stopPropagation();
-      openSettings();
-    };
-    document.addEventListener("pointerdown", onPillPointer, true);
-    ctx.cleanup(() => document.removeEventListener("pointerdown", onPillPointer, true));
+    // Icon-only launcher immediately left of Gemini's sidenav gear (beside W / Pro).
+    // Do not use the USPP floating pill — that sits in the bottom-right CTTF chrome.
+    const gemini = ctx.use<GeminiApi>("gemini");
+    const entry = h(
+      "button",
+      {
+        class: "ggpp-sidenav-settings",
+        type: "button",
+        title: "GG++",
+        "aria-label": "GG++ settings",
+        onpointerdown: (e: Event) => {
+          e.preventDefault();
+          e.stopPropagation();
+        },
+        onclick: (e: Event) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openSettings();
+        },
+      },
+      icon(I.ggpp, 18),
+    );
+    ctx.cleanup(
+      gemini.watch(gemini.SEL.accountFooter, (footer) => {
+        const place = () => placeSidenavSettingsEntry(entry, footer);
+        place();
+        const mo = new MutationObserver(place);
+        mo.observe(footer, { childList: true, subtree: true });
+        return () => mo.disconnect();
+      }),
+    );
+    ctx.cleanup(() => entry.remove());
 
     ctx.on("ggpp:open-settings", (p?: { tab?: string; plugin?: string }) => openSettings(p?.tab, p?.plugin));
 

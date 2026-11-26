@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.3
+// @version      0.2.4
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -8139,12 +8139,30 @@ ${depth === 0 ? "\n" : ""}`;
   }
 
   // sites/gemini/plugins/settings/settings.css
-  var settings_default = ".ggpp-settings { height: min(760px, calc(100vh - 48px)); }\n.ggpp-settings .ggpp-modal-body { flex: 1; padding: 0; overflow: hidden; }\n.ggpp-shell { display: flex; height: 100%; min-height: 0; border-top: 1px solid var(--ggpp-border-soft); }\n\n.ggpp-nav {\n  flex: none;\n  width: 200px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  border-right: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-nav-item {\n  all: unset;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  height: 40px;\n  padding: 0 16px;\n  border-radius: 20px;\n  font: 500 14px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-2);\n  cursor: pointer;\n}\n\n.ggpp-nav-item:hover { background: var(--ggpp-hover); }\n.ggpp-nav-item.ggpp-on { background: var(--ggpp-accent-soft); color: var(--ggpp-fg); }\n.ggpp-nav-item:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-version {\n  margin-top: auto;\n  padding: 8px 16px;\n  font-size: 11px;\n  line-height: 16px;\n  color: var(--ggpp-fg-3);\n  opacity: 0.7;\n}\n\n.ggpp-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.ggpp-pane-head { display: flex; align-items: center; gap: 8px; padding: 16px 24px 8px; }\n.ggpp-pane-head h3 { margin: 0; font: 400 18px/24px var(--ggpp-font); }\n.ggpp-hint { color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 4px 24px 20px; overflow: auto; }\n\n.ggpp-banner {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 8px 8px 8px 16px;\n  border-radius: 12px;\n  background: color-mix(in srgb, var(--ggpp-warn) 16%, transparent);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-banner span { flex: 1; }\n.ggpp-banner[hidden] { display: none; }\n\n.ggpp-cats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 16px;\n  border-bottom: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-cat {\n  all: unset;\n  padding: 6px 0;\n  margin-bottom: -1px;\n  font: 500 13px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  border-bottom: 2px solid transparent;\n  cursor: pointer;\n}\n\n.ggpp-cat:hover { color: var(--ggpp-fg); }\n.ggpp-cat.ggpp-on { color: var(--ggpp-fg); border-bottom-color: var(--ggpp-accent); }\n.ggpp-cat:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-searchbar { display: flex; gap: 8px; }\n.ggpp-search { flex: 1; }\n.ggpp-filter { width: 8rem; flex: none; }\n\n.ggpp-plugin-scroll {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n  padding: 8px 2px 16px;\n  mask-image: linear-gradient(transparent, #000 8px, #000 calc(100% - 16px), transparent);\n}\n\n.ggpp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }\n\n.ggpp-grid-sep {\n  margin: 20px 0 10px;\n  padding-top: 12px;\n  border-top: 1px solid var(--ggpp-border-soft);\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n.ggpp-empty { padding: 32px 0; text-align: center; color: var(--ggpp-fg-2); }\n\n.ggpp-card {\n  display: flex;\n  flex-direction: column;\n  min-height: 112px;\n  border: 1px solid var(--ggpp-border-soft);\n  border-radius: 12px;\n  background: var(--ggpp-surface);\n  overflow: hidden;\n}\n\n.ggpp-card.ggpp-required { opacity: 0.55; }\n.ggpp-card.ggpp-crashed { opacity: 0.7; border-color: var(--ggpp-danger); }\n.ggpp-card-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px 12px; min-width: 0; }\n\n.ggpp-card-icon {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: var(--ggpp-accent-soft);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-card-name { font: 500 14px/20px var(--ggpp-font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }\n.ggpp-spacer { flex: 1; }\n.ggpp-card .ggpp-icon-btn { width: 28px; height: 28px; color: var(--ggpp-fg-3); }\n.ggpp-card .ggpp-icon-btn.ggpp-active { color: var(--ggpp-accent); }\n.ggpp-card .ggpp-icon-btn.ggpp-active svg { fill: currentColor; }\n.ggpp-card .ggpp-switch { transform: scale(0.8); margin-left: -4px; }\n\n.ggpp-card-desc {\n  margin: 0;\n  padding: 0 12px 10px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--ggpp-fg-2);\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n}\n\n.ggpp-card-foot { margin-top: auto; padding: 6px 12px; border-top: 1px solid var(--ggpp-border-soft); font-size: 11px; color: var(--ggpp-fg-3); }\n.ggpp-badge { display: inline-grid; color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-badge-err { color: var(--ggpp-danger); }\n\n.ggpp-pill {\n  padding: 0 8px;\n  border-radius: 10px;\n  background: var(--ggpp-accent);\n  color: var(--ggpp-accent-fg);\n  font: 500 11px/18px var(--ggpp-font);\n  margin-left: 6px;\n}\n\n.ggpp-pill-warn { background: color-mix(in srgb, var(--ggpp-warn) 25%, transparent); color: var(--ggpp-fg); }\n.ggpp-error-text { color: var(--ggpp-danger); margin: 0; }\n\n.ggpp-section-label {\n  margin-top: 4px;\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n/* fields */\n.ggpp-fields { display: flex; flex-direction: column; gap: 14px; }\n.ggpp-field { display: flex; flex-direction: column; gap: 8px; }\n.ggpp-field-inline { flex-direction: row; align-items: center; gap: 16px; }\n.ggpp-field-head { flex: 1; min-width: 0; }\n.ggpp-field-label { font-weight: 500; display: flex; align-items: center; }\n.ggpp-field-desc { font-size: 13px; line-height: 18px; color: var(--ggpp-fg-2); margin-top: 2px; }\n.ggpp-number-wrap { display: flex; align-items: center; gap: 6px; }\n.ggpp-number { width: 96px; }\n.ggpp-unit { color: var(--ggpp-fg-3); }\n.ggpp-slider-row { display: flex; align-items: center; gap: 12px; }\n.ggpp-slider { flex: 1; accent-color: var(--ggpp-accent); }\n.ggpp-slider-value { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ggpp-fg-2); }\n.ggpp-color { width: 48px; height: 32px; border: 1px solid var(--ggpp-border); border-radius: 8px; background: none; padding: 2px; cursor: pointer; }\n.ggpp-list { display: flex; flex-direction: column; gap: 6px; }\n.ggpp-list-row { display: flex; gap: 6px; align-items: center; }\n.ggpp-list-add { align-self: flex-start; }\n\n@media (width <= 720px) {\n  .ggpp-shell { flex-direction: column; }\n  .ggpp-nav { width: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ggpp-border-soft); }\n  .ggpp-version { display: none; }\n}\n\n.ggpp-css-editor {\n  flex: 1;\n  min-height: 260px;\n  font: 13px/20px var(--ggpp-mono);\n  tab-size: 4;\n  white-space: pre;\n  overflow: auto;\n  background: var(--ggpp-surface);\n}\n\n.ggpp-css-editor:disabled { opacity: 0.5; }\n.ggpp-theme-section { padding-bottom: 12px; border-bottom: 1px solid var(--ggpp-border-soft); }\n.ggpp-searchbar[hidden] { display: none; }\n";
+  var settings_default = ".ggpp-settings { height: min(760px, calc(100vh - 48px)); }\n.ggpp-settings .ggpp-modal-body { flex: 1; padding: 0; overflow: hidden; }\n.ggpp-shell { display: flex; height: 100%; min-height: 0; border-top: 1px solid var(--ggpp-border-soft); }\n\n.ggpp-nav {\n  flex: none;\n  width: 200px;\n  padding: 12px;\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  border-right: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-nav-item {\n  all: unset;\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  height: 40px;\n  padding: 0 16px;\n  border-radius: 20px;\n  font: 500 14px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-2);\n  cursor: pointer;\n}\n\n.ggpp-nav-item:hover { background: var(--ggpp-hover); }\n.ggpp-nav-item.ggpp-on { background: var(--ggpp-accent-soft); color: var(--ggpp-fg); }\n.ggpp-nav-item:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-version {\n  margin-top: auto;\n  padding: 8px 16px;\n  font-size: 11px;\n  line-height: 16px;\n  color: var(--ggpp-fg-3);\n  opacity: 0.7;\n}\n\n.ggpp-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.ggpp-pane-head { display: flex; align-items: center; gap: 8px; padding: 16px 24px 8px; }\n.ggpp-pane-head h3 { margin: 0; font: 400 18px/24px var(--ggpp-font); }\n.ggpp-hint { color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 4px 24px 20px; overflow: auto; }\n\n.ggpp-banner {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 8px 8px 8px 16px;\n  border-radius: 12px;\n  background: color-mix(in srgb, var(--ggpp-warn) 16%, transparent);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-banner span { flex: 1; }\n.ggpp-banner[hidden] { display: none; }\n\n.ggpp-cats {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 16px;\n  border-bottom: 1px solid var(--ggpp-border-soft);\n}\n\n.ggpp-cat {\n  all: unset;\n  padding: 6px 0;\n  margin-bottom: -1px;\n  font: 500 13px/20px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  border-bottom: 2px solid transparent;\n  cursor: pointer;\n}\n\n.ggpp-cat:hover { color: var(--ggpp-fg); }\n.ggpp-cat.ggpp-on { color: var(--ggpp-fg); border-bottom-color: var(--ggpp-accent); }\n.ggpp-cat:focus-visible { outline: 2px solid var(--ggpp-accent); }\n\n.ggpp-searchbar { display: flex; gap: 8px; }\n.ggpp-search { flex: 1; }\n.ggpp-filter { width: 8rem; flex: none; }\n\n.ggpp-plugin-scroll {\n  flex: 1;\n  min-height: 0;\n  overflow: auto;\n  padding: 8px 2px 16px;\n  mask-image: linear-gradient(transparent, #000 8px, #000 calc(100% - 16px), transparent);\n}\n\n.ggpp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }\n\n.ggpp-grid-sep {\n  margin: 20px 0 10px;\n  padding-top: 12px;\n  border-top: 1px solid var(--ggpp-border-soft);\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n.ggpp-empty { padding: 32px 0; text-align: center; color: var(--ggpp-fg-2); }\n\n.ggpp-card {\n  display: flex;\n  flex-direction: column;\n  min-height: 112px;\n  border: 1px solid var(--ggpp-border-soft);\n  border-radius: 12px;\n  background: var(--ggpp-surface);\n  overflow: hidden;\n}\n\n.ggpp-card.ggpp-required { opacity: 0.55; }\n.ggpp-card.ggpp-crashed { opacity: 0.7; border-color: var(--ggpp-danger); }\n.ggpp-card-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 4px 12px; min-width: 0; }\n\n.ggpp-card-icon {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: var(--ggpp-accent-soft);\n  color: var(--ggpp-fg);\n}\n\n.ggpp-card-name { font: 500 14px/20px var(--ggpp-font); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }\n.ggpp-spacer { flex: 1; }\n.ggpp-card .ggpp-icon-btn { width: 28px; height: 28px; color: var(--ggpp-fg-3); }\n.ggpp-card .ggpp-icon-btn.ggpp-active { color: var(--ggpp-accent); }\n.ggpp-card .ggpp-icon-btn.ggpp-active svg { fill: currentColor; }\n.ggpp-card .ggpp-switch { transform: scale(0.8); margin-left: -4px; }\n\n.ggpp-card-desc {\n  margin: 0;\n  padding: 0 12px 10px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--ggpp-fg-2);\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n}\n\n.ggpp-card-foot { margin-top: auto; padding: 6px 12px; border-top: 1px solid var(--ggpp-border-soft); font-size: 11px; color: var(--ggpp-fg-3); }\n.ggpp-badge { display: inline-grid; color: var(--ggpp-fg-3); cursor: help; }\n.ggpp-badge-err { color: var(--ggpp-danger); }\n\n.ggpp-pill {\n  padding: 0 8px;\n  border-radius: 10px;\n  background: var(--ggpp-accent);\n  color: var(--ggpp-accent-fg);\n  font: 500 11px/18px var(--ggpp-font);\n  margin-left: 6px;\n}\n\n.ggpp-pill-warn { background: color-mix(in srgb, var(--ggpp-warn) 25%, transparent); color: var(--ggpp-fg); }\n.ggpp-error-text { color: var(--ggpp-danger); margin: 0; }\n\n.ggpp-section-label {\n  margin-top: 4px;\n  font: 500 12px/16px var(--ggpp-font);\n  color: var(--ggpp-fg-3);\n  text-transform: uppercase;\n  letter-spacing: 0.05em;\n}\n\n/* fields */\n.ggpp-fields { display: flex; flex-direction: column; gap: 14px; }\n.ggpp-field { display: flex; flex-direction: column; gap: 8px; }\n.ggpp-field-inline { flex-direction: row; align-items: center; gap: 16px; }\n.ggpp-field-head { flex: 1; min-width: 0; }\n.ggpp-field-label { font-weight: 500; display: flex; align-items: center; }\n.ggpp-field-desc { font-size: 13px; line-height: 18px; color: var(--ggpp-fg-2); margin-top: 2px; }\n.ggpp-number-wrap { display: flex; align-items: center; gap: 6px; }\n.ggpp-number { width: 96px; }\n.ggpp-unit { color: var(--ggpp-fg-3); }\n.ggpp-slider-row { display: flex; align-items: center; gap: 12px; }\n.ggpp-slider { flex: 1; accent-color: var(--ggpp-accent); }\n.ggpp-slider-value { min-width: 48px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ggpp-fg-2); }\n.ggpp-color { width: 48px; height: 32px; border: 1px solid var(--ggpp-border); border-radius: 8px; background: none; padding: 2px; cursor: pointer; }\n.ggpp-list { display: flex; flex-direction: column; gap: 6px; }\n.ggpp-list-row { display: flex; gap: 6px; align-items: center; }\n.ggpp-list-add { align-self: flex-start; }\n\n@media (width <= 720px) {\n  .ggpp-shell { flex-direction: column; }\n  .ggpp-nav { width: auto; flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--ggpp-border-soft); }\n  .ggpp-version { display: none; }\n}\n\n.ggpp-css-editor {\n  flex: 1;\n  min-height: 260px;\n  font: 13px/20px var(--ggpp-mono);\n  tab-size: 4;\n  white-space: pre;\n  overflow: auto;\n  background: var(--ggpp-surface);\n}\n\n.ggpp-css-editor:disabled { opacity: 0.5; }\n.ggpp-theme-section { padding-bottom: 12px; border-bottom: 1px solid var(--ggpp-border-soft); }\n.ggpp-searchbar[hidden] { display: none; }\n.ggpp-sidenav-settings { all: unset; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; color: inherit; flex: none; }\n.ggpp-sidenav-settings:hover { background: rgb(127 127 127 / 14%); }\n.ggpp-sidenav-settings:focus-visible { outline: 2px solid #0b57d0; outline-offset: 2px; }\n.mavatar-settings-button-wrapper:has(.ggpp-sidenav-settings) { display: inline-flex; align-items: center; }\nside-navigation-content.rail .ggpp-sidenav-settings { width: 32px; height: 32px; }\n";
 
   // sites/gemini/plugins/settings/index.ts
   var RECENT_DAYS = 7;
   var NEW_DAYS = 2;
   var DAY = 864e5;
+
+  function findSidenavSettingsGear(footer) {
+    const byClass = footer.querySelector("gem-icon-button.mavatar-settings-button") ?? footer.querySelector(".mavatar-settings-button");
+    if (byClass) return byClass;
+    const labeled = footer.querySelector("button[aria-label='Settings']") ?? footer.querySelector("button[aria-label='设置']") ?? footer.querySelector("button[aria-label='設定']");
+    if (!labeled) return null;
+    return labeled.closest?.("gem-icon-button") ?? labeled;
+  }
+  function placeSidenavSettingsEntry(btn, footer) {
+    const gear = findSidenavSettingsGear(footer);
+    if (gear) {
+      if (gear.previousElementSibling !== btn) gear.before(btn);
+      return;
+    }
+    const host = footer.querySelector(".mavatar-settings-button-wrapper") ?? footer.querySelector(".mavatar-footer-right") ?? footer;
+    if (!btn.isConnected || !host.contains(btn)) host.append(btn);
+  }
+
   var settings_default2 = definePlugin({
     id: "settings",
     name: "Settings",
@@ -8588,29 +8606,36 @@ ${depth === 0 ? "\n" : ""}`;
           onSelect: () => openSettings3()
         })
       );
-      try {
-        const U3 = getU();
-        const offFloat = U3.addSlotItem?.("floating", "ggpp.settingsFloating", {
-          label: "GG++",
-          showLabel: true,
-          order: -1e3,
-          onSelect: () => openSettings3()
-        });
-        if (typeof offFloat === "function") ctx.cleanup(offFloat);
-        else ctx.cleanup(() => U3.removeSlotItem?.("floating", "ggpp.settingsFloating"));
-      } catch (e3) {
-        ctx.log.warn("failed to register GG++ floating settings entry", e3);
-      }
-      const onPillPointer = (e3) => {
-        const path = typeof e3.composedPath === "function" ? e3.composedPath() : [];
-        const hit = path.some((n2) => n2 && n2.getAttribute && n2.getAttribute("data-uspp-ggpp-floating-item") === "ggpp.settingsFloating");
-        if (!hit) return;
-        e3.preventDefault();
-        e3.stopPropagation();
-        openSettings3();
-      };
-      document.addEventListener("pointerdown", onPillPointer, true);
-      ctx.cleanup(() => document.removeEventListener("pointerdown", onPillPointer, true));
+      const gemini2 = ctx.use("gemini");
+      const entry = h4(
+        "button",
+        {
+          class: "ggpp-sidenav-settings",
+          type: "button",
+          title: "GG++",
+          "aria-label": "GG++ settings",
+          onpointerdown: (e3) => {
+            e3.preventDefault();
+            e3.stopPropagation();
+          },
+          onclick: (e3) => {
+            e3.preventDefault();
+            e3.stopPropagation();
+            openSettings3();
+          }
+        },
+        icon(I3.ggpp, 18)
+      );
+      ctx.cleanup(
+        gemini2.watch(gemini2.SEL.accountFooter, (footer) => {
+          const place = () => placeSidenavSettingsEntry(entry, footer);
+          place();
+          const mo = new MutationObserver(place);
+          mo.observe(footer, { childList: true, subtree: true });
+          return () => mo.disconnect();
+        })
+      );
+      ctx.cleanup(() => entry.remove());
       ctx.on("ggpp:open-settings", (p3) => openSettings3(p3?.tab, p3?.plugin));
       window.addEventListener(
         "keydown",
