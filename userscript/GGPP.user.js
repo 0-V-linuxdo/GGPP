@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.8
+// @version      0.2.9
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3373,100 +3373,425 @@
   });
 
   // sites/gemini/plugins/autoAllow/index.ts
-  var autoAllowUi = "#ggpp-layer, #ggpp-settings, .ggpp-modal, .ggpp-ct, .ggpp-settings";
-  var autoAllowExact = /* @__PURE__ */ new Set(["allow", "allow once", "allow for this chat", "always allow", "允许", "允许一次", "允许本次对话", "始终允许", "允許", "允許一次", "允許本次對話", "始終允許"]);
-  var autoAllowSticky = /* @__PURE__ */ new Set(["allow for this chat", "always allow", "允许本次对话", "始终允许", "允許本次對話", "始終允許"]);
-  var autoAllowCancel = /* @__PURE__ */ new Set(["cancel", "取消"]);
-  function autoAllowNormalize(text) {
+  var aa_GGPP_UI = "#ggpp-layer, #ggpp-settings, .ggpp-modal, .ggpp-ct, .ggpp-settings";
+  var aa_CODE_SEL = "pre, code, textarea, [data-test-id*='code']";
+  var aa_BUTTON_SEL = "button, [role='button']";
+  var aa_COMPUTER_USE_COPY = /computer\s*use|remote\s*(?:computer|browser)|远程(?:计算机|浏览器)|遠端(?:電腦|瀏覽器)|电脑使用|電腦使用/i;
+  var aa_COMPUTER_USE_ATTR = /computer-?use|remote-?(?:computer|browser)|cua-/i;
+  var aa_EXPAND_LABEL = /expand(?:\s+text)?|show more|展开|展開|显示更多|顯示更多/i;
+  var aa_ALLOW_EXACT = new Set([
+    "allow",
+    "allow once",
+    "allow for this chat",
+    "always allow",
+    "允许",
+    "允许一次",
+    "允许本次对话",
+    "始终允许",
+    "允許",
+    "允許一次",
+    "允許本次對話",
+    "始終允許"
+  ]);
+  var aa_STICKY_EXACT = new Set([
+    "allow for this chat",
+    "always allow",
+    "允许本次对话",
+    "始终允许",
+    "允許本次對話",
+    "始終允許"
+  ]);
+  var aa_CANCEL_EXACT = new Set(["cancel", "取消"]);
+  function aa_normalizeLabel(text) {
     return String(text ?? "").replace(/\s+/g, " ").trim();
   }
-  function autoAllowButtonKind(label) {
-    const text = autoAllowNormalize(label).toLowerCase();
-    if (autoAllowSticky.has(text)) return "sticky";
-    if (autoAllowExact.has(text)) return "allow";
-    if (autoAllowCancel.has(text)) return "cancel";
+  function aa_buttonKind(label) {
+    const t = aa_normalizeLabel(label).toLowerCase();
+    if (aa_STICKY_EXACT.has(t))
+      return "sticky";
+    if (aa_ALLOW_EXACT.has(t))
+      return "allow";
+    if (aa_CANCEL_EXACT.has(t))
+      return "cancel";
     return "other";
   }
   function autoAllowLooksLikePermission(text) {
-    const value = String(text ?? "").replace(/\s+/g, " ");
-    if (!value) return false;
-    if (/Allow Gemini to\s+run\s+\S+/i.test(value)) return true;
-    if (/Waiting for your input/i.test(value) && /\bRun\s+[\w./-]+\?/i.test(value)) return true;
-    if (/允许\s*Gemini/i.test(value) && /运行|執行|执行/.test(value)) return true;
-    if (/在你的(?:电脑|電腦|设备|設備|机器|機器)上/.test(value) && /允许|允許/.test(value)) return true;
-    return /(等待你的输入|等待您的输入|等待你的輸入)/.test(value) && /运行|執行|执行|Run\s+/i.test(value);
+    const t = String(text ?? "").replace(/\s+/g, " ");
+    if (!t)
+      return false;
+    if (/Allow Gemini to\s+run\s+\S+/i.test(t))
+      return true;
+    if (/Waiting for your input/i.test(t) && /\bRun\s+[\w./-]+\?/i.test(t))
+      return true;
+    if (/允许\s*Gemini/i.test(t) && /运行|執行|执行/.test(t))
+      return true;
+    if (/在你的(?:电脑|電腦|设备|設備|机器|機器)上/.test(t) && /允许|允許/.test(t))
+      return true;
+    if (/(等待你的输入|等待您的输入|等待你的輸入)/.test(t) && /运行|執行|执行|Run\s+/i.test(t))
+      return true;
+    return false;
   }
-  function autoAllowLabel(el) {
-    return autoAllowNormalize(el.getAttribute("aria-label") || el.textContent);
+  function aa_pickAllowLabel(buttons, preferSticky) {
+    const enabled = buttons.filter((b) => !b.disabled).map((b) => ({ ...b, kind: aa_buttonKind(b.label) }));
+    if (!enabled.some((b) => b.kind === "cancel"))
+      return null;
+    const sticky = enabled.find((b) => b.kind === "sticky");
+    const allow = enabled.find((b) => b.kind === "allow");
+    const chosen = preferSticky ? sticky ?? allow : allow ?? sticky;
+    if (!chosen || chosen.kind !== "allow" && chosen.kind !== "sticky")
+      return null;
+    return { kind: chosen.kind, label: chosen.label };
   }
-  function autoAllowDisabled(el) {
-    return !!(el.disabled || el.getAttribute("aria-disabled") === "true" || el.hasAttribute("disabled"));
+  function aa_elementLabel(el) {
+    return aa_normalizeLabel(el.getAttribute("aria-label") || el.textContent);
   }
-  function autoAllowInUi(el) {
+  function aa_isDisabled(el) {
+    const btn = el;
+    if (typeof btn.disabled === "boolean" && btn.disabled)
+      return true;
+    const aria = el.getAttribute("aria-disabled");
+    if (aria === "true")
+      return true;
+    return el.hasAttribute("disabled");
+  }
+  function aa_isToggle(el) {
+    const pressed = el.getAttribute("aria-pressed");
+    if (pressed === "true" || pressed === "false")
+      return true;
+    const cls = `${el.className || ""}`;
+    return /\bggpp-star-btn\b/.test(cls);
+  }
+  function aa_isButtonish(el) {
+    if (el.tagName === "BUTTON")
+      return true;
+    if (el.getAttribute("role") === "button")
+      return true;
     try {
-      return !!el.closest(autoAllowUi);
+      return typeof el.matches === "function" && el.matches(aa_BUTTON_SEL);
     } catch {
       return false;
     }
   }
-  function autoAllowPick(buttons, preferSticky) {
-    const enabled = buttons.filter((button) => !button.disabled).map((button) => ({ ...button, kind: autoAllowButtonKind(button.label) }));
-    if (!enabled.some((button) => button.kind === "cancel")) return null;
-    const sticky = enabled.find((button) => button.kind === "sticky");
-    const allow = enabled.find((button) => button.kind === "allow");
-    const chosen = preferSticky ? sticky ?? allow : allow ?? sticky;
-    return chosen && (chosen.kind === "allow" || chosen.kind === "sticky") ? chosen : null;
+  function aa_inGgppUi(el) {
+    try {
+      return !!el.closest(aa_GGPP_UI);
+    } catch {
+      return false;
+    }
   }
-  function autoAllowToolName(text) {
+  function aa_nodeText(el) {
+    return el.innerText || el.textContent || "";
+  }
+  function aa_descendantCount(el) {
+    try {
+      return el.querySelectorAll("*").length;
+    } catch {
+      return 1e9;
+    }
+  }
+  function aa_isRootNode(el) {
+    const tag = el.tagName;
+    if (tag === "HTML" || tag === "BODY")
+      return true;
+    try {
+      const doc = typeof document !== "undefined" ? document : null;
+      return !!doc && (el === doc.documentElement || el === doc.body);
+    } catch {
+      return false;
+    }
+  }
+  function aa_walkParents(start, maxDepth, includeSelf = false) {
+    const out = [];
+    let n = includeSelf ? start : start.parentElement;
+    for (let depth = 0;n && depth < maxDepth; n = n.parentElement, depth++) {
+      if (aa_isRootNode(n))
+        break;
+      out.push(n);
+    }
+    return out;
+  }
+  function aa_smallest(matches) {
+    let best = null;
+    let bestCount = Infinity;
+    for (const el of matches) {
+      const count = aa_descendantCount(el);
+      if (count < bestCount) {
+        best = el;
+        bestCount = count;
+      }
+    }
+    return best;
+  }
+  function aa_attrBlob(el) {
+    return `${el.tagName} ${el.id || ""} ${el.className || ""} ${el.getAttribute("aria-label") || ""} ${el.getAttribute("data-test-id") || ""} ${el.getAttribute("data-testid") || ""}`;
+  }
+  function aa_looksLikeComputerUseChrome(el) {
+    if (aa_COMPUTER_USE_ATTR.test(aa_attrBlob(el)))
+      return true;
+    const text = aa_nodeText(el).slice(0, 1200);
+    if (aa_COMPUTER_USE_COPY.test(text))
+      return true;
+    if (aa_descendantCount(el) < 80 && /\bcomputer\b/i.test(text))
+      return true;
+    return false;
+  }
+  function aa_computedPosition(el) {
+    try {
+      const inline = el.style?.position || "";
+      if (inline)
+        return inline;
+      if (typeof getComputedStyle === "function")
+        return getComputedStyle(el).position || "";
+    } catch {}
+    return "";
+  }
+  function aa_isFixedTopRightPill(el) {
+    const hosts = [el, ...aa_walkParents(el, 8)];
+    const positioned = hosts.some((n) => /fixed|sticky/i.test(aa_computedPosition(n)));
+    if (!positioned)
+      return false;
+    try {
+      const rect = el.getBoundingClientRect?.();
+      if (!rect || rect.width < 8 || rect.height < 8)
+        return false;
+      const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+      const vh = typeof window !== "undefined" ? window.innerHeight : 0;
+      if (!vw)
+        return false;
+      const topish = rect.top >= -12 && rect.top <= Math.max(140, vh * 0.25);
+      const rightish = rect.right >= vw - Math.max(280, vw * 0.34);
+      const pill = rect.height <= 96 && rect.width <= 320;
+      return topish && rightish && pill;
+    } catch {
+      return false;
+    }
+  }
+  function isComputerUseOverlayAllow(el) {
+    if (!aa_isButtonish(el) || aa_inGgppUi(el) || aa_isDisabled(el) || aa_isToggle(el))
+      return false;
+    const kind = aa_buttonKind(aa_elementLabel(el));
+    if (kind !== "allow" && kind !== "sticky")
+      return false;
+    if ([el, ...aa_walkParents(el, 12)].some(aa_looksLikeComputerUseChrome))
+      return true;
+    return aa_isFixedTopRightPill(el);
+  }
+  function aa_permissionMatches(el) {
+    return autoAllowLooksLikePermission(aa_nodeText(el));
+  }
+  function aa_enabledAllowPick(el, preferSticky = true) {
+    const buttons = [...el.querySelectorAll(aa_BUTTON_SEL)].filter((b) => !aa_inGgppUi(b));
+    return aa_pickAllowLabel(buttons.map((b) => ({ label: aa_elementLabel(b), disabled: aa_isDisabled(b) })), preferSticky);
+  }
+  function aa_cardOf(allowEl, requireEnabledPair = true) {
+    const matches = [];
+    for (const n of aa_walkParents(allowEl, 16)) {
+      if (aa_inGgppUi(n) || !aa_permissionMatches(n))
+        continue;
+      if (requireEnabledPair && !aa_enabledAllowPick(n))
+        continue;
+      matches.push(n);
+    }
+    return aa_smallest(matches);
+  }
+  function aa_overlayHost(allowEl) {
+    const chrome = aa_walkParents(allowEl, 8).filter((n) => !aa_inGgppUi(n) && aa_looksLikeComputerUseChrome(n));
+    return aa_smallest(chrome) || allowEl.parentElement || allowEl;
+  }
+  function aa_extractToolName(text) {
     return /(?:Run|运行|執行)\s+([\w./:-]+)\s*[?？]/i.exec(text)?.[1] || /run\s+([\w./:-]+)\s+on your machine/i.exec(text)?.[1] || "";
   }
-  function autoAllowFindPermission(root = document) {
-    for (const card of [...root.querySelectorAll("body *")]) {
-      if (autoAllowInUi(card)) continue;
-      const text = autoAllowNormalize(card.innerText || card.textContent);
-      if (!autoAllowLooksLikePermission(text)) continue;
-      const buttons = [...card.querySelectorAll("button, [role='button']")].filter((button) => !autoAllowInUi(button));
-      if (!autoAllowPick(buttons.map((button) => ({ label: autoAllowLabel(button), disabled: autoAllowDisabled(button) })), true)) continue;
-      const code = card.querySelector("pre, code, [data-test-id*='code'], textarea");
-      return { element: card, toolName: autoAllowToolName(text), script: autoAllowNormalize(code?.innerText || code?.textContent || text), text };
+  function aa_isCodeLike(text) {
+    if (!text)
+      return false;
+    if (/"function"\s*:/.test(text) && /\bfetch\s*\(/.test(text))
+      return true;
+    if (/\basync\s*\(\)\s*=>/.test(text) && /\bfetch\s*\(/.test(text))
+      return true;
+    if (/\bfetch\s*\(/.test(text) && (/JSON\.stringify/.test(text) || /\bgv2map\b/.test(text)))
+      return true;
+    if (/[{};=]/.test(text) && text.length > 40)
+      return true;
+    return text.length > 80;
+  }
+  function expandPermissionCard(card) {
+    const controls = [...card.querySelectorAll(aa_BUTTON_SEL)];
+    for (const el of controls) {
+      if (aa_inGgppUi(el) || aa_isDisabled(el) || aa_isToggle(el))
+        continue;
+      const label = aa_elementLabel(el);
+      const kind = aa_buttonKind(label);
+      if (kind === "allow" || kind === "sticky" || kind === "cancel")
+        continue;
+      if (!aa_EXPAND_LABEL.test(label))
+        continue;
+      try {
+        el.click();
+      } catch {}
     }
+  }
+  function extractPermissionScript(card) {
+    const nodes = [...card.querySelectorAll(aa_CODE_SEL)];
+    let best = "";
+    for (const node of nodes) {
+      const chunk = aa_normalizeLabel(node.innerText || node.textContent);
+      if (!chunk)
+        continue;
+      if (chunk.length > best.length || chunk.length === best.length && aa_isCodeLike(chunk))
+        best = chunk;
+    }
+    return best;
+  }
+  function aa_asElement(root) {
+    const el = root;
+    return el && typeof el.tagName === "string" ? el : null;
+  }
+  function aa_buttonCandidates(root) {
+    const nodes = [...root.querySelectorAll(aa_BUTTON_SEL)];
+    const el = aa_asElement(root);
+    if (el && aa_isButtonish(el))
+      nodes.unshift(el);
+    return nodes.filter((b) => !aa_inGgppUi(b));
+  }
+  function aa_harvestPermissionCards(root) {
+    const found = new Set;
+    const ordered = [];
+    const seeds = [];
+    try {
+      seeds.push(...root.querySelectorAll(`${aa_CODE_SEL}, ${aa_BUTTON_SEL}`));
+    } catch {}
+    const self = aa_asElement(root);
+    if (self)
+      seeds.unshift(self);
+    for (const seed of seeds) {
+      const card = aa_cardOf(seed, false);
+      if (!card || aa_inGgppUi(card) || found.has(card))
+        continue;
+      found.add(card);
+      ordered.push(card);
+    }
+    return ordered;
+  }
+  function aa_inferEvaluateTool(script, text) {
+    return aa_extractToolName(text) || aa_extractToolName(script) || (aa_isCodeLike(script) ? "evaluate_script" : "");
+  }
+  function aa_findClickableAllow(root) {
+    let overlay = null;
+    let classic = null;
+    for (const el of aa_buttonCandidates(root)) {
+      if (aa_isDisabled(el) || aa_isToggle(el))
+        continue;
+      const kind = aa_buttonKind(aa_elementLabel(el));
+      if (kind !== "allow" && kind !== "sticky")
+        continue;
+      if (!classic) {
+        const card = aa_cardOf(el, true);
+        if (card)
+          classic = card;
+      }
+      if (!overlay && isComputerUseOverlayAllow(el))
+        overlay = aa_overlayHost(el);
+    }
+    if (overlay)
+      return { element: overlay, overlay: true };
+    if (classic)
+      return { element: classic, overlay: false };
     return null;
   }
-  var autoAllowClicked = /* @__PURE__ */ new WeakSet();
-  function autoAllowClick(card, preferSticky) {
-    const buttons = [...card.querySelectorAll("button, [role='button']")].filter((button) => !autoAllowInUi(button));
-    const pick = autoAllowPick(buttons.map((button) => ({ label: autoAllowLabel(button), disabled: autoAllowDisabled(button) })), preferSticky);
-    if (!pick) return false;
-    const target = buttons.find((button) => !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === pick.kind && autoAllowLabel(button) === pick.label) ?? buttons.find((button) => !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === pick.kind);
-    if (!target || autoAllowClicked.has(target)) return false;
-    autoAllowClicked.add(target);
+  function aa_bestScriptCard(root) {
+    let best = null;
+    for (const card of aa_harvestPermissionCards(root)) {
+      if (aa_descendantCount(card) >= 800)
+        continue;
+      expandPermissionCard(card);
+      const script = extractPermissionScript(card);
+      if (aa_isCodeLike(script) || aa_permissionMatches(card))
+        best = card;
+    }
+    return best;
+  }
+  function autoAllowFindPermission(root = document) {
+    const clickable = aa_findClickableAllow(root);
+    const scriptCard = aa_bestScriptCard(root);
+    const host = clickable?.element || scriptCard;
+    if (!host)
+      return null;
+    if (scriptCard)
+      expandPermissionCard(scriptCard);
+    expandPermissionCard(host);
+    const text = aa_normalizeLabel(aa_nodeText(scriptCard || host) || aa_nodeText(host));
+    const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || text;
+    const toolName = aa_inferEvaluateTool(script, text);
+    if (!toolName && !script)
+      return null;
+    return { element: host, toolName, script, text };
+  }
+  var aa_clicked = new WeakSet;
+  function aa_clickTarget(target) {
+    if (!target || aa_isDisabled(target) || aa_clicked.has(target) || aa_isToggle(target))
+      return false;
+    aa_clicked.add(target);
     try {
       target.click();
       return true;
     } catch {
-      autoAllowClicked.delete(target);
+      aa_clicked.delete(target);
       return false;
     }
+  }
+  function aa_clickClassicAllow(root, preferSticky) {
+    for (const el of aa_buttonCandidates(root)) {
+      if (aa_isDisabled(el) || aa_isToggle(el))
+        continue;
+      const kind = aa_buttonKind(aa_elementLabel(el));
+      if (kind !== "allow" && kind !== "sticky")
+        continue;
+      const card = aa_cardOf(el, true);
+      if (!card)
+        continue;
+      const buttons = [...card.querySelectorAll(aa_BUTTON_SEL)].filter((b) => !aa_inGgppUi(b));
+      const pick = aa_pickAllowLabel(buttons.map((b) => ({ label: aa_elementLabel(b), disabled: aa_isDisabled(b) })), preferSticky);
+      if (!pick)
+        continue;
+      const target = buttons.find((b) => !aa_isDisabled(b) && !aa_isToggle(b) && aa_buttonKind(aa_elementLabel(b)) === pick.kind && aa_elementLabel(b) === pick.label) ?? buttons.find((b) => !aa_isDisabled(b) && !aa_isToggle(b) && aa_buttonKind(aa_elementLabel(b)) === pick.kind);
+      if (aa_clickTarget(target))
+        return true;
+    }
+    return false;
+  }
+  function aa_clickOverlayAllow(root) {
+    for (const el of aa_buttonCandidates(root)) {
+      if (!isComputerUseOverlayAllow(el))
+        continue;
+      if (aa_clickTarget(el))
+        return true;
+    }
+    return false;
+  }
+  function autoAllowClick(root = document, preferSticky = true) {
+    if (aa_clickClassicAllow(root, preferSticky))
+      return true;
+    if (aa_clickOverlayAllow(root))
+      return true;
+    const doc = typeof document !== "undefined" ? document : null;
+    if (doc && root !== doc)
+      return aa_clickOverlayAllow(doc);
+    return false;
   }
   function autoAllowCancelClick(card) {
-    const target = [...card.querySelectorAll("button, [role='button']")].find((button) => !autoAllowInUi(button) && !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === "cancel");
-    if (!target || autoAllowClicked.has(target)) return false;
-    autoAllowClicked.add(target);
-    try {
-      target.click();
-      return true;
-    } catch {
-      autoAllowClicked.delete(target);
-      return false;
-    }
+    const el = "element" in card ? card.element : card;
+    const target = [...el.querySelectorAll(aa_BUTTON_SEL)].find((b) => !aa_inGgppUi(b) && !aa_isDisabled(b) && !aa_isToggle(b) && aa_buttonKind(aa_elementLabel(b)) === "cancel");
+    return aa_clickTarget(target);
   }
-  var autoAllowDestructive = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
-  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n;]{0,200}\b(?:document\.cookie|localStorage(?:\.getItem)?|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
-  var autoAllowShellDownload = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
-  var autoAllowReadOnlyScript = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
-  var autoAllowAbsoluteUrl = /https?:\/\//i;
-  var autoAllowScriptMutation = /(?:localStorage\.setItem|sessionStorage\.setItem|indexedDB|\.click\s*\(|\.submit\s*\(|\beval\s*\(|innerHTML\s*=|document\.cookie\s*=)/i;
-  function autoAllowParseJson(script) {
+
+  var aa_DESTRUCTIVE = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
+  var aa_EXFILTRATION = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n;]{0,200}\b(?:document\.cookie|localStorage(?:\.getItem)?|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
+  var aa_SHELL_DOWNLOAD = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
+  var aa_READ_ONLY_SCRIPT = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
+  var aa_RELATIVE_READ = /['"`]\/(?:v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)|Automatic\/OnAction)\b/;
+  var aa_ABSOLUTE_URL = /https?:\/\//i;
+  var aa_SCRIPT_MUTATION = /(?:localStorage\.setItem|sessionStorage\.setItem|indexedDB|\.click\s*\(|\.submit\s*\(|\beval\s*\(|innerHTML\s*=|document\.cookie\s*=)/i;
+  function aa_parseJson(script) {
     try {
       const value = JSON.parse(script);
       return value && typeof value === "object" ? value : null;
@@ -3474,73 +3799,162 @@
       return null;
     }
   }
-  function autoAllowSafeEvaluate(script) {
-    if (autoAllowReadOnlyScript.test(script)) return true;
-    if (autoAllowAbsoluteUrl.test(script) || autoAllowScriptMutation.test(script)) return false;
-    if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(script)) return true;
-    if (/['"`]\/Automatic\/OnAction\b/.test(script) && /LoadTriggers/.test(script)) return true;
+  function decodeEscapes(script) {
+    return String(script ?? "").replace(/\\u003e/gi, ">").replace(/\\u003c/gi, "<").replace(/\\u0026/gi, "&");
+  }
+  function unescapeJsonString(value) {
+    return decodeEscapes(value.replace(/\\n/g, `
+  `).replace(/\\r/g, "\r").replace(/\\t/g, "\t").replace(/\\"/g, '"').replace(/\\\\/g, "\\"));
+  }
+  function unwrapEvaluateScript(script, depth = 0) {
+    const decoded = decodeEscapes(String(script ?? ""));
+    if (depth > 3)
+      return decoded;
+    const trimmed = decoded.trim();
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object" && typeof parsed.function === "string") {
+        return unwrapEvaluateScript(String(parsed.function), depth + 1);
+      }
+      if (typeof parsed === "string")
+        return unwrapEvaluateScript(parsed, depth + 1);
+    } catch {}
+    const wrapped = /^\{\s*"function"\s*:\s*"([\s\S]*)/.exec(trimmed);
+    if (wrapped)
+      return unwrapEvaluateScript(unescapeJsonString(wrapped[1]), depth + 1);
+    return decoded;
+  }
+  function isH3yunReadHelper(script) {
+    if (!/\bfetch\s*\(/.test(script))
+      return false;
+    const hasPostForm = /\bpostForm\b/.test(script);
+    const hasStringify = /JSON\.stringify\s*\(\s*(?:b|obj)\s*\)/.test(script) || /body\s*:\s*JSON\.stringify/.test(script);
+    if (!hasPostForm && !hasStringify)
+      return false;
+    const truncated = /\.{3}/.test(script);
+    const hasIdentity = /\bgv2map\b/.test(script) || /localStorage\.getItem/.test(script);
+    const hasRelative = /\/v1\b|\/Form\/OnAction\b|\/Automatic\/OnAction\b/.test(script);
+    if (truncated && (hasPostForm || hasStringify))
+      return true;
+    if (hasIdentity && (hasRelative || truncated))
+      return true;
+    if (hasRelative && (hasPostForm || hasStringify))
+      return true;
+    return false;
+  }
+  function isSafeEvaluateScript(script) {
+    const source = unwrapEvaluateScript(script);
+    if (aa_READ_ONLY_SCRIPT.test(source))
+      return true;
+    if (aa_ABSOLUTE_URL.test(source) || aa_SCRIPT_MUTATION.test(source))
+      return false;
+    if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(source))
+      return true;
+    if (/['"`]\/Automatic\/OnAction\b/.test(source) && /LoadTriggers/.test(source))
+      return true;
+    if (aa_RELATIVE_READ.test(source) && /LoadTriggers/.test(source))
+      return true;
+    if (isH3yunReadHelper(source))
+      return true;
     return false;
   }
   function autoAllowRules(permission) {
     const tool = String(permission.toolName || "").trim();
     const script = String(permission.script || "").trim();
-    const haystack = `${tool}\n${script}\n${permission.text || ""}`;
-    if (!tool || !script) return "unsure";
-    if (autoAllowDestructive.test(haystack) || autoAllowExfiltration.test(haystack) || autoAllowShellDownload.test(haystack)) return "deny";
-    if (/^(?:list_network_requests|get_network_request)$/i.test(tool)) return "allow";
+    const source = unwrapEvaluateScript(script);
+    const haystack = `${tool}
+  ${script}
+  ${source}
+  ${permission.text || ""}`;
+    if (!tool || !script)
+      return "unsure";
+    if (aa_DESTRUCTIVE.test(haystack) || aa_EXFILTRATION.test(haystack) || aa_SHELL_DOWNLOAD.test(haystack))
+      return "deny";
+    if (/^(?:list_network_requests|get_network_request)$/i.test(tool))
+      return "allow";
     if (/^click$/i.test(tool)) {
-      const args = autoAllowParseJson(script);
-      if (!args) return "unsure";
+      const args = aa_parseJson(script);
+      if (!args)
+        return "unsure";
       const keys = Object.keys(args);
       return keys.length && keys.every((key) => /^(?:pageId|uid|element|ref)$/i.test(key)) ? "allow" : "unsure";
     }
-    if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4e3) return "allow";
-    if (/^evaluate_script$/i.test(tool)) return autoAllowSafeEvaluate(script) ? "allow" : "unsure";
+    if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4000)
+      return "allow";
+    if (/^evaluate_script$/i.test(tool))
+      return isSafeEvaluateScript(script) ? "allow" : "unsure";
     return "unsure";
   }
-  function autoAllowApiPrompt(permission) {
-    return ["You are a safety gate for a computer-use permission request.", "Return exactly one line: ALLOW or DENY. No punctuation, explanation, or markdown.", "Choose DENY for destructive actions, credential/cookie/token collection, data exfiltration, or uncertain intent.", "Choose ALLOW only for clearly harmless read-only work.", `Tool: ${permission.toolName}`, "Script/content:", permission.script.slice(0, 12e3)].join("\n");
+  function aa_apiPrompt(permission) {
+    return [
+      "You are a safety gate for a computer-use permission request.",
+      "Return exactly one line: ALLOW or DENY. No punctuation, explanation, or markdown.",
+      "Choose DENY for destructive actions, credential/cookie/token collection, data exfiltration, or uncertain intent.",
+      "Choose ALLOW only for clearly harmless read-only work.",
+      `Tool: ${permission.toolName}`,
+      "Script/content:",
+      permission.script.slice(0, 12000)
+    ].join(`
+  `);
   }
   async function autoAllowApi(permission, apiKey, model = "gemini-2.5-flash") {
     const key = apiKey.trim();
-    if (!key) return "unsure";
+    if (!key)
+      return "unsure";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model || "gemini-2.5-flash")}:generateContent?key=${encodeURIComponent(key)}`;
-    const body = JSON.stringify({ contents: [{ role: "user", parts: [{ text: autoAllowApiPrompt(permission) }] }], generationConfig: { temperature: 0, maxOutputTokens: 4 } });
+    const body = JSON.stringify({ contents: [{ role: "user", parts: [{ text: aa_apiPrompt(permission) }] }], generationConfig: { temperature: 0, maxOutputTokens: 4 } });
     try {
       const text = await new Promise((resolve, reject) => {
         const request = globalThis.GM?.xmlHttpRequest;
-        if (typeof request !== "function") return reject(new Error("GM.xmlHttpRequest unavailable"));
-        request({ method: "POST", url, data: body, headers: { "Content-Type": "application/json" }, timeout: 15e3, onload: (response) => response.status >= 200 && response.status < 300 ? resolve(response.responseText) : reject(new Error(`HTTP ${response.status}`)), onerror: () => reject(new Error("Network error")), ontimeout: () => reject(new Error("Timed out")) });
+        if (typeof request !== "function")
+          return reject(new Error("GM.xmlHttpRequest unavailable"));
+        request({
+          method: "POST",
+          url,
+          data: body,
+          headers: { "Content-Type": "application/json" },
+          timeout: 15000,
+          onload: (r) => r.status >= 200 && r.status < 300 ? resolve(r.responseText) : reject(new Error(`HTTP ${r.status}`)),
+          onerror: () => reject(new Error("Network error")),
+          ontimeout: () => reject(new Error("Timed out"))
+        });
       });
-      const answer = JSON.parse(text)?.candidates?.[0]?.content?.parts?.map((part) => part?.text || "").join("").trim();
+      const answer = JSON.parse(text)?.candidates?.[0]?.content?.parts?.map((p) => p?.text || "").join("").trim();
       return answer === "ALLOW" ? "allow" : answer === "DENY" ? "deny" : "unsure";
     } catch {
       return "unsure";
     }
   }
+  var aa_TEMP_ENTRY = "temp-chat-button gem-icon-button.temp-chat-entry button, temp-chat-button button[aria-label='Temporary chat']";
   function autoAllowWeb(permission) {
     try {
       const tab = window.open("/app", "_blank");
-      if (!tab) return "unsure";
-      const prompt = `${autoAllowApiPrompt(permission)}\n\nReply with exactly ALLOW or DENY.`;
+      if (!tab)
+        return "unsure";
+      const prompt = `${aa_apiPrompt(permission)}
+
+  Reply with exactly ALLOW or DENY.`;
       const prepare = () => {
         try {
-          tab.document.querySelector("temp-chat-button gem-icon-button.temp-chat-entry button, temp-chat-button button[aria-label='Temporary chat']")?.click();
+          const button = tab.document.querySelector(aa_TEMP_ENTRY);
+          button?.click();
           const editor = tab.document.querySelector("[contenteditable='true']");
           if (editor) {
             editor.focus();
             editor.textContent = prompt;
             editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: prompt }));
           }
-        } catch {
-        }
+        } catch {}
       };
       tab.addEventListener("load", () => setTimeout(prepare, 700), { once: true });
       setTimeout(prepare, 1200);
-    } catch {
-    }
+    } catch {}
     return "unsure";
   }
+  function autoAllowSafeEvaluate(script) {
+    return isSafeEvaluateScript(script);
+  }
+
   var autoAllow_default = definePlugin({
     id: "autoAllow",
     name: "AutoAllow",
@@ -3991,6 +4405,166 @@
   var READ_LINE = 0.28;
   var LOCK_MS = 1e3;
   var TOP_OFFSET = 72;
+  // sites/gemini/plugins/betterNavigator/navItems.ts
+  var aa_CHROME_LABELS = [
+    "allow for this chat",
+    "always allow",
+    "allow once",
+    "keep going",
+    "finished thinking",
+    "waiting for your input",
+    "allow",
+    "cancel",
+    "continue",
+    "copy",
+    "share",
+    "retry",
+    "edit",
+    "more",
+    "thinking",
+    "analyzing",
+    "searching",
+    "writing",
+    "允许本次对话",
+    "允许本次聊天",
+    "始终允许",
+    "允许一次",
+    "允许",
+    "取消",
+    "继续",
+    "允許本次對話",
+    "始終允許",
+    "允許一次",
+    "允許",
+    "繼續",
+    "思考完成",
+    "思考中",
+    "等待你的输入",
+    "等待您的输入",
+    "等待你的輸入",
+    "等待您的輸入"
+  ].sort((a, b) => b.length - a.length);
+  var aa_LONG_CHROME = [
+    /^writing[.\u2026\u22EF]+/i,
+    /^run\s+[\w./:-]+\s*\?/i,
+    /^allow gemini to\s+run\s+[\w./:-]+(?:\s+on your machine)?\s*\??/i,
+    /^waiting for your input\.?/i,
+    /^允许\s*gemini[^?？]*[?？]/i,
+    /^允許\s*gemini[^?？]*[?？]/i,
+    /^(?:等待你的输入|等待您的输入|等待你的輸入|等待您的輸入)/
+  ];
+  var aa_ELLIPSIS = /^[.\u2026\u22EF]+/;
+  function collapseNavText(text) {
+    return String(text ?? "").replace(/\s+/g, " ").trim();
+  }
+  function aa_matchListed(s) {
+    const lower = s.toLowerCase();
+    for (const phrase of aa_CHROME_LABELS) {
+      if (!lower.startsWith(phrase) && !s.startsWith(phrase))
+        continue;
+      const rest = s.slice(phrase.length);
+      if (rest && !/^[\s.。!！?？]/.test(rest))
+        continue;
+      return phrase.length + (rest.match(/^[.。!！?？]+/)?.[0].length ?? 0);
+    }
+    return 0;
+  }
+  function aa_matchLong(s) {
+    const ellipsis = aa_ELLIPSIS.exec(s);
+    if (ellipsis && (s.length === ellipsis[0].length || /^[.\u2026\u22EF]+(?:\s|$)/.test(s)))
+      return ellipsis[0].length;
+    for (const re of aa_LONG_CHROME) {
+      const m = re.exec(s);
+      if (m && m.index === 0)
+        return m[0].length;
+    }
+    return 0;
+  }
+  function aa_consumeChromeFromStart(text, buttonsAlways) {
+    let s = collapseNavText(text);
+    let sawLong = false;
+    while (s) {
+      const long = aa_matchLong(s);
+      if (long) {
+        s = collapseNavText(s.slice(long));
+        sawLong = true;
+        continue;
+      }
+      if (buttonsAlways || sawLong) {
+        const listed = aa_matchListed(s);
+        if (listed) {
+          s = collapseNavText(s.slice(listed));
+          continue;
+        }
+      }
+      break;
+    }
+    return s;
+  }
+  function isChromeNavText(_role, text) {
+    return aa_consumeChromeFromStart(text, true) === "";
+  }
+  function navLabelText(text) {
+    const leftover = aa_consumeChromeFromStart(text, false);
+    if (!leftover)
+      return "";
+    if (aa_consumeChromeFromStart(leftover, true) === "")
+      return "";
+    return leftover;
+  }
+  function isTopLevelMessageEl(el) {
+    if (!el)
+      return true;
+    const parent = el.parentElement ?? el.parentNode;
+    if (parent && typeof parent.closest === "function") {
+      try {
+        return !parent.closest("user-query, model-response");
+      } catch {}
+    }
+    let node = parent;
+    const seen = new Set;
+    while (node && !seen.has(node)) {
+      seen.add(node);
+      const tag = String(node.tagName || node.localName || "").toLowerCase();
+      if (tag === "user-query" || tag === "model-response")
+        return false;
+      node = node.parentElement ?? node.parentNode;
+    }
+    return true;
+  }
+  function aa_hasNavMedia(el) {
+    if (!el || typeof el.querySelector !== "function")
+      return false;
+    try {
+      return !!(el.querySelector("img") || el.querySelector("uploader-file-preview, .file-preview-container *"));
+    } catch {
+      return false;
+    }
+  }
+  function filterNavMessages(messages, opts) {
+    const showAssistant = opts?.showAssistant ?? true;
+    const generating = opts?.generating ?? false;
+    const top = messages.map((m) => !m.el || isTopLevelMessageEl(m.el));
+    const keep = messages.map((m, i) => {
+      if (!top[i])
+        return false;
+      if (m.role === "model" && !showAssistant)
+        return false;
+      if (aa_hasNavMedia(m.el))
+        return true;
+      return !isChromeNavText(m.role, m.text) && !!navLabelText(m.text);
+    });
+    if (generating && showAssistant) {
+      for (let i = messages.length - 1;i >= 0; i--) {
+        if (!top[i] || messages[i].role !== "model")
+          continue;
+        if (!keep[i] && !keep.some((flag, j) => flag && j > i))
+          keep[i] = true;
+        break;
+      }
+    }
+    return messages.filter((_, i) => keep[i]);
+  }
   var betterNavigator_default = definePlugin({
     id: "betterNavigator",
     name: "BetterNavigator",
@@ -4062,20 +4636,21 @@
       function label(m3) {
         const cached = labels.get(m3.el);
         if (cached && !(m3.role === "model" && gemini.isGenerating())) return cached;
-        let text = m3.text.replace(/\s+/g, " ").trim();
+        let text = navLabelText(m3.text);
+        if (isChromeNavText(m3.role, m3.text)) text = "";
         if (!text) text = m3.el.querySelector("img") ? "Image" : m3.el.querySelector("uploader-file-preview, .file-preview-container *") ? "Attachment" : m3.role === "model" && gemini.isGenerating() ? "Writing…" : "…";
         const out = truncate(text, 61);
         labels.set(m3.el, out);
         return out;
       }
       function collect2() {
-        items = gemini.messages().filter((m3) => showAssistant || m3.role === "user");
+        items = filterNavMessages(gemini.messages(), { showAssistant, generating: gemini.isGenerating() });
       }
       function render() {
         collect2();
         rail.hidden = items.length < 2;
         if (rail.hidden) return;
-        const live = gemini.isGenerating() ? items.findLast((m3) => m3.role === "model") : void 0;
+        const live = gemini.isGenerating() && items.at(-1)?.role === "model" ? items.at(-1) : void 0;
         ticks.replaceChildren(
           ...items.map(
             (m3, i3) => h4("button", {
@@ -5072,6 +5647,52 @@
   });
 
   // sites/gemini/plugins/chatListStatus/index.ts
+  var NATIVE_SIDEBAR_SPINNER_SEL = "progress, [role='progressbar'], circular-progress, mat-progress-spinner, mat-spinner";
+  var NATIVE_SIDEBAR_FLAG_SEL = [
+    "mat-icon[data-mat-icon-name='flag']",
+    "mat-icon[data-mat-icon-name='outlined_flag']",
+    "mat-icon[fonticon='flag']",
+    "mat-icon[fonticon='outlined_flag']",
+    "[data-mat-icon-name='flag']",
+    "[data-mat-icon-name='outlined_flag']",
+    "[aria-label*='flag' i]:not([aria-label*='pin' i])",
+    "[aria-label*='旗帜']",
+    "[aria-label*='红旗']"
+  ].join(", ");
+  var PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+  var FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
+  function rowHasNativeGeneratingSpinner(row) {
+    return [...row.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)].some(isVisible);
+  }
+  function isPinChrome(el) {
+    try {
+      return !!el.closest(PIN_SEL);
+    } catch {
+      return false;
+    }
+  }
+  function rowHasNativeFlag(row) {
+    const host = row;
+    for (const el of host.querySelectorAll(NATIVE_SIDEBAR_FLAG_SEL)) {
+      if (isVisible(el) && !isPinChrome(el)) return true;
+    }
+    const box = typeof host.getBoundingClientRect === "function" ? host.getBoundingClientRect() : null;
+    for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols")) {
+      if (!isVisible(el) || isPinChrome(el) || el.closest("a[href]") || el.closest(".ggpp-cls")) continue;
+      const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+      if (label.includes("flag") || label.includes("旗")) return true;
+      const d3 = [...el.querySelectorAll("path")].map((p3) => p3.getAttribute("d") || "").join(" ");
+      if (FLAG_PATH.test(d3)) return true;
+      if (box) {
+        const r3 = el.getBoundingClientRect();
+        if (r3.width >= 10 && r3.width <= 28 && r3.height >= 10 && r3.height <= 28 && r3.left > box.right - 72 && r3.right < box.right - 12) return true;
+      }
+    }
+    return false;
+  }
+  function rowHasNativeStatusChrome(row) {
+    return rowHasNativeGeneratingSpinner(row) || rowHasNativeFlag(row);
+  }
   var chatListStatus_default = definePlugin({
     id: "chatListStatus",
     name: "ChatListStatus",
@@ -5085,32 +5706,32 @@
       const gemini = ctx.use("gemini");
       const status = /* @__PURE__ */ new Map();
       ctx.css(`
-      .ggpp-cls { position: absolute; right: 36px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 1; }
+      .ggpp-cls { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; margin-inline-end: 4px; vertical-align: middle; }
       .ggpp-cls[data-s="done"] { background: #3b82f6; }
       .ggpp-cls[data-s="error"] { background: #ef4444; }
-      .ggpp-cls[data-s="live"] { width: 10px; height: 10px; border: 2px solid #3b82f6; border-right-color: transparent; animation: ggpp-cls-spin .8s linear infinite; }
-      gem-nav-list-item[data-test-id='conversation']:hover .ggpp-cls { display: none; }
-      @keyframes ggpp-cls-spin { to { transform: translateY(-50%) rotate(360deg); } }
+      .ggpp-cls[data-s="live"] { width: 12px; height: 12px; border: 2px solid #3b82f6; border-right-color: transparent; background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
+      @keyframes ggpp-cls-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-right-color: #3b82f6; } }
     `);
       const idOf = (row) => row.querySelector(gemini.SEL.conversationLink)?.href.match(/\/([0-9a-f]{8,})(?:[/?#]|$)/i)?.[1] ?? null;
+      function placeMark(row, mark) {
+        const title = row.querySelector(gemini.SEL.conversationTitle);
+        if (title && mark.nextElementSibling !== title) title.before(mark);
+        else if (!title && mark.parentElement !== row) row.prepend(mark);
+      }
       function paint() {
         for (const row of gemini.qa(gemini.SEL.conversationRow)) {
           const id = idOf(row);
           const s3 = id ? status.get(id) : void 0;
-          let mark = row.querySelector(":scope > .ggpp-cls");
-          if (!s3) {
-            mark?.remove();
-            continue;
-          }
-          if (s3 === "live" && row.querySelector("progress, [role='progressbar'], circular-progress")) {
+          let mark = row.querySelector(".ggpp-cls");
+          if (!s3 || rowHasNativeStatusChrome(row)) {
             mark?.remove();
             continue;
           }
           if (!mark) {
             mark = h4("span", { class: "ggpp-cls", "aria-hidden": "true" });
-            row.append(mark);
           }
+          placeMark(row, mark);
           mark.dataset.s = s3;
           mark.title = s3 === "live" ? "Replying…" : s3 === "done" ? "New reply" : "Ended with an error";
         }

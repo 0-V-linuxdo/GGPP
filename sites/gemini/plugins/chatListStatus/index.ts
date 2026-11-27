@@ -1,11 +1,67 @@
 import { definePlugin } from "../../shims/types";
-import { h, nextFrame } from "../../../../src/lib/dom";
+import { h, isVisible, nextFrame } from "../../../../src/lib/dom";
 import { I } from "../../../../src/lib/icons";
 import type { GeminiApi, ResponseEvent } from "../gemini";
 
 /** Status marks on side panel chats: replying, finished while you were away, or error. */
 
 type Status = "live" | "done" | "error";
+
+/** Native sidenav generating indicators; skip our mark when one is actually visible. */
+export const NATIVE_SIDEBAR_SPINNER_SEL = "progress, [role='progressbar'], circular-progress, mat-progress-spinner, mat-spinner";
+
+/** Gemini app red/orange flag on a conversation row (task / attention). */
+export const NATIVE_SIDEBAR_FLAG_SEL = [
+  "mat-icon[data-mat-icon-name='flag']",
+  "mat-icon[data-mat-icon-name='outlined_flag']",
+  "mat-icon[fonticon='flag']",
+  "mat-icon[fonticon='outlined_flag']",
+  "[data-mat-icon-name='flag']",
+  "[data-mat-icon-name='outlined_flag']",
+  "[aria-label*='flag' i]:not([aria-label*='pin' i])",
+  "[aria-label*='旗帜']",
+  "[aria-label*='红旗']",
+].join(", ");
+
+const PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+const FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
+
+export function rowHasNativeGeneratingSpinner(row: ParentNode): boolean {
+  return [...row.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)].some(isVisible);
+}
+
+function isPinChrome(el: Element): boolean {
+  try {
+    return !!el.closest(PIN_SEL);
+  } catch {
+    return false;
+  }
+}
+
+export function rowHasNativeFlag(row: ParentNode): boolean {
+  const host = row as Element;
+  for (const el of host.querySelectorAll(NATIVE_SIDEBAR_FLAG_SEL)) {
+    if (isVisible(el) && !isPinChrome(el)) return true;
+  }
+  const box = typeof host.getBoundingClientRect === "function" ? host.getBoundingClientRect() : null;
+  for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols")) {
+    if (!isVisible(el) || isPinChrome(el) || el.closest("a[href]") || el.closest(".ggpp-cls")) continue;
+    const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+    if (label.includes("flag") || label.includes("旗")) return true;
+    const d = [...el.querySelectorAll("path")].map((p) => p.getAttribute("d") || "").join(" ");
+    if (FLAG_PATH.test(d)) return true;
+    if (box) {
+      const r = el.getBoundingClientRect();
+      if (r.width >= 10 && r.width <= 28 && r.height >= 10 && r.height <= 28 && r.left > box.right - 72 && r.right < box.right - 12) return true;
+    }
+  }
+  return false;
+}
+
+/** Native Gemini flag or spinner already occupies the status slot. */
+export function rowHasNativeStatusChrome(row: ParentNode): boolean {
+  return rowHasNativeGeneratingSpinner(row) || rowHasNativeFlag(row);
+}
 
 export default definePlugin({
   id: "chatListStatus",
@@ -21,35 +77,35 @@ export default definePlugin({
     const status = new Map<string, Status>();
 
     ctx.css(`
-      .ggpp-cls { position: absolute; right: 36px; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; pointer-events: none; z-index: 1; }
+      .ggpp-cls { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; margin-inline-end: 4px; vertical-align: middle; }
       .ggpp-cls[data-s="done"] { background: #3b82f6; }
       .ggpp-cls[data-s="error"] { background: #ef4444; }
-      .ggpp-cls[data-s="live"] { width: 10px; height: 10px; border: 2px solid #3b82f6; border-right-color: transparent; animation: ggpp-cls-spin .8s linear infinite; }
-      gem-nav-list-item[data-test-id='conversation']:hover .ggpp-cls { display: none; }
-      @keyframes ggpp-cls-spin { to { transform: translateY(-50%) rotate(360deg); } }
+      .ggpp-cls[data-s="live"] { width: 12px; height: 12px; border: 2px solid #3b82f6; border-right-color: transparent; background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
+      @keyframes ggpp-cls-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-right-color: #3b82f6; } }
     `);
 
     const idOf = (row: Element) => row.querySelector<HTMLAnchorElement>(gemini.SEL.conversationLink)?.href.match(/\/([0-9a-f]{8,})(?:[/?#]|$)/i)?.[1] ?? null;
 
+    function placeMark(row: Element, mark: HTMLElement) {
+      const title = row.querySelector(gemini.SEL.conversationTitle);
+      if (title && mark.nextElementSibling !== title) title.before(mark);
+      else if (!title && mark.parentElement !== row) row.prepend(mark);
+    }
+
     function paint() {
       for (const row of gemini.qa(gemini.SEL.conversationRow)) {
         const id = idOf(row);
         const s = id ? status.get(id) : undefined;
-        let mark = row.querySelector<HTMLElement>(":scope > .ggpp-cls");
-        if (!s) {
-          mark?.remove();
-          continue;
-        }
-        // Native generating spinner is intermittent; only skip our live mark when it is actually present.
-        if (s === "live" && row.querySelector("progress, [role='progressbar'], circular-progress")) {
+        let mark = row.querySelector<HTMLElement>(".ggpp-cls");
+        if (!s || rowHasNativeStatusChrome(row)) {
           mark?.remove();
           continue;
         }
         if (!mark) {
           mark = h("span", { class: "ggpp-cls", "aria-hidden": "true" });
-          row.append(mark);
         }
+        placeMark(row, mark);
         mark.dataset.s = s;
         mark.title = s === "live" ? "Replying…" : s === "done" ? "New reply" : "Ended with an error";
       }

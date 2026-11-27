@@ -25,11 +25,65 @@ function parseJson(script: string): Record<string, unknown> | null {
   }
 }
 
+function decodeEscapes(script: string): string {
+  return String(script ?? "")
+    .replace(/\\u003e/gi, ">")
+    .replace(/\\u003c/gi, "<")
+    .replace(/\\u0026/gi, "&");
+}
+
+function unescapeJsonString(value: string): string {
+  return decodeEscapes(
+    value
+      .replace(/\\n/g, "\n")
+      .replace(/\\r/g, "\r")
+      .replace(/\\t/g, "\t")
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, "\\"),
+  );
+}
+
+/** Unwrap Gemini `{"function":"..."}` payloads, including truncated previews. */
+export function unwrapEvaluateScript(script: string, depth = 0): string {
+  const decoded = decodeEscapes(String(script ?? ""));
+  if (depth > 3) return decoded;
+  const trimmed = decoded.trim();
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed === "object" && typeof (parsed as { function?: unknown }).function === "string") {
+      return unwrapEvaluateScript(String((parsed as { function: string }).function), depth + 1);
+    }
+    if (typeof parsed === "string") return unwrapEvaluateScript(parsed, depth + 1);
+  } catch {}
+  const wrapped = /^\{\s*"function"\s*:\s*"([\s\S]*)/.exec(trimmed);
+  if (wrapped) return unwrapEvaluateScript(unescapeJsonString(wrapped[1]), depth + 1);
+  return decoded;
+}
+
+function isH3yunReadHelper(script: string): boolean {
+  if (!/\bfetch\s*\(/.test(script)) return false;
+  const hasPostForm = /\bpostForm\b/.test(script);
+  const hasStringify =
+    /JSON\.stringify\s*\(\s*(?:b|obj)\s*\)/.test(script) ||
+    /body\s*:\s*JSON\.stringify/.test(script);
+  if (!hasPostForm && !hasStringify) return false;
+  const truncated = /\.{3}/.test(script);
+  const hasIdentity = /\bgv2map\b/.test(script) || /localStorage\.getItem/.test(script);
+  const hasRelative = /\/v1\b|\/Form\/OnAction\b|\/Automatic\/OnAction\b/.test(script);
+  if (truncated && (hasPostForm || hasStringify)) return true;
+  if (hasIdentity && (hasRelative || truncated)) return true;
+  if (hasRelative && (hasPostForm || hasStringify)) return true;
+  return false;
+}
+
 function isSafeEvaluateScript(script: string): boolean {
-  if (READ_ONLY_SCRIPT.test(script)) return true;
-  if (ABSOLUTE_URL.test(script) || SCRIPT_MUTATION.test(script)) return false;
-  if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(script)) return true;
-  if (/['"`]\/Automatic\/OnAction\b/.test(script) && /LoadTriggers/.test(script)) return true;
+  const source = unwrapEvaluateScript(script);
+  if (READ_ONLY_SCRIPT.test(source)) return true;
+  if (ABSOLUTE_URL.test(source) || SCRIPT_MUTATION.test(source)) return false;
+  if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(source)) return true;
+  if (/['"`]\/Automatic\/OnAction\b/.test(source) && /LoadTriggers/.test(source)) return true;
+  if (RELATIVE_READ.test(source) && /LoadTriggers/.test(source)) return true;
+  if (isH3yunReadHelper(source)) return true;
   return false;
 }
 
@@ -40,7 +94,8 @@ function isSafeEvaluateScript(script: string): boolean {
 export function judgeRules(permission: ToolPermission): Verdict {
   const tool = String(permission.toolName || "").trim();
   const script = String(permission.script || "").trim();
-  const haystack = `${tool}\n${script}\n${permission.text || ""}`;
+  const source = unwrapEvaluateScript(script);
+  const haystack = `${tool}\n${script}\n${source}\n${permission.text || ""}`;
   if (!tool || !script) return "unsure";
   if (DESTRUCTIVE.test(haystack) || EXFILTRATION.test(haystack) || SHELL_DOWNLOAD.test(haystack)) return "deny";
   if (/^(?:list_network_requests|get_network_request)$/i.test(tool)) return "allow";

@@ -3,6 +3,7 @@ import { h, isEditable, nextFrame } from "../../../../src/lib/dom";
 import { I } from "../../../../src/lib/icons";
 import { truncate } from "../../../../src/lib/text";
 import type { GeminiApi, Message } from "../gemini";
+import { filterNavMessages, isChromeNavText, navLabelText } from "./navItems";
 
 /**
  * A Notion-style outline of the conversation: a tick rail at the right edge of
@@ -95,7 +96,8 @@ export default definePlugin({
     function label(m: Message) {
       const cached = labels.get(m.el);
       if (cached && !(m.role === "model" && gemini.isGenerating())) return cached;
-      let text = m.text.replace(/\s+/g, " ").trim();
+      let text = navLabelText(m.text);
+      if (isChromeNavText(m.role, m.text)) text = "";
       if (!text) text = m.el.querySelector("img") ? "Image" : m.el.querySelector("uploader-file-preview, .file-preview-container *") ? "Attachment" : m.role === "model" && gemini.isGenerating() ? "Writing…" : "…";
       const out = truncate(text, 61);
       labels.set(m.el, out);
@@ -103,14 +105,14 @@ export default definePlugin({
     }
 
     function collect() {
-      items = gemini.messages().filter((m) => showAssistant || m.role === "user");
+      items = filterNavMessages(gemini.messages(), { showAssistant, generating: gemini.isGenerating() });
     }
 
     function render() {
       collect();
       rail.hidden = items.length < 2;
       if (rail.hidden) return;
-      const live = gemini.isGenerating() ? items.findLast((m) => m.role === "model") : undefined;
+      const live = gemini.isGenerating() && items.at(-1)?.role === "model" ? items.at(-1) : undefined;
       ticks.replaceChildren(
         ...items.map((m, i) =>
           h("button", {
