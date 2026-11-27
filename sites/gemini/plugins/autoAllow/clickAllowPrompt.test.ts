@@ -80,6 +80,32 @@ describe("local permission judge", () => {
     expect(judgeRules({ toolName: "run_shell", script: "echo hello" })).toBe("unsure");
   });
 
+  test("allows computer-use read tools and in-page clicks", () => {
+    expect(judgeRules({ toolName: "list_network_requests", script: '{"pageId":23,"resourceTypes":["xhr","fetch"],"pageSize":20}' })).toBe("allow");
+    expect(judgeRules({ toolName: "get_network_request", script: '{"pageId":23,"reqid":100}' })).toBe("allow");
+    expect(judgeRules({ toolName: "click", script: '{"pageId":3,"uid":"3_22"}' })).toBe("allow");
+  });
+
+  test("allows relative H3yun query and LoadTriggers reads", () => {
+    const query = `async () => {
+ const post = (u, b) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(r => r.json());
+ const gv2map = JSON.parse(localStorage.getItem('gv2map') || '{}');
+ const r = await post('/v1/bizdata/view/query', { schemaCode: 'D000845gv2order', scope: 4 });
+ return { total: r?.returnData?.dataCount, mapped: Object.keys(gv2map).length };
+}`;
+    const triggers = `async () => {
+ const postForm = (u, obj) => fetch(u, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'PostData=' + encodeURIComponent(JSON.stringify(obj)) }).then(r => r.json());
+ const r = await postForm('/Automatic/OnAction', { ActionName: 'LoadTriggers', SchemaCode: 'D000845gv2order' });
+ return r?.ReturnData?.Triggers || [];
+}`;
+    expect(judgeRules({ toolName: "evaluate_script", script: query })).toBe("allow");
+    expect(judgeRules({ toolName: "evaluate_script", script: triggers })).toBe("allow");
+    expect(judgeRules({
+      toolName: "evaluate_script",
+      script: "const r = await fetch('/v1/bizdata/load', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ schemaCode: 'D000845gv2order', bizObjectId: id }) }).then(x => x.json()); return Object.keys(r.returnData||{});",
+    })).toBe("allow");
+  });
+
   test("web backend opens a Temporary-chat handoff but never guesses a scraped verdict", () => {
     const prior = (globalThis as any).window;
     const priorSetTimeout = globalThis.setTimeout;

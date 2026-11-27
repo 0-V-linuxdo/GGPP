@@ -3461,19 +3461,42 @@
     }
   }
   var autoAllowDestructive = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
-  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bcookies?\b[^\n]{0,80}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:localStorage|sessionStorage|indexedDB)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:api[_-]?key|access[_-]?token|authorization|secret)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b)/i;
+  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n]{0,200}\b(?:cookie|localStorage|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
   var autoAllowShellDownload = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
-  var autoAllowReadOnlyTool = /^(?:evaluate_script|list_files|read_file|search_files|inspect|browser_[\w-]+)$/i;
   var autoAllowReadOnlyScript = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
+  var autoAllowAbsoluteUrl = /https?:\/\//i;
+  var autoAllowScriptMutation = /(?:localStorage\.setItem|sessionStorage\.setItem|indexedDB|\.click\s*\(|\.submit\s*\(|\beval\s*\(|innerHTML\s*=|document\.cookie\s*=)/i;
+  function autoAllowParseJson(script) {
+    try {
+      const value = JSON.parse(script);
+      return value && typeof value === "object" ? value : null;
+    } catch {
+      return null;
+    }
+  }
+  function autoAllowSafeEvaluate(script) {
+    if (autoAllowReadOnlyScript.test(script)) return true;
+    if (autoAllowAbsoluteUrl.test(script) || autoAllowScriptMutation.test(script)) return false;
+    if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(script)) return true;
+    if (/['"`]\/Automatic\/OnAction\b/.test(script) && /LoadTriggers/.test(script)) return true;
+    return false;
+  }
   function autoAllowRules(permission) {
     const tool = String(permission.toolName || "").trim();
     const script = String(permission.script || "").trim();
     const haystack = `${tool}\n${script}\n${permission.text || ""}`;
     if (!tool || !script) return "unsure";
     if (autoAllowDestructive.test(haystack) || autoAllowExfiltration.test(haystack) || autoAllowShellDownload.test(haystack)) return "deny";
-    if (!autoAllowReadOnlyTool.test(tool)) return "unsure";
+    if (/^(?:list_network_requests|get_network_request)$/i.test(tool)) return "allow";
+    if (/^click$/i.test(tool)) {
+      const args = autoAllowParseJson(script);
+      if (!args) return "unsure";
+      const keys = Object.keys(args);
+      return keys.length && keys.every((key) => /^(?:pageId|uid|element|ref)$/i.test(key)) ? "allow" : "unsure";
+    }
     if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4e3) return "allow";
-    return autoAllowReadOnlyScript.test(script) ? "allow" : "unsure";
+    if (/^evaluate_script$/i.test(tool)) return autoAllowSafeEvaluate(script) ? "allow" : "unsure";
+    return "unsure";
   }
   function autoAllowApiPrompt(permission) {
     return ["You are a safety gate for a computer-use permission request.", "Return exactly one line: ALLOW or DENY. No punctuation, explanation, or markdown.", "Choose DENY for destructive actions, credential/cookie/token collection, data exfiltration, or uncertain intent.", "Choose ALLOW only for clearly harmless read-only work.", `Tool: ${permission.toolName}`, "Script/content:", permission.script.slice(0, 12e3)].join("\n");

@@ -9,10 +9,29 @@ export type ToolPermission = {
 export type Verdict = "allow" | "deny" | "unsure";
 
 const DESTRUCTIVE = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
-const EXFILTRATION = /(?:document\s*\.\s*cookie|\bcookies?\b[^\n]{0,80}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:localStorage|sessionStorage|indexedDB)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:api[_-]?key|access[_-]?token|authorization|secret)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b)/i;
+const EXFILTRATION = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n]{0,200}\b(?:cookie|localStorage|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
 const SHELL_DOWNLOAD = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
-const READ_ONLY_TOOL = /^(?:evaluate_script|list_files|read_file|search_files|inspect|browser_[\w-]+)$/i;
 const READ_ONLY_SCRIPT = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
+const RELATIVE_READ = /['"`]\/(?:v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)|Automatic\/OnAction)\b/;
+const ABSOLUTE_URL = /https?:\/\//i;
+const SCRIPT_MUTATION = /(?:localStorage\.setItem|sessionStorage\.setItem|indexedDB|\.click\s*\(|\.submit\s*\(|\beval\s*\(|innerHTML\s*=|document\.cookie\s*=)/i;
+
+function parseJson(script: string): Record<string, unknown> | null {
+  try {
+    const value = JSON.parse(script);
+    return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
+function isSafeEvaluateScript(script: string): boolean {
+  if (READ_ONLY_SCRIPT.test(script)) return true;
+  if (ABSOLUTE_URL.test(script) || SCRIPT_MUTATION.test(script)) return false;
+  if (/['"`]\/v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)\b/.test(script)) return true;
+  if (/['"`]\/Automatic\/OnAction\b/.test(script) && /LoadTriggers/.test(script)) return true;
+  return false;
+}
 
 /**
  * Only a small, explainable set of read-only actions gets an automatic allow.
@@ -24,9 +43,16 @@ export function judgeRules(permission: ToolPermission): Verdict {
   const haystack = `${tool}\n${script}\n${permission.text || ""}`;
   if (!tool || !script) return "unsure";
   if (DESTRUCTIVE.test(haystack) || EXFILTRATION.test(haystack) || SHELL_DOWNLOAD.test(haystack)) return "deny";
-  if (!READ_ONLY_TOOL.test(tool)) return "unsure";
+  if (/^(?:list_network_requests|get_network_request)$/i.test(tool)) return "allow";
+  if (/^click$/i.test(tool)) {
+    const args = parseJson(script);
+    if (!args) return "unsure";
+    const keys = Object.keys(args);
+    return keys.length && keys.every((key) => /^(?:pageId|uid|element|ref)$/i.test(key)) ? "allow" : "unsure";
+  }
   if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4000) return "allow";
-  return READ_ONLY_SCRIPT.test(script) ? "allow" : "unsure";
+  if (/^evaluate_script$/i.test(tool)) return isSafeEvaluateScript(script) ? "allow" : "unsure";
+  return "unsure";
 }
 
 function apiPrompt(permission: ToolPermission): string {
