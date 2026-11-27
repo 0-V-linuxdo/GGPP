@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.9
+// @version      0.2.10
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3870,7 +3870,7 @@
       return "unsure";
     if (aa_DESTRUCTIVE.test(haystack) || aa_EXFILTRATION.test(haystack) || aa_SHELL_DOWNLOAD.test(haystack))
       return "deny";
-    if (/^(?:list_network_requests|get_network_request)$/i.test(tool))
+    if (/^(?:list_network_requests|get_network_request|list_pages|list_tabs)$/i.test(tool))
       return "allow";
     if (/^click$/i.test(tool)) {
       const args = aa_parseJson(script);
@@ -4454,8 +4454,17 @@
     /^(?:等待你的输入|等待您的输入|等待你的輸入|等待您的輸入)/
   ];
   var aa_ELLIPSIS = /^[.\u2026\u22EF]+/;
+  var aa_JSON_CRUMB = /^(?:\{\s*\}|\[\s*\]|\{\s*\.\.\.\s*\})$/;
   function collapseNavText(text) {
     return String(text ?? "").replace(/\s+/g, " ").trim();
+  }
+  function isWritingPlaceholder(text) {
+    const s = collapseNavText(text);
+    if (!s)
+      return true;
+    if (aa_ELLIPSIS.test(s) && (s.length === aa_ELLIPSIS.exec(s)[0].length || /^[.\u2026\u22EF]+$/.test(s)))
+      return true;
+    return /^writing[.\u2026\u22EF]*$/i.test(s);
   }
   function aa_matchListed(s) {
     const lower = s.toLowerCase();
@@ -4466,6 +4475,18 @@
       if (rest && !/^[\s.。!！?？]/.test(rest))
         continue;
       return phrase.length + (rest.match(/^[.。!！?？]+/)?.[0].length ?? 0);
+    }
+    return 0;
+  }
+  function aa_matchListedFromEnd(s) {
+    const lower = s.toLowerCase();
+    for (const phrase of aa_CHROME_LABELS) {
+      if (!lower.endsWith(phrase) && !s.endsWith(phrase))
+        continue;
+      const before = s.slice(0, s.length - phrase.length);
+      if (before && !/[\s.。!！?？]$/.test(before))
+        continue;
+      return phrase.length + (before.match(/[.。!！?？]+$/)?.[0].length ?? 0);
     }
     return 0;
   }
@@ -4501,16 +4522,45 @@
     }
     return s;
   }
+  function aa_consumeTrailingButtons(text) {
+    let s = collapseNavText(text);
+    while (s) {
+      const listed = aa_matchListedFromEnd(s);
+      if (!listed)
+        break;
+      s = collapseNavText(s.slice(0, s.length - listed));
+    }
+    return s;
+  }
+  function aa_isPermissionPayload(s) {
+    const t = collapseNavText(s);
+    if (!t)
+      return true;
+    if (aa_JSON_CRUMB.test(t))
+      return true;
+    if (/^\{[\s\S]{0,400}\}$/.test(t) && !/[A-Za-z\u4e00-\u9fff]{4,}\s+[A-Za-z\u4e00-\u9fff]{4,}/.test(t))
+      return true;
+    return false;
+  }
   function isChromeNavText(_role, text) {
-    return aa_consumeChromeFromStart(text, true) === "";
+    const start = aa_consumeChromeFromStart(text, true);
+    if (!start)
+      return true;
+    const stripped = aa_consumeTrailingButtons(start);
+    if (!stripped)
+      return true;
+    return aa_isPermissionPayload(stripped);
   }
   function navLabelText(text) {
     const leftover = aa_consumeChromeFromStart(text, false);
     if (!leftover)
       return "";
-    if (aa_consumeChromeFromStart(leftover, true) === "")
+    const stripped = aa_consumeTrailingButtons(leftover);
+    if (!stripped || aa_isPermissionPayload(stripped))
       return "";
-    return leftover;
+    if (aa_consumeChromeFromStart(stripped, true) === "")
+      return "";
+    return stripped;
   }
   function isTopLevelMessageEl(el) {
     if (!el)
@@ -4541,6 +4591,12 @@
       return false;
     }
   }
+  function isPermissionWaitText(text) {
+    const s = collapseNavText(text);
+    if (/(?:waiting for your input|等待你的输入|等待您的输入|等待你的輸入|等待您的輸入)/i.test(s))
+      return true;
+    return isChromeNavText("model", s) && /(?:\ballow\b|\bcancel\b|允许|允許|取消)/i.test(s);
+  }
   function filterNavMessages(messages, opts) {
     const showAssistant = opts?.showAssistant ?? true;
     const generating = opts?.generating ?? false;
@@ -4558,7 +4614,7 @@
       for (let i = messages.length - 1;i >= 0; i--) {
         if (!top[i] || messages[i].role !== "model")
           continue;
-        if (!keep[i] && !keep.some((flag, j) => flag && j > i))
+        if (!keep[i] && !keep.some((flag, j) => flag && j > i) && isWritingPlaceholder(messages[i].text))
           keep[i] = true;
         break;
       }
@@ -4650,7 +4706,9 @@
         collect2();
         rail.hidden = items.length < 2;
         if (rail.hidden) return;
-        const live = gemini.isGenerating() && items.at(-1)?.role === "model" ? items.at(-1) : void 0;
+        const waiting = gemini.messages().some((m3) => isPermissionWaitText(m3.text));
+        const last = items.at(-1);
+        const live = gemini.isGenerating() && !waiting && last?.role === "model" ? last : void 0;
         ticks.replaceChildren(
           ...items.map(
             (m3, i3) => h4("button", {

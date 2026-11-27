@@ -98,7 +98,7 @@ export function judgeRules(permission: ToolPermission): Verdict {
   const haystack = `${tool}\n${script}\n${source}\n${permission.text || ""}`;
   if (!tool || !script) return "unsure";
   if (DESTRUCTIVE.test(haystack) || EXFILTRATION.test(haystack) || SHELL_DOWNLOAD.test(haystack)) return "deny";
-  if (/^(?:list_network_requests|get_network_request)$/i.test(tool)) return "allow";
+  if (/^(?:list_network_requests|get_network_request|list_pages|list_tabs)$/i.test(tool)) return "allow";
   if (/^click$/i.test(tool)) {
     const args = parseJson(script);
     if (!args) return "unsure";

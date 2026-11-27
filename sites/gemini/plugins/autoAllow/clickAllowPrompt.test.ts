@@ -84,6 +84,8 @@ describe("local permission judge", () => {
     expect(judgeRules({ toolName: "list_network_requests", script: '{"pageId":23,"resourceTypes":["xhr","fetch"],"pageSize":20}' })).toBe("allow");
     expect(judgeRules({ toolName: "get_network_request", script: '{"pageId":23,"reqid":100}' })).toBe("allow");
     expect(judgeRules({ toolName: "click", script: '{"pageId":3,"uid":"3_22"}' })).toBe("allow");
+    expect(judgeRules({ toolName: "list_pages", script: "{}" })).toBe("allow");
+    expect(judgeRules({ toolName: "list_tabs", script: "{}" })).toBe("allow");
   });
 
   test("allows relative H3yun query and LoadTriggers reads", () => {

@@ -42,6 +42,8 @@ describe("isChromeNavText", () => {
       ),
     ).toBe(true);
     expect(isChromeNavText("model", "Waiting for your input")).toBe(true);
+    expect(isChromeNavText("model", "{} Cancel Allow")).toBe(true);
+    expect(isChromeNavText("model", "Run list_pages?\n{}\nCancel\nAllow\nWaiting for your input")).toBe(true);
   });
 
   test("real prompts and replies are not chrome", () => {
@@ -58,6 +60,8 @@ describe("navLabelText", () => {
     expect(navLabelText("Writing...")).toBe("");
     expect(navLabelText("Cancel")).toBe("");
     expect(navLabelText("继续")).toBe("");
+    expect(navLabelText("{} Cancel Allow")).toBe("");
+    expect(navLabelText("Run list_pages? {} Cancel Allow")).toBe("");
   });
 
   test("strips a permission prefix when real markdown follows", () => {
@@ -103,6 +107,14 @@ describe("filterNavMessages", () => {
     expect(kept.map((m) => m.role)).toEqual(["user", "model"]);
   });
 
+  test("drops a {} Cancel Allow permission row even while generating", () => {
+    const kept = filterNavMessages(
+      [msg("user", "Help me inspect the current tab"), msg("model", "当前 Tabbit mcp 已连接，可以继续。"), msg("model", "{} Cancel Allow")],
+      { showAssistant: true, generating: true },
+    );
+    expect(kept.map((m) => navLabelText(m.text) || m.text)).toEqual(["Help me inspect the current tab", "当前 Tabbit mcp 已连接，可以继续。"]);
+  });
+
   test("while generating, also keeps the last Writing placeholder", () => {
     const kept = filterNavMessages(liveOutline, { showAssistant: true, generating: true });
     expect(kept.map((m) => [m.role, navLabelText(m.text)])).toEqual([
@@ -146,7 +158,8 @@ describe("BetterNavigator wiring", () => {
   test("collect filters messages and live tick is only the last item", () => {
     const src = readFileSync(resolve(HERE, "index.ts"), "utf8");
     expect(src).toContain('filterNavMessages(gemini.messages(), { showAssistant, generating: gemini.isGenerating() })');
-    expect(src).toContain('gemini.isGenerating() && items.at(-1)?.role === "model" ? items.at(-1) : undefined');
+    expect(src).toContain("isPermissionWaitText");
+    expect(src).toContain("gemini.isGenerating() && !waiting && last?.role === \"model\" ? last : undefined");
     expect(src).toContain("navLabelText(");
     expect(src).toContain("isChromeNavText(");
     expect(src).not.toMatch(/items\.findLast\(\((?:m|m3)\) => \1\.role === "model"\)/);

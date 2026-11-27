@@ -3,7 +3,7 @@ import { h, isEditable, nextFrame } from "../../../../src/lib/dom";
 import { I } from "../../../../src/lib/icons";
 import { truncate } from "../../../../src/lib/text";
 import type { GeminiApi, Message } from "../gemini";
-import { filterNavMessages, isChromeNavText, navLabelText } from "./navItems";
+import { filterNavMessages, isChromeNavText, isPermissionWaitText, navLabelText } from "./navItems";
 
 /**
  * A Notion-style outline of the conversation: a tick rail at the right edge of
@@ -112,7 +112,9 @@ export default definePlugin({
       collect();
       rail.hidden = items.length < 2;
       if (rail.hidden) return;
-      const live = gemini.isGenerating() && items.at(-1)?.role === "model" ? items.at(-1) : undefined;
+      const waiting = gemini.messages().some((m) => isPermissionWaitText(m.text));
+      const last = items.at(-1);
+      const live = gemini.isGenerating() && !waiting && last?.role === "model" ? last : undefined;
       ticks.replaceChildren(
         ...items.map((m, i) =>
           h("button", {
