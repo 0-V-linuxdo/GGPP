@@ -1,45 +1,30 @@
-import { svg } from "./dom";
-
 /** Official GG++ @icon silhouette (sparkle + evenodd ++ holes). Keep in sync with static/icons/userscript.svg. */
 export const GGPP_BRAND_PATH =
   "M58.6819 29.4195C53.6116 27.2369 49.1753 24.2426 45.3711 20.4403C41.5688 16.638 38.5745 12.1998 36.3919 7.12951C35.554 5.18629 34.8807 3.18883 34.3645 1.14087C34.1962 0.471311 33.5958 0 32.9057 0C32.2156 0 31.6152 0.471311 31.4469 1.14087C30.9307 3.18883 30.2574 5.18442 29.4195 7.12951C27.2369 12.1998 24.2426 16.638 20.4403 20.4403C16.638 24.2426 12.1998 27.2369 7.12951 29.4195C5.18629 30.2574 3.18883 30.9307 1.14087 31.4469C0.471311 31.6152 0 32.2156 0 32.9057C0 33.5958 0.471311 34.1962 1.14087 34.3645C3.18883 34.8807 5.18442 35.554 7.12951 36.3919C12.1998 38.5745 16.6361 41.5688 20.4403 45.3711C24.2444 49.1734 27.2369 53.6116 29.4195 58.6819C30.2574 60.6251 30.9307 62.6226 31.4469 64.6705C31.6152 65.3401 32.2156 65.8114 32.9057 65.8114C33.5958 65.8114 34.1962 65.3401 34.3645 64.6705C34.8807 62.6226 35.554 60.627 36.3919 58.6819C38.5745 53.6116 41.5688 49.1753 45.3711 45.3711C49.1734 41.5688 53.6116 38.5745 58.6819 36.3919C60.6251 35.554 62.6226 34.8807 64.6705 34.3645C65.3401 34.1962 65.8114 33.5958 65.8114 32.9057C65.8114 32.2156 65.3401 31.6152 64.6705 31.4469C62.6226 30.9307 60.627 30.2574 58.6819 29.4195Z M21.200,26.300 H26.000 V30.500 H30.200 V35.300 H26.000 V39.500 H21.200 V35.300 H17.000 V30.500 H21.200 Z M39.800,26.300 H44.600 V30.500 H48.800 V35.300 H44.600 V39.500 H39.800 V35.300 H35.600 V30.500 H39.800 Z";
 
+/** Same data URI as userscript @icon / sites/gemini/userscript.json. */
+export const GGPP_ICON_DATA_URI =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NiIgaGVpZ2h0PSI2NiIgdmlld0JveD0iMCAwIDY2IDY2IiBmaWxsPSJub25lIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ2dwcFNwYXJrIiB4MT0iMTguNDUiIHkxPSI0My40MiIgeDI9IjUyLjE1IiB5Mj0iMTUuMDAiIGdyYWRpZW50VW5pdHM9InVzZXJTcGFjZU9uVXNlIj4KICAgICAgPHN0b3Agc3RvcC1jb2xvcj0iIzQ4OTNGQyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjAuMjciIHN0b3AtY29sb3I9IiM0ODkzRkMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIwLjc3NyIgc3RvcC1jb2xvcj0iIzk2OURGRiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNCRDk5RkUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgogIDwhLS0gR0crKyByZXZpZXcgKGJveCBvbmx5KS4gU3RhciBwYXRoIGQ9IGlkZW50aWNhbCB0byBDRE4gb3JpZ2luYWwuICsrIHZpYSBldmVub2RkIGhvbGVzLiAtLT4KICA8cGF0aCBmaWxsPSJ1cmwoI2dncHBTcGFyaykiIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTTU4LjY4MTkgMjkuNDE5NUM1My42MTE2IDI3LjIzNjkgNDkuMTc1MyAyNC4yNDI2IDQ1LjM3MTEgMjAuNDQwM0M0MS41Njg4IDE2LjYzOCAzOC41NzQ1IDEyLjE5OTggMzYuMzkxOSA3LjEyOTUxQzM1LjU1NCA1LjE4NjI5IDM0Ljg4MDcgMy4xODg4MyAzNC4zNjQ1IDEuMTQwODdDMzQuMTk2MiAwLjQ3MTMxMSAzMy41OTU4IDAgMzIuOTA1NyAwQzMyLjIxNTYgMCAzMS42MTUyIDAuNDcxMzExIDMxLjQ0NjkgMS4xNDA4N0MzMC45MzA3IDMuMTg4ODMgMzAuMjU3NCA1LjE4NDQyIDI5LjQxOTUgNy4xMjk1MUMyNy4yMzY5IDEyLjE5OTggMjQuMjQyNiAxNi42MzggMjAuNDQwMyAyMC40NDAzQzE2LjYzOCAyNC4yNDI2IDEyLjE5OTggMjcuMjM2OSA3LjEyOTUxIDI5LjQxOTVDNS4xODYyOSAzMC4yNTc0IDMuMTg4ODMgMzAuOTMwNyAxLjE0MDg3IDMxLjQ0NjlDMC40NzEzMTEgMzEuNjE1MiAwIDMyLjIxNTYgMCAzMi45MDU3QzAgMzMuNTk1OCAwLjQ3MTMxMSAzNC4xOTYyIDEuMTQwODcgMzQuMzY0NUMzLjE4ODgzIDM0Ljg4MDcgNS4xODQ0MiAzNS41NTQgNy4xMjk1MSAzNi4zOTE5QzEyLjE5OTggMzguNTc0NSAxNi42MzYxIDQxLjU2ODggMjAuNDQwMyA0NS4zNzExQzI0LjI0NDQgNDkuMTczNCAyNy4yMzY5IDUzLjYxMTYgMjkuNDE5NSA1OC42ODE5QzMwLjI1NzQgNjAuNjI1MSAzMC45MzA3IDYyLjYyMjYgMzEuNDQ2OSA2NC42NzA1QzMxLjYxNTIgNjUuMzQwMSAzMi4yMTU2IDY1LjgxMTQgMzIuOTA1NyA2NS44MTE0QzMzLjU5NTggNjUuODExNCAzNC4xOTYyIDY1LjM0MDEgMzQuMzY0NSA2NC42NzA1QzM0Ljg4MDcgNjIuNjIyNiAzNS41NTQgNjAuNjI3IDM2LjM5MTkgNTguNjgxOUMzOC41NzQ1IDUzLjYxMTYgNDEuNTY4OCA0OS4xNzUzIDQ1LjM3MTEgNDUuMzcxMUM0OS4xNzM0IDQxLjU2ODggNTMuNjExNiAzOC41NzQ1IDU4LjY4MTkgMzYuMzkxOUM2MC42MjUxIDM1LjU1NCA2Mi42MjI2IDM0Ljg4MDcgNjQuNjcwNSAzNC4zNjQ1QzY1LjM0MDEgMzQuMTk2MiA2NS44MTE0IDMzLjU5NTggNjUuODExNCAzMi45MDU3QzY1LjgxMTQgMzIuMjE1NiA2NS4zNDAxIDMxLjYxNTIgNjQuNjcwNSAzMS40NDY5QzYyLjYyMjYgMzAuOTMwNyA2MC42MjcgMzAuMjU3NCA1OC42ODE5IDI5LjQxOTVaIE0yMS4yMDAsMjYuMzAwIEgyNi4wMDAgVjMwLjUwMCBIMzAuMjAwIFYzNS4zMDAgSDI2LjAwMCBWMzkuNTAwIEgyMS4yMDAgVjM1LjMwMCBIMTcuMDAwIFYzMC41MDAgSDIxLjIwMCBaIE0zOS44MDAsMjYuMzAwIEg0NC42MDAgVjMwLjUwMCBINDguODAwIFYzNS4zMDAgSDQ0LjYwMCBWMzkuNTAwIEgzOS44MDAgVjM1LjMwMCBIMzUuNjAwIFYzMC41MDAgSDM5LjgwMCBaIi8+Cjwvc3ZnPgo=";
+
 /** Filled brand mark matching userscript @icon. Not the Lucide I.ggpp stroke glyph. */
-export function brandMark(size = 20): SVGElement {
-  const id = "ggppSidenavSpark";
-  return svg(
-    "svg",
-    {
-      width: size,
-      height: size,
-      viewBox: "0 0 66 66",
-      fill: "none",
-      "aria-hidden": "true",
-      class: "ggpp-brand-mark",
-    },
-    svg(
-      "defs",
-      null,
-      svg(
-        "linearGradient",
-        {
-          id,
-          x1: "18.45",
-          y1: "43.42",
-          x2: "52.15",
-          y2: "15.00",
-          gradientUnits: "userSpaceOnUse",
-        },
-        svg("stop", { "stop-color": "#4893FC" }),
-        svg("stop", { offset: "0.27", "stop-color": "#4893FC" }),
-        svg("stop", { offset: "0.777", "stop-color": "#969DFF" }),
-        svg("stop", { offset: "1", "stop-color": "#BD99FE" }),
-      ),
-    ),
-    svg("path", {
-      fill: `url(#${id})`,
-      "fill-rule": "evenodd",
-      d: GGPP_BRAND_PATH,
-    }),
-  );
+export function brandMark(size = 20): HTMLElement {
+  try {
+    const img = document.createElement("img");
+    img.className = "ggpp-brand-mark";
+    img.width = size;
+    img.height = size;
+    img.alt = "";
+    img.draggable = false;
+    img.setAttribute("decoding", "async");
+    img.src = GGPP_ICON_DATA_URI;
+    img.style.display = "block";
+    return img;
+  } catch {
+    const span = document.createElement("span");
+    span.className = "ggpp-brand-mark";
+    span.style.display = "block";
+    span.style.width = `${size}px`;
+    span.style.height = `${size}px`;
+    return span;
+  }
 }

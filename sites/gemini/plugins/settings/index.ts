@@ -65,13 +65,29 @@ export default definePlugin({
     },
   },
   async start(ctx) {
+    const tabs = new Map<string, SettingsTab>();
+    const settingsUIApi = {} as SettingsUiApi;
+    let queuedOpen: [string?, string?] | null = null;
+    settingsUIApi.open = (tab, pluginId) => {
+      queuedOpen = [tab, pluginId];
+    };
+    settingsUIApi.close = () => {};
+    settingsUIApi.openPluginDialog = () => {};
+    settingsUIApi.tabs = () => [];
+    settingsUIApi.configurable = () => [];
+    settingsUIApi.registerTab = (tab) => {
+      tabs.set(tab.id, tab);
+      return () => {
+        tabs.delete(tab.id);
+      };
+    };
+    ctx.provide("settingsUI", settingsUIApi);
+
+    try {
     const kernel = ctx.use<Kernel>("kernel");
     const ui = ctx.use<UiApi>("ui");
     ctx.css(css);
 
-    const tabs = new Map<string, SettingsTab>();
-    const settingsUIApi = {} as SettingsUiApi;
-    ctx.provide("settingsUI", settingsUIApi);
     settingsUIApi.registerTab = (tab) => {
       tabs.set(tab.id, tab);
       kernel.emit("settings:tabs-changed", tab.id);
@@ -508,6 +524,11 @@ export default definePlugin({
         };
       },
     } satisfies SettingsUiApi);
+    if (queuedOpen) {
+      const [tab, pluginId] = queuedOpen;
+      queuedOpen = null;
+      openSettings(tab, pluginId);
+    }
     ctx.cleanup(() => open?.close());
 
     ctx.cleanup(
@@ -525,7 +546,9 @@ export default definePlugin({
 
     // Icon-only launcher immediately left of Gemini's sidenav gear (beside W / Pro).
     // Do not use the USPP floating pill — that sits in the bottom-right CTTF chrome.
+    try {
     const gemini = ctx.use<GeminiApi>("gemini");
+    const mark = brandMark(20);
     const entry = h(
       "button",
       {
@@ -542,7 +565,7 @@ export default definePlugin({
           openSettings();
         },
       },
-      brandMark(20),
+      mark,
     );
     ctx.cleanup(
       gemini.watch(gemini.SEL.accountFooter, (footer) => {
@@ -554,6 +577,9 @@ export default definePlugin({
       }),
     );
     ctx.cleanup(() => entry.remove());
+    } catch (err) {
+      ctx.log.error("sidenav settings entry failed", err);
+    }
 
     ctx.on("ggpp:open-settings", (p?: { tab?: string; plugin?: string }) => openSettings(p?.tab, p?.plugin));
 
@@ -570,5 +596,8 @@ export default definePlugin({
       },
       { capture: true, signal: ctx.signal },
     );
+    } catch (err) {
+      ctx.log.error("settings start failed", err);
+    }
   },
 });
