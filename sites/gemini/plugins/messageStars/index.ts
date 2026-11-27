@@ -66,11 +66,15 @@ export function insertModelStarButton<
 
 /** Re-home an existing star when a better inner toolbar appears later. */
 export function placeStarOnHost<
-  B extends { parentElement?: H | null },
+  B extends { parentElement?: H | null; nextElementSibling?: unknown },
   S extends { before(node: B): void },
   H extends { querySelector(selectors: string): S | null; append(node: B): void },
 >(host: H, btn: B): void {
-  if (btn.parentElement === host) return;
+  if (btn.parentElement === host) {
+    const spacer = host.querySelector(".spacer");
+    if (spacer && btn.nextElementSibling !== spacer) spacer.before(btn);
+    return;
+  }
   insertModelStarButton(host, btn);
 }
 
@@ -82,6 +86,7 @@ export default definePlugin({
   icon: I.star,
   updated: "2026-10-14",
   dependencies: ["gemini"],
+  enabledByDefault: true,
   settings: {
     showInHeader: { type: "boolean", label: "Starred list in top bar", description: "Show a star next to the conversation menu that opens this chat's starred messages.", default: true },
   },
@@ -100,8 +105,8 @@ export default definePlugin({
     ctx.css(`
       .ggpp-star-btn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--gem-sys-color--on-surface-variant, currentColor); }
       user-query .ggpp-star-btn { opacity: 0; pointer-events: none; }
-      user-query:hover .ggpp-star-btn, user-query:focus-within .ggpp-star-btn { opacity: 1; pointer-events: auto; }
-      @media (hover: none) { user-query .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
+      user-query:hover .luminous-actions-container .ggpp-star-btn, user-query:focus-within .luminous-actions-container .ggpp-star-btn, user-query:hover .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn, user-query:focus-within .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn { opacity: 1; pointer-events: auto; }
+      @media (hover: none) { user-query .luminous-actions-container .ggpp-star-btn, user-query .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
       .ggpp-star-btn:hover, .ggpp-star-btn:focus-visible { background: rgb(127 127 127 / 14%); }
       .ggpp-star-btn[aria-pressed="true"] { color: ${ORANGE}; background: color-mix(in srgb, ${ORANGE} 14%, transparent); }
       .ggpp-star-btn[aria-pressed="true"] svg { fill: currentColor; }
@@ -177,16 +182,17 @@ export default definePlugin({
 
     function mountStar(msg: HTMLElement, host: HTMLElement) {
       let btn = buttons.get(msg);
-      if (!btn) btn = starButton(msg);
+      if (!btn || !btn.isConnected) btn = starButton(msg);
       placeStarOnHost(host, btn);
       return btn;
     }
 
     // Model replies: the action row under each reply.
     ctx.cleanup(
-      gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
+      gemini.watch(`${gemini.SEL.modelResponse} message-actions, ${gemini.SEL.modelResponse} message-actions .buttons-container-v2`, (row) => {
         const msg = row.closest<HTMLElement>(gemini.SEL.modelResponse)!;
-        const host = pickModelStarHost(row) as HTMLElement;
+        const actions = row.closest("message-actions") ?? row;
+        const host = pickModelStarHost(actions) as HTMLElement;
         const btn = mountStar(msg, host);
         return () => {
           if (btn.parentElement === host) releaseStarButton(buttons, msg, btn);
@@ -332,8 +338,25 @@ export default definePlugin({
       wrap?.classList.toggle("ggpp-has", stars.some((s) => s.conversationId === conv()));
     }
 
+    function relocateStars() {
+      for (const row of gemini.qa(`${gemini.SEL.modelResponse} message-actions, ${gemini.SEL.modelResponse} message-actions .buttons-container-v2`)) {
+        const msg = row.closest<HTMLElement>(gemini.SEL.modelResponse);
+        if (!msg) continue;
+        const actions = row.closest("message-actions") ?? row;
+        const host = pickModelStarHost(actions) as HTMLElement;
+        mountStar(msg, host);
+      }
+      for (const row of gemini.qa(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`)) {
+        const msg = row.closest<HTMLElement>(gemini.SEL.userQuery);
+        if (!msg) continue;
+        const host = pickUserStarHost(row) as HTMLElement;
+        mountStar(msg, host);
+      }
+    }
+
     function refresh() {
       buttons.forEach((btn, msg) => syncButton(msg, btn));
+      relocateStars();
       syncHeader();
       if (!list.hidden) renderList();
       const marked = new Set(gemini.messages().filter((m) => { const id = idOf(m.el); return !!id && isStarred(id); }).map((m) => m.el));
@@ -345,6 +368,7 @@ export default definePlugin({
     });
     ctx.on("plugin:started", (id: string) => id === "betterNavigator" && refresh());
     setTimeout(refresh, 500);
+    ctx.setInterval(relocateStars, 700);
     ctx.cleanup(() => nav()?.setMarks(new Set()));
   },
 });

@@ -99,6 +99,7 @@ describe("local permission judge", () => {
  return r?.ReturnData?.Triggers || [];
 }`;
     expect(judgeRules({ toolName: "evaluate_script", script: query })).toBe("allow");
+    expect(judgeRules({ toolName: "evaluate_script", script: query.replace(/\s+/g, " ") })).toBe("allow");
     expect(judgeRules({ toolName: "evaluate_script", script: triggers })).toBe("allow");
     expect(judgeRules({
       toolName: "evaluate_script",

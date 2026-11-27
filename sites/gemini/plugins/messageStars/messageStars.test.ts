@@ -11,7 +11,7 @@ const LEGACY_MODEL_HOST_SELECTOR_LIST =
 
 type Insert = { id: string; via: "append" | "before" };
 type Node = { id: string; classes: string[]; children: Node[]; btn?: FakeBtn; inserted: Insert[] };
-type FakeBtn = { id: string; removed: boolean; parentElement: Host | null; remove(): void };
+type FakeBtn = { id: string; removed: boolean; parentElement: Host | null; nextElementSibling: Host | null; isConnected: boolean; remove(): void };
 
 type Host = StarHostLike & { append(c: FakeBtn): void; before(c: FakeBtn): void; classes: string[]; _node: Node };
 
@@ -60,12 +60,16 @@ function asHost(root: Node, parent?: Node): Host {
       root.inserted.push({ id: c.id, via: "append" });
       root.btn = c;
       c.parentElement = host;
+      c.nextElementSibling = null;
+      c.isConnected = true;
     },
     before(c: FakeBtn) {
       if (!parent) throw new Error("before() without parent");
       parent.inserted.push({ id: c.id, via: "before" });
       parent.btn = c;
       c.parentElement = asHost(parent);
+      c.nextElementSibling = host;
+      c.isConnected = true;
     },
   };
   hostCache.set(root, host);
@@ -106,8 +110,13 @@ function makeBtn(id: string): FakeBtn {
     id,
     removed: false,
     parentElement: null,
+    nextElementSibling: null,
+    isConnected: false,
     remove() {
       this.removed = true;
+      this.isConnected = false;
+      this.parentElement = null;
+      this.nextElementSibling = null;
     },
   };
 }
@@ -116,7 +125,7 @@ function makeBtn(id: string): FakeBtn {
 function modelWatchBody(row: ReturnType<typeof asHost>, msg: object, buttons: Map<object, FakeBtn>, id: string) {
   const host = pickModelStarHost(row) as ReturnType<typeof asHost>;
   let btn = buttons.get(msg);
-  if (!btn) {
+  if (!btn || !btn.isConnected) {
     btn = makeBtn(id);
     buttons.set(msg, btn);
   }
@@ -294,7 +303,7 @@ function nestUserActionsWithSpacer(): Node {
 function userWatchBody(row: ReturnType<typeof asHost>, msg: object, buttons: Map<object, FakeBtn>, id: string) {
   const host = pickUserStarHost(row) as ReturnType<typeof asHost>;
   let btn = buttons.get(msg);
-  if (!btn) {
+  if (!btn || !btn.isConnected) {
     btn = makeBtn(id);
     buttons.set(msg, btn);
   }
@@ -386,7 +395,7 @@ describe("product source markers", () => {
     const { dirname, join } = await import("node:path");
     const { fileURLToPath } = await import("node:url");
     const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "index.ts"), "utf8");
-    expect(src).toContain("pickModelStarHost(row)");
+    expect(src).toContain("pickModelStarHost(actions)");
     expect(src).toContain("releaseStarButton(buttons, msg, btn)");
     expect(src).not.toContain("LEGACY_MODEL_HOST_SELECTOR_LIST");
     expect(src).not.toContain("mountModelStarButton");
@@ -400,8 +409,64 @@ describe("product source markers", () => {
     expect(src).toContain(".spacer");
     expect(src).toContain("pickUserStarHost(row)");
     expect(src).toContain("placeStarOnHost");
-    expect(src).toContain("user-query:hover .ggpp-star-btn");
+    expect(src).toContain("user-query:hover .luminous-actions-container .ggpp-star-btn");
+    expect(src).toContain(".query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn");
+    expect(src).toContain("message-actions .buttons-container-v2");
+    expect(src).toContain("enabledByDefault: true");
+    expect(src).toContain("function relocateStars");
+    expect(src).toContain("ctx.setInterval(relocateStars, 700)");
+    expect(src).toMatch(/if \(!btn \|\| !btn\.isConnected\)/);
     expect(src).not.toMatch(/if \(buttons\.has\(msg\)\) return/);
     expect(src).not.toMatch(/row\.append\(btn\)/);
+  });
+});
+
+describe("placeStarOnHost late spacer and remount", () => {
+  test("enabledByDefault true", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { dirname, join } = await import("node:path");
+    const { fileURLToPath } = await import("node:url");
+    const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "index.ts"), "utf8");
+    expect(src).toMatch(/dependencies:\s*\["gemini"\],\s*enabledByDefault:\s*true/);
+  });
+
+  test("late spacer on same host moves star before it", () => {
+    const inner = node("div", ["buttons-container-v2"], [node("gem-icon-button", ["thumb-up-button"])]);
+    const host = asHost(inner);
+    const btn = makeBtn("s1");
+    placeStarOnHost(host, btn);
+    expect(inner.inserted).toEqual([{ id: "s1", via: "append" }]);
+    inner.children.push(node("div", ["spacer"]));
+    placeStarOnHost(host, btn);
+    expect(inner.inserted).toEqual([
+      { id: "s1", via: "append" },
+      { id: "s1", via: "before" },
+    ]);
+  });
+
+  test("already before spacer does not reinsert", () => {
+    const row = asHost(nestButtonsWithSpacer());
+    const host = pickModelStarHost(row) as ReturnType<typeof asHost>;
+    const btn = makeBtn("s1");
+    placeStarOnHost(host, btn);
+    const inner = qs(row._node, ".buttons-container-v2")!;
+    expect(inner.inserted).toEqual([{ id: "s1", via: "before" }]);
+    placeStarOnHost(host, btn);
+    expect(inner.inserted).toEqual([{ id: "s1", via: "before" }]);
+  });
+
+  test("disconnected remount creates a new button", () => {
+    const row = asHost(nestButtonsInsideActions());
+    const msg = {};
+    const buttons = new Map<object, FakeBtn>();
+    modelWatchBody(row, msg, buttons, "s1");
+    const old = buttons.get(msg)!;
+    expect(old.id).toBe("s1");
+    old.remove();
+    modelWatchBody(row, msg, buttons, "s2");
+    expect(old.removed).toBe(true);
+    expect(old.isConnected).toBe(false);
+    expect(buttons.get(msg)?.id).toBe("s2");
+    expect(buttons.get(msg)?.isConnected).toBe(true);
   });
 });

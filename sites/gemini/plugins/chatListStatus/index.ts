@@ -10,10 +10,10 @@ type Status = "live" | "done" | "error";
 export default definePlugin({
   id: "chatListStatus",
   name: "ChatListStatus",
-  description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Off by default: Gemini already shows a spinner next to those chats.",
+  description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Complements Gemini\'s native spinner, which is sometimes missing.",
   tags: ["Chats", "Notifications"],
   icon: I.list,
-  enabledByDefault: false,
+  enabledByDefault: true,
   updated: "2026-11-28",
   dependencies: ["gemini"],
   start(ctx) {
@@ -38,6 +38,11 @@ export default definePlugin({
         const s = id ? status.get(id) : undefined;
         let mark = row.querySelector<HTMLElement>(":scope > .ggpp-cls");
         if (!s) {
+          mark?.remove();
+          continue;
+        }
+        // Native generating spinner is intermittent; only skip our live mark when it is actually present.
+        if (s === "live" && row.querySelector("progress, [role='progressbar'], circular-progress")) {
           mark?.remove();
           continue;
         }

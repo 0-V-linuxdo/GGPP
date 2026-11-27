@@ -9,7 +9,7 @@ export type ToolPermission = {
 export type Verdict = "allow" | "deny" | "unsure";
 
 const DESTRUCTIVE = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
-const EXFILTRATION = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n]{0,200}\b(?:cookie|localStorage|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
+const EXFILTRATION = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n;]{0,200}\b(?:document\.cookie|localStorage(?:\.getItem)?|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
 const SHELL_DOWNLOAD = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
 const READ_ONLY_SCRIPT = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
 const RELATIVE_READ = /['"`]\/(?:v1\/(?:bizdata\/(?:view\/query|load)|form\/load|schema)|Automatic\/OnAction)\b/;

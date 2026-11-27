@@ -78,21 +78,21 @@ function applyLegacy(bag: Record<string, any>) {
 }
 
 
-const RETIRE_CHATLIST_FLAG = "ggpp:retired-chatListStatus-v1";
+const RESTORE_CHATLIST_FLAG = "ggpp:restored-chatListStatus-v2";
 
-/** Gemini now draws its own sidebar generating spinner; drop the duplicate plugin once. */
+/** Native Gemini sidebar spinner is unreliable; put ChatListStatus back on once. */
 export function retireRedundantPlugins() {
   try {
-    if (localStorage.getItem(RETIRE_CHATLIST_FLAG) === "1") return;
+    if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return;
   } catch {}
   const U = getU();
   try {
-    U.importSettings?.({ plugins: { chatListStatus: { enabled: false } } }, { merge: true });
+    U.importSettings?.({ plugins: { chatListStatus: { enabled: true } } }, { merge: true });
   } catch {}
   try {
-    U.setPluginEnabled?.("chatListStatus", false);
+    U.setPluginEnabled?.("chatListStatus", true);
   } catch {}
   try {
-    localStorage.setItem(RETIRE_CHATLIST_FLAG, "1");
+    localStorage.setItem(RESTORE_CHATLIST_FLAG, "1");
   } catch {}
 }

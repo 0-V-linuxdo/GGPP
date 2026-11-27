@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.7
+// @version      0.2.8
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -1681,23 +1681,23 @@
       }
     }
   }
-  var RETIRE_CHATLIST_FLAG = "ggpp:retired-chatListStatus-v1";
+  var RESTORE_CHATLIST_FLAG = "ggpp:restored-chatListStatus-v2";
   function retireRedundantPlugins() {
     try {
-      if (localStorage.getItem(RETIRE_CHATLIST_FLAG) === "1") return;
+      if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return;
     } catch {
     }
     const U3 = getU();
     try {
-      U3.importSettings?.({ plugins: { chatListStatus: { enabled: false } } }, { merge: true });
+      U3.importSettings?.({ plugins: { chatListStatus: { enabled: true } } }, { merge: true });
     } catch {
     }
     try {
-      U3.setPluginEnabled?.("chatListStatus", false);
+      U3.setPluginEnabled?.("chatListStatus", true);
     } catch {
     }
     try {
-      localStorage.setItem(RETIRE_CHATLIST_FLAG, "1");
+      localStorage.setItem(RESTORE_CHATLIST_FLAG, "1");
     } catch {
     }
   }
@@ -3461,7 +3461,7 @@
     }
   }
   var autoAllowDestructive = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
-  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n]{0,200}\b(?:cookie|localStorage|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
+  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n;]{0,200}\b(?:document\.cookie|localStorage(?:\.getItem)?|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
   var autoAllowShellDownload = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
   var autoAllowReadOnlyScript = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
   var autoAllowAbsoluteUrl = /https?:\/\//i;
@@ -5075,10 +5075,10 @@
   var chatListStatus_default = definePlugin({
     id: "chatListStatus",
     name: "ChatListStatus",
-    description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Off by default: Gemini already shows a spinner next to those chats.",
+    description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Complements Gemini\'s native spinner, which is sometimes missing.",
     tags: ["Chats", "Notifications"],
     icon: I3.list,
-    enabledByDefault: false,
+    enabledByDefault: true,
     updated: "2026-11-28",
     dependencies: ["gemini"],
     start(ctx) {
@@ -5100,6 +5100,10 @@
           const s3 = id ? status.get(id) : void 0;
           let mark = row.querySelector(":scope > .ggpp-cls");
           if (!s3) {
+            mark?.remove();
+            continue;
+          }
+          if (s3 === "live" && row.querySelector("progress, [role='progressbar'], circular-progress")) {
             mark?.remove();
             continue;
           }
@@ -7272,7 +7276,11 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     else host.append(btn);
   }
   function placeStarOnHost(host, btn) {
-    if (btn.parentElement === host) return;
+    if (btn.parentElement === host) {
+      const spacer = host.querySelector(".spacer");
+      if (spacer && btn.nextElementSibling !== spacer) spacer.before(btn);
+      return;
+    }
     insertModelStarButton(host, btn);
   }
   function releaseStarButton(buttons, msg, btn) {
@@ -7287,6 +7295,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
     icon: I3.star,
     updated: "2026-10-14",
     dependencies: ["gemini"],
+    enabledByDefault: true,
     settings: {
       showInHeader: { type: "boolean", label: "Starred list in top bar", description: "Show a star next to the conversation menu that opens this chat's starred messages.", default: true }
     },
@@ -7303,8 +7312,8 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       ctx.css(`
       .ggpp-star-btn { all: unset; box-sizing: border-box; display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; color: var(--gem-sys-color--on-surface-variant, currentColor); }
       user-query .ggpp-star-btn { opacity: 0; pointer-events: none; }
-      user-query:hover .ggpp-star-btn, user-query:focus-within .ggpp-star-btn { opacity: 1; pointer-events: auto; }
-      @media (hover: none) { user-query .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
+      user-query:hover .luminous-actions-container .ggpp-star-btn, user-query:focus-within .luminous-actions-container .ggpp-star-btn, user-query:hover .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn, user-query:focus-within .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn { opacity: 1; pointer-events: auto; }
+      @media (hover: none) { user-query .luminous-actions-container .ggpp-star-btn, user-query .query-content-actions:not(:has(.luminous-actions-container)) .ggpp-star-btn { opacity: 1; pointer-events: auto; } }
       .ggpp-star-btn:hover, .ggpp-star-btn:focus-visible { background: rgb(127 127 127 / 14%); }
       .ggpp-star-btn[aria-pressed="true"] { color: ${ORANGE}; background: color-mix(in srgb, ${ORANGE} 14%, transparent); }
       .ggpp-star-btn[aria-pressed="true"] svg { fill: currentColor; }
@@ -7376,14 +7385,15 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       }
       function mountStar(msg, host2) {
         let btn = buttons.get(msg);
-        if (!btn) btn = starButton(msg);
+        if (!btn || !btn.isConnected) btn = starButton(msg);
         placeStarOnHost(host2, btn);
         return btn;
       }
       ctx.cleanup(
-        gemini.watch(`${gemini.SEL.modelResponse} message-actions`, (row) => {
+        gemini.watch(`${gemini.SEL.modelResponse} message-actions, ${gemini.SEL.modelResponse} message-actions .buttons-container-v2`, (row) => {
           const msg = row.closest(gemini.SEL.modelResponse);
-          const host2 = pickModelStarHost(row);
+          const actions = row.closest("message-actions") ?? row;
+          const host2 = pickModelStarHost(actions);
           const btn = mountStar(msg, host2);
           return () => {
             if (btn.parentElement === host2) releaseStarButton(buttons, msg, btn);
@@ -7517,8 +7527,24 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       function syncHeader() {
         wrap2?.classList.toggle("ggpp-has", stars.some((s3) => s3.conversationId === conv()));
       }
+      function relocateStars() {
+        for (const row of gemini.qa(`${gemini.SEL.modelResponse} message-actions, ${gemini.SEL.modelResponse} message-actions .buttons-container-v2`)) {
+          const msg = row.closest(gemini.SEL.modelResponse);
+          if (!msg) continue;
+          const actions = row.closest("message-actions") ?? row;
+          const host2 = pickModelStarHost(actions);
+          mountStar(msg, host2);
+        }
+        for (const row of gemini.qa(`${gemini.SEL.userQuery} .luminous-actions-container, ${gemini.SEL.userQuery} .query-content-actions`)) {
+          const msg = row.closest(gemini.SEL.userQuery);
+          if (!msg) continue;
+          const host2 = pickUserStarHost(row);
+          mountStar(msg, host2);
+        }
+      }
       function refresh() {
         buttons.forEach((btn, msg) => syncButton(msg, btn));
+        relocateStars();
         syncHeader();
         if (!list2.hidden) renderList();
         const marked = new Set(gemini.messages().filter((m3) => {
@@ -7533,6 +7559,7 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
       });
       ctx.on("plugin:started", (id) => id === "betterNavigator" && refresh());
       setTimeout(refresh, 500);
+      ctx.setInterval(relocateStars, 700);
       ctx.cleanup(() => nav()?.setMarks(/* @__PURE__ */ new Set()));
     }
   });
