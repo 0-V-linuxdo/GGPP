@@ -5,7 +5,7 @@
  * is invoked at build time for metadata.
  */
 import { bindApi, getKernelFacade } from "./runtime";
-import { migrateGgSettings } from "./migrate";
+import { migrateGgSettings, retireRedundantPlugins } from "./migrate";
 import { installNetHook } from "./netHook";
 import { installUsageObserver } from "./usageObserver";
 
@@ -55,6 +55,7 @@ export default (U: any) => {
     },
     start() {
       migrateGgSettings();
+      retireRedundantPlugins();
       installNetHook();
       // Voyager-style MAIN-world batchexecute capture/replay (userscript sandbox ≠ page fetch/WIZ).
       installUsageObserver();

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.6
+// @version      0.2.7
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -1681,6 +1681,26 @@
       }
     }
   }
+  var RETIRE_CHATLIST_FLAG = "ggpp:retired-chatListStatus-v1";
+  function retireRedundantPlugins() {
+    try {
+      if (localStorage.getItem(RETIRE_CHATLIST_FLAG) === "1") return;
+    } catch {
+    }
+    const U3 = getU();
+    try {
+      U3.importSettings?.({ plugins: { chatListStatus: { enabled: false } } }, { merge: true });
+    } catch {
+    }
+    try {
+      U3.setPluginEnabled?.("chatListStatus", false);
+    } catch {
+    }
+    try {
+      localStorage.setItem(RETIRE_CHATLIST_FLAG, "1");
+    } catch {
+    }
+  }
 
   // sites/gemini/netHook.ts
   function resolveNetHookWindow() {
@@ -2957,6 +2977,7 @@
       settingsHost: createSettingsHost(() => getKernelFacade()?.service("settingsUI")),
       start() {
         migrateGgSettings();
+        retireRedundantPlugins();
         installNetHook();
         installUsageObserver();
         const kernel = getKernelFacade();
@@ -3348,6 +3369,205 @@
       ctx.cleanup(
         ctx.use("menus").register({ id: "accountSwitcher", location: "settings", label: "Switch account", icon: I3.user, order: -50, onSelect: open })
       );
+    }
+  });
+
+  // sites/gemini/plugins/autoAllow/index.ts
+  var autoAllowUi = "#ggpp-layer, #ggpp-settings, .ggpp-modal, .ggpp-ct, .ggpp-settings";
+  var autoAllowExact = /* @__PURE__ */ new Set(["allow", "allow once", "allow for this chat", "always allow", "允许", "允许一次", "允许本次对话", "始终允许", "允許", "允許一次", "允許本次對話", "始終允許"]);
+  var autoAllowSticky = /* @__PURE__ */ new Set(["allow for this chat", "always allow", "允许本次对话", "始终允许", "允許本次對話", "始終允許"]);
+  var autoAllowCancel = /* @__PURE__ */ new Set(["cancel", "取消"]);
+  function autoAllowNormalize(text) {
+    return String(text ?? "").replace(/\s+/g, " ").trim();
+  }
+  function autoAllowButtonKind(label) {
+    const text = autoAllowNormalize(label).toLowerCase();
+    if (autoAllowSticky.has(text)) return "sticky";
+    if (autoAllowExact.has(text)) return "allow";
+    if (autoAllowCancel.has(text)) return "cancel";
+    return "other";
+  }
+  function autoAllowLooksLikePermission(text) {
+    const value = String(text ?? "").replace(/\s+/g, " ");
+    if (!value) return false;
+    if (/Allow Gemini to\s+run\s+\S+/i.test(value)) return true;
+    if (/Waiting for your input/i.test(value) && /\bRun\s+[\w./-]+\?/i.test(value)) return true;
+    if (/允许\s*Gemini/i.test(value) && /运行|執行|执行/.test(value)) return true;
+    if (/在你的(?:电脑|電腦|设备|設備|机器|機器)上/.test(value) && /允许|允許/.test(value)) return true;
+    return /(等待你的输入|等待您的输入|等待你的輸入)/.test(value) && /运行|執行|执行|Run\s+/i.test(value);
+  }
+  function autoAllowLabel(el) {
+    return autoAllowNormalize(el.getAttribute("aria-label") || el.textContent);
+  }
+  function autoAllowDisabled(el) {
+    return !!(el.disabled || el.getAttribute("aria-disabled") === "true" || el.hasAttribute("disabled"));
+  }
+  function autoAllowInUi(el) {
+    try {
+      return !!el.closest(autoAllowUi);
+    } catch {
+      return false;
+    }
+  }
+  function autoAllowPick(buttons, preferSticky) {
+    const enabled = buttons.filter((button) => !button.disabled).map((button) => ({ ...button, kind: autoAllowButtonKind(button.label) }));
+    if (!enabled.some((button) => button.kind === "cancel")) return null;
+    const sticky = enabled.find((button) => button.kind === "sticky");
+    const allow = enabled.find((button) => button.kind === "allow");
+    const chosen = preferSticky ? sticky ?? allow : allow ?? sticky;
+    return chosen && (chosen.kind === "allow" || chosen.kind === "sticky") ? chosen : null;
+  }
+  function autoAllowToolName(text) {
+    return /(?:Run|运行|執行)\s+([\w./:-]+)\s*[?？]/i.exec(text)?.[1] || /run\s+([\w./:-]+)\s+on your machine/i.exec(text)?.[1] || "";
+  }
+  function autoAllowFindPermission(root = document) {
+    for (const card of [...root.querySelectorAll("body *")]) {
+      if (autoAllowInUi(card)) continue;
+      const text = autoAllowNormalize(card.innerText || card.textContent);
+      if (!autoAllowLooksLikePermission(text)) continue;
+      const buttons = [...card.querySelectorAll("button, [role='button']")].filter((button) => !autoAllowInUi(button));
+      if (!autoAllowPick(buttons.map((button) => ({ label: autoAllowLabel(button), disabled: autoAllowDisabled(button) })), true)) continue;
+      const code = card.querySelector("pre, code, [data-test-id*='code'], textarea");
+      return { element: card, toolName: autoAllowToolName(text), script: autoAllowNormalize(code?.innerText || code?.textContent || text), text };
+    }
+    return null;
+  }
+  var autoAllowClicked = /* @__PURE__ */ new WeakSet();
+  function autoAllowClick(card, preferSticky) {
+    const buttons = [...card.querySelectorAll("button, [role='button']")].filter((button) => !autoAllowInUi(button));
+    const pick = autoAllowPick(buttons.map((button) => ({ label: autoAllowLabel(button), disabled: autoAllowDisabled(button) })), preferSticky);
+    if (!pick) return false;
+    const target = buttons.find((button) => !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === pick.kind && autoAllowLabel(button) === pick.label) ?? buttons.find((button) => !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === pick.kind);
+    if (!target || autoAllowClicked.has(target)) return false;
+    autoAllowClicked.add(target);
+    try {
+      target.click();
+      return true;
+    } catch {
+      autoAllowClicked.delete(target);
+      return false;
+    }
+  }
+  function autoAllowCancelClick(card) {
+    const target = [...card.querySelectorAll("button, [role='button']")].find((button) => !autoAllowInUi(button) && !autoAllowDisabled(button) && autoAllowButtonKind(autoAllowLabel(button)) === "cancel");
+    if (!target || autoAllowClicked.has(target)) return false;
+    autoAllowClicked.add(target);
+    try {
+      target.click();
+      return true;
+    } catch {
+      autoAllowClicked.delete(target);
+      return false;
+    }
+  }
+  var autoAllowDestructive = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
+  var autoAllowExfiltration = /(?:document\s*\.\s*cookie|\bcookies?\b[^\n]{0,80}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:localStorage|sessionStorage|indexedDB)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b|\b(?:api[_-]?key|access[_-]?token|authorization|secret)\b[^\n]{0,160}\b(?:fetch|sendBeacon|XMLHttpRequest|axios|post)\b)/i;
+  var autoAllowShellDownload = /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sh|bash|zsh|cmd|powershell)\b/i;
+  var autoAllowReadOnlyTool = /^(?:evaluate_script|list_files|read_file|search_files|inspect|browser_[\w-]+)$/i;
+  var autoAllowReadOnlyScript = /^(?=[\s\S]{1,12000}$)(?=.*\b(?:fetch|JSON\.parse|querySelector(?:All)?|document\.title|location\.href|return)\b)(?![\s\S]*\b(?:click|submit|dispatchEvent|append(?:Child)?|remove(?:Child)?|replaceWith|innerHTML\s*=|textContent\s*=|value\s*=|location\s*=|history\.(?:push|replace)|fetch\s*\([^)]*,\s*\{[^}]*\bmethod\s*:\s*["'](?:POST|PUT|PATCH|DELETE)["'])\b)[\s\S]*$/i;
+  function autoAllowRules(permission) {
+    const tool = String(permission.toolName || "").trim();
+    const script = String(permission.script || "").trim();
+    const haystack = `${tool}\n${script}\n${permission.text || ""}`;
+    if (!tool || !script) return "unsure";
+    if (autoAllowDestructive.test(haystack) || autoAllowExfiltration.test(haystack) || autoAllowShellDownload.test(haystack)) return "deny";
+    if (!autoAllowReadOnlyTool.test(tool)) return "unsure";
+    if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4e3) return "allow";
+    return autoAllowReadOnlyScript.test(script) ? "allow" : "unsure";
+  }
+  function autoAllowApiPrompt(permission) {
+    return ["You are a safety gate for a computer-use permission request.", "Return exactly one line: ALLOW or DENY. No punctuation, explanation, or markdown.", "Choose DENY for destructive actions, credential/cookie/token collection, data exfiltration, or uncertain intent.", "Choose ALLOW only for clearly harmless read-only work.", `Tool: ${permission.toolName}`, "Script/content:", permission.script.slice(0, 12e3)].join("\n");
+  }
+  async function autoAllowApi(permission, apiKey, model = "gemini-2.5-flash") {
+    const key = apiKey.trim();
+    if (!key) return "unsure";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model || "gemini-2.5-flash")}:generateContent?key=${encodeURIComponent(key)}`;
+    const body = JSON.stringify({ contents: [{ role: "user", parts: [{ text: autoAllowApiPrompt(permission) }] }], generationConfig: { temperature: 0, maxOutputTokens: 4 } });
+    try {
+      const text = await new Promise((resolve, reject) => {
+        const request = globalThis.GM?.xmlHttpRequest;
+        if (typeof request !== "function") return reject(new Error("GM.xmlHttpRequest unavailable"));
+        request({ method: "POST", url, data: body, headers: { "Content-Type": "application/json" }, timeout: 15e3, onload: (response) => response.status >= 200 && response.status < 300 ? resolve(response.responseText) : reject(new Error(`HTTP ${response.status}`)), onerror: () => reject(new Error("Network error")), ontimeout: () => reject(new Error("Timed out")) });
+      });
+      const answer = JSON.parse(text)?.candidates?.[0]?.content?.parts?.map((part) => part?.text || "").join("").trim();
+      return answer === "ALLOW" ? "allow" : answer === "DENY" ? "deny" : "unsure";
+    } catch {
+      return "unsure";
+    }
+  }
+  function autoAllowWeb(permission) {
+    try {
+      const tab = window.open("/app", "_blank");
+      if (!tab) return "unsure";
+      const prompt = `${autoAllowApiPrompt(permission)}\n\nReply with exactly ALLOW or DENY.`;
+      const prepare = () => {
+        try {
+          tab.document.querySelector("temp-chat-button gem-icon-button.temp-chat-entry button, temp-chat-button button[aria-label='Temporary chat']")?.click();
+          const editor = tab.document.querySelector("[contenteditable='true']");
+          if (editor) {
+            editor.focus();
+            editor.textContent = prompt;
+            editor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: prompt }));
+          }
+        } catch {
+        }
+      };
+      tab.addEventListener("load", () => setTimeout(prepare, 700), { once: true });
+      setTimeout(prepare, 1200);
+    } catch {
+    }
+    return "unsure";
+  }
+  var autoAllow_default = definePlugin({
+    id: "autoAllow",
+    name: "AutoAllow",
+    description: "Judges Gemini's in-page tool permissions. Uncertain requests are left for you to decide.",
+    tags: ["Messages"],
+    icon: I3.check,
+    enabledByDefault: true,
+    updated: "2026-11-28",
+    settings: {
+      delay: { type: "number", label: "Delay", description: "Seconds to wait before acting on a verdict.", default: 0, min: 0, max: 5, unit: "s" },
+      preferSticky: { type: "boolean", label: "Remember when possible", description: "Prefer Always allow / Allow for this chat when Gemini offers it.", default: true },
+      backend: { type: "select", label: "Judge backend", description: "Rules are local. API uses your Gemini key. Web opens a Gemini Temporary chat for review.", default: "rules", options: [{ value: "rules", label: "Local safety rules" }, { value: "api", label: "Gemini API" }, { value: "web", label: "Gemini Temporary chat (preview)" }] },
+      apiKey: { type: "string", label: "Gemini API key", description: "Used only for the safety verdict; it is never logged.", default: "", placeholder: "AIza…", showIf: (values) => values.backend === "api" },
+      model: { type: "string", label: "Gemini API model", description: "Must support generateContent.", default: "gemini-2.5-flash", showIf: (values) => values.backend === "api" }
+    },
+    start(ctx) {
+      let timer;
+      let pending;
+      const scan = () => {
+        clearTimeout(pending);
+        const delayMs = Math.max(0, Number(ctx.settings.delay) || 0) * 1e3;
+        const run = async () => {
+          try {
+            const card = autoAllowFindPermission(document);
+            if (!card) return;
+            const permission = { toolName: card.toolName, script: card.script, text: card.text };
+            const backend = ctx.settings.backend;
+            const verdict = backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
+            if (verdict === "allow") autoAllowClick(card.element, ctx.settings.preferSticky !== false);
+            else if (verdict === "deny") autoAllowCancelClick(card.element);
+          } catch {
+          }
+        };
+        if (delayMs) pending = setTimeout(run, delayMs);
+        else void run();
+      };
+      const observer = new MutationObserver(() => {
+        clearTimeout(timer);
+        timer = setTimeout(scan, 80);
+      });
+      try {
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      } catch {
+      }
+      scan();
+      ctx.cleanup(() => {
+        observer.disconnect();
+        clearTimeout(timer);
+        clearTimeout(pending);
+      });
     }
   });
 
@@ -4832,11 +5052,11 @@
   var chatListStatus_default = definePlugin({
     id: "chatListStatus",
     name: "ChatListStatus",
-    description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error.",
+    description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Off by default: Gemini already shows a spinner next to those chats.",
     tags: ["Chats", "Notifications"],
     icon: I3.list,
-    enabledByDefault: true,
-    updated: "2026-10-14",
+    enabledByDefault: false,
+    updated: "2026-11-28",
     dependencies: ["gemini"],
     start(ctx) {
       const gemini = ctx.use("gemini");
@@ -11372,6 +11592,10 @@ ${depth === 0 ? "\n" : ""}`;
   // uspp:sites
   var sites_default = [{ id: "gemini", site: gemini_default, plugins: [((U3) => {
     const d3 = typeof accountSwitcher_default === "function" ? accountSwitcher_default(U3) : accountSwitcher_default;
+    d3.site = "gemini";
+    return d3;
+  }), ((U3) => {
+    const d3 = typeof autoAllow_default === "function" ? autoAllow_default(U3) : autoAllow_default;
     d3.site = "gemini";
     return d3;
   }), ((U3) => {

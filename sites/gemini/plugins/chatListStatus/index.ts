@@ -10,11 +10,11 @@ type Status = "live" | "done" | "error";
 export default definePlugin({
   id: "chatListStatus",
   name: "ChatListStatus",
-  description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error.",
+  description: "Mark chats in the side panel that are replying, finished while you were away, or ended with an error. Off by default: Gemini already shows a spinner next to those chats.",
   tags: ["Chats", "Notifications"],
   icon: I.list,
-  enabledByDefault: true,
-  updated: "2026-10-14",
+  enabledByDefault: false,
+  updated: "2026-11-28",
   dependencies: ["gemini"],
   start(ctx) {
     const gemini = ctx.use<GeminiApi>("gemini");
