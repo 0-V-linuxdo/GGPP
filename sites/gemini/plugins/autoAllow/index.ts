@@ -26,7 +26,7 @@ export default definePlugin({
     alwaysAllow: {
       type: "boolean",
       label: "总是允许",
-      description: "规则不确定时也点 Allow。破坏性和 cookie 外传仍会拒绝。",
+      description: "不确定时直接点 Allow，不展开询问内容。",
       default: true,
     },
     preferSticky: {
@@ -70,16 +70,19 @@ export default definePlugin({
       const delayMs = Math.max(0, Number(ctx.settings.delay) || 0) * 1000;
       const run = async () => {
         try {
-          const card = findToolPermission(document);
+          const always = ctx.settings.alwaysAllow !== false;
+          const card = findToolPermission(document, { expand: !always });
           if (!card) return;
           const permission = { toolName: card.toolName, script: card.script, text: card.text };
           const backend = ctx.settings.backend;
-          const verdict = backend === "api"
-            ? await judgeApi(permission, ctx.settings.apiKey, ctx.settings.model)
-            : backend === "web"
-              ? openTemporaryWebJudge(permission)
-              : judgeRules(permission);
-          const action = decideAutoAllow(verdict, ctx.settings.alwaysAllow !== false);
+          const verdict = always
+            ? judgeRules(permission)
+            : backend === "api"
+              ? await judgeApi(permission, ctx.settings.apiKey, ctx.settings.model)
+              : backend === "web"
+                ? openTemporaryWebJudge(permission)
+                : judgeRules(permission);
+          const action = decideAutoAllow(verdict, always);
           if (action === "allow") clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
           else if (action === "deny") clickCancelPrompt(card);
         } catch {}

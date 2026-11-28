@@ -345,25 +345,37 @@ function findClickableAllow(root: ParentNode): { element: Element; overlay: bool
   return null;
 }
 
-function bestScriptCard(root: ParentNode): Element | null {
+function isLivePermissionCard(card: Element): boolean {
+  return !!enabledAllowPick(card);
+}
+
+function maybeExpandPermissionCard(card: Element | null, expand: boolean): void {
+  if (!expand || !card || !isLivePermissionCard(card)) return;
+  expandPermissionCard(card);
+}
+
+function bestScriptCard(root: ParentNode, expand: boolean): Element | null {
   let best: Element | null = null;
   for (const card of harvestPermissionCards(root)) {
     if (descendantCount(card) >= 800) continue;
-    expandPermissionCard(card);
+    maybeExpandPermissionCard(card, expand);
     const script = extractPermissionScript(card);
     if (isCodeLike(script) || permissionMatches(card)) best = card;
   }
   return best;
 }
 
+export type FindToolPermissionOptions = { expand?: boolean };
+
 /** Locate the live Allow target, but read script from the smallest permission card — not a huge ancestor. */
-export function findToolPermission(root: ParentNode = document): ToolPermissionCard | null {
+export function findToolPermission(root: ParentNode = document, opts: FindToolPermissionOptions = {}): ToolPermissionCard | null {
+  const expand = opts.expand !== false;
   const clickable = findClickableAllow(root);
-  const scriptCard = bestScriptCard(root);
+  const scriptCard = bestScriptCard(root, expand);
   const host = clickable?.element || scriptCard;
   if (!host) return null;
-  if (scriptCard) expandPermissionCard(scriptCard);
-  expandPermissionCard(host);
+  maybeExpandPermissionCard(scriptCard, expand);
+  maybeExpandPermissionCard(host, expand);
   const text = normalizeLabel(nodeText(scriptCard || host) || nodeText(host));
   const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || text;
   const toolName = inferEvaluateTool(script, text);

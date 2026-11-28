@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.12
+// @version      0.2.13
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3709,27 +3709,35 @@
       return { element: classic, overlay: false };
     return null;
   }
-  function aa_bestScriptCard(root) {
+  function aa_isLivePermissionCard(card) {
+    return !!aa_enabledAllowPick(card);
+  }
+  function aa_maybeExpandPermissionCard(card, expand) {
+    if (!expand || !card || !aa_isLivePermissionCard(card))
+      return;
+    expandPermissionCard(card);
+  }
+  function aa_bestScriptCard(root, expand) {
     let best = null;
     for (const card of aa_harvestPermissionCards(root)) {
       if (aa_descendantCount(card) >= 800)
         continue;
-      expandPermissionCard(card);
+      aa_maybeExpandPermissionCard(card, expand);
       const script = extractPermissionScript(card);
       if (aa_isCodeLike(script) || aa_permissionMatches(card))
         best = card;
     }
     return best;
   }
-  function autoAllowFindPermission(root = document) {
+  function autoAllowFindPermission(root = document, opts = {}) {
+    const expand = opts.expand !== false;
     const clickable = aa_findClickableAllow(root);
-    const scriptCard = aa_bestScriptCard(root);
+    const scriptCard = aa_bestScriptCard(root, expand);
     const host = clickable?.element || scriptCard;
     if (!host)
       return null;
-    if (scriptCard)
-      expandPermissionCard(scriptCard);
-    expandPermissionCard(host);
+    aa_maybeExpandPermissionCard(scriptCard, expand);
+    aa_maybeExpandPermissionCard(host, expand);
     const text = aa_normalizeLabel(aa_nodeText(scriptCard || host) || aa_nodeText(host));
     const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || text;
     const toolName = aa_inferEvaluateTool(script, text);
@@ -3983,7 +3991,7 @@
     updated: "2026-11-28",
     settings: {
       delay: { type: "number", label: "Delay", description: "Seconds to wait before acting on a verdict.", default: 0, min: 0, max: 5, unit: "s" },
-      alwaysAllow: { type: "boolean", label: "总是允许", description: "规则不确定时也点 Allow。破坏性和 cookie 外传仍会拒绝。", default: true },
+      alwaysAllow: { type: "boolean", label: "总是允许", description: "不确定时直接点 Allow，不展开询问内容。", default: true },
       preferSticky: { type: "boolean", label: "Remember when possible", description: "Prefer Always allow / Allow for this chat when Gemini offers it.", default: true },
       backend: { type: "select", label: "Judge backend", description: "Rules are local. API uses your Gemini key. Web opens a Gemini Temporary chat for review.", default: "rules", options: [{ value: "rules", label: "Local safety rules" }, { value: "api", label: "Gemini API" }, { value: "web", label: "Gemini Temporary chat (preview)" }] },
       apiKey: { type: "string", label: "Gemini API key", description: "Used only for the safety verdict; it is never logged.", default: "", placeholder: "AIza…", showIf: (values) => values.backend === "api" },
@@ -3997,12 +4005,13 @@
         const delayMs = Math.max(0, Number(ctx.settings.delay) || 0) * 1e3;
         const run = async () => {
           try {
-            const card = autoAllowFindPermission(document);
+            const always = ctx.settings.alwaysAllow !== false;
+            const card = autoAllowFindPermission(document, { expand: !always });
             if (!card) return;
             const permission = { toolName: card.toolName, script: card.script, text: card.text };
             const backend = ctx.settings.backend;
-            const verdict = backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
-            const action = autoAllowDecide(verdict, ctx.settings.alwaysAllow !== false);
+            const verdict = always ? autoAllowRules(permission) : backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
+            const action = autoAllowDecide(verdict, always);
             if (action === "allow") autoAllowClick(card.element, ctx.settings.preferSticky !== false);
             else if (action === "deny") autoAllowCancelClick(card.element);
           } catch {

@@ -356,6 +356,53 @@ describe("findToolPermission uses the inner card script", () => {
     expect(expand.clicks).toBeGreaterThan(0);
   });
 
+  test("does not expand the inquiry card when expand is off", () => {
+    const expand = el("button", { text: "Expand text" });
+    const cancel = el("button", { text: "Cancel" });
+    const allow = el("button", { text: "Allow" });
+    const inner = el("div", {
+      children: [
+        el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nWaiting for your input" }),
+        el("pre", { text: LIVE_POSTFORM }),
+        expand,
+        cancel,
+        allow,
+      ],
+    });
+    const found = findToolPermission(el("body", { children: [inner] }) as unknown as ParentNode, { expand: false });
+    expect(found).toBeTruthy();
+    expect(found!.toolName).toBe("evaluate_script");
+    expect(expand.clicks).toBe(0);
+  });
+
+  test("does not expand a finished card that already has disabled Allow", () => {
+    const oldExpand = el("button", { text: "Expand text" });
+    const oldCard = el("div", {
+      children: [
+        el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nYou said Allow" }),
+        el("pre", { text: "const gv2map = JSON.parse(localStorage.getItem('gv2map') || '{}')" }),
+        oldExpand,
+        el("button", { text: "Cancel", disabled: true }),
+        el("button", { text: "Allow", disabled: true }),
+      ],
+    });
+    const liveExpand = el("button", { text: "Expand text" });
+    const live = el("div", {
+      children: [
+        el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nWaiting for your input" }),
+        el("pre", { text: LIVE_POSTFORM }),
+        liveExpand,
+        el("button", { text: "Cancel" }),
+        el("button", { text: "Allow" }),
+      ],
+    });
+    const found = findToolPermission(el("body", { children: [oldCard, live] }) as unknown as ParentNode);
+    expect(found).toBeTruthy();
+    expect(found!.element).toBe(live);
+    expect(oldExpand.clicks).toBe(0);
+    expect(liveExpand.clicks).toBeGreaterThan(0);
+  });
+
   test("does not treat an aria-pressed Allow toggle as the computer-use overlay", () => {
     const star = el("button", { text: "Allow", attrs: { "aria-pressed": "false" }, className: "ggpp-star-btn" });
     const root = el("body", {
