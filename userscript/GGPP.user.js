@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.23
+// @version      0.2.24
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -1701,6 +1701,54 @@
     } catch {
     }
   }
+  var PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v1";
+  var PRE_0222_DEFAULT_ON = ["cleaner", "noStarters", "noShareLink", "noDictation", "noSidebarIdentity", "composerOpacity", "skillBlocker"];
+  function hadExistingGgProfile() {
+    try {
+      if (localStorage.getItem(FLAG) === "1") return true;
+      if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return true;
+    } catch {
+    }
+    return false;
+  }
+  function storedPluginEnabled(U3, id) {
+    try {
+      const v3 = U3.exportSettings?.()?.settings?.plugins?.[id]?.enabled;
+      if (typeof v3 === "boolean") return v3;
+    } catch {
+    }
+    return void 0;
+  }
+  function preserveLegacyDeclutterDefaults(existingProfile) {
+    try {
+      if (localStorage.getItem(PRESERVE_DECLUTTER_FLAG) === "1") return;
+    } catch {
+    }
+    if (existingProfile) {
+      const U3 = getU();
+      const plugins2 = {};
+      for (const id of PRE_0222_DEFAULT_ON) {
+        if (typeof storedPluginEnabled(U3, id) === "boolean") continue;
+        plugins2[id] = { enabled: true };
+      }
+      if (Object.keys(plugins2).length) {
+        try {
+          U3.importSettings?.({ plugins: plugins2 }, { merge: true });
+        } catch {
+        }
+        for (const id of Object.keys(plugins2)) {
+          try {
+            U3.setPluginEnabled?.(id, true);
+          } catch {
+          }
+        }
+      }
+    }
+    try {
+      localStorage.setItem(PRESERVE_DECLUTTER_FLAG, "1");
+    } catch {
+    }
+  }
 
   // sites/gemini/netHook.ts
   function resolveNetHookWindow() {
@@ -2977,7 +3025,9 @@
       settingsHost: createSettingsHost(() => getKernelFacade()?.service("settingsUI")),
       start() {
         migrateGgSettings();
+        const existingGgProfile = hadExistingGgProfile();
         retireRedundantPlugins();
+        preserveLegacyDeclutterDefaults(existingGgProfile);
         installNetHook();
         installUsageObserver();
         const kernel = getKernelFacade();

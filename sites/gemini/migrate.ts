@@ -96,3 +96,66 @@ export function retireRedundantPlugins() {
     localStorage.setItem(RESTORE_CHATLIST_FLAG, "1");
   } catch {}
 }
+
+
+export const PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v1";
+
+/** Plugins that were enabledByDefault before 0.2.22. New installs stay off. */
+export const PRE_0222_DEFAULT_ON = [
+  "cleaner",
+  "noStarters",
+  "noShareLink",
+  "noDictation",
+  "noSidebarIdentity",
+  "composerOpacity",
+  "skillBlocker",
+] as const;
+
+/** True if this browser already ran GG++ before this page load. */
+export function hadExistingGgProfile(): boolean {
+  try {
+    if (localStorage.getItem(FLAG) === "1") return true;
+    if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return true;
+  } catch {}
+  return false;
+}
+
+function storedPluginEnabled(U: ReturnType<typeof getU>, id: string): boolean | undefined {
+  try {
+    const v = U.exportSettings?.()?.settings?.plugins?.[id]?.enabled;
+    if (typeof v === "boolean") return v;
+  } catch {}
+  return undefined;
+}
+
+/**
+ * 0.2.22 flipped enabledByDefault to false. Unset enabled flags then followed
+ * the new default and changed existing machines. Restore the old on-state once
+ * for profiles that already existed; leave explicit on/off and fresh installs.
+ */
+export function preserveLegacyDeclutterDefaults(existingProfile: boolean) {
+  try {
+    if (localStorage.getItem(PRESERVE_DECLUTTER_FLAG) === "1") return;
+  } catch {}
+  if (existingProfile) {
+    const U = getU();
+    const plugins: Record<string, { enabled: true }> = {};
+    for (const id of PRE_0222_DEFAULT_ON) {
+      if (typeof storedPluginEnabled(U, id) === "boolean") continue;
+      plugins[id] = { enabled: true };
+    }
+    if (Object.keys(plugins).length) {
+      try {
+        U.importSettings?.({ plugins }, { merge: true });
+      } catch {}
+      for (const id of Object.keys(plugins)) {
+        try {
+          U.setPluginEnabled?.(id, true);
+        } catch {}
+      }
+    }
+  }
+  try {
+    localStorage.setItem(PRESERVE_DECLUTTER_FLAG, "1");
+  } catch {}
+}

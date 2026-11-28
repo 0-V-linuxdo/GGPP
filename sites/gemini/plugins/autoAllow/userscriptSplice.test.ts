@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.23 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
-  expect(js).toMatch(/@version\s+0\.2\.23/);
+test("hand-spliced userscript is 0.2.24 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.24/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -63,6 +63,10 @@ test("hand-spliced userscript is 0.2.23 with AutoAllow overlay retry, nav filter
   }
   expect(js).toContain("ggpp:restored-chatListStatus-v2");
   expect(js).toContain("retireRedundantPlugins");
+  expect(js).toContain("ggpp:preserved-pre-0222-declutter-v1");
+  expect(js).toContain("function hadExistingGgProfile");
+  expect(js).toContain("function preserveLegacyDeclutterDefaults");
+  expect(js).toContain("preserveLegacyDeclutterDefaults(existingGgProfile)");
   expect(js).toContain("function computeFaviconState");
   expect(js).toContain("function faviconHref");
   expect(js).toContain("function pngFromKey");
