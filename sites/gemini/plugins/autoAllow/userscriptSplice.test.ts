@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.21 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
-  expect(js).toMatch(/@version\s+0\.2\.21/);
+test("hand-spliced userscript is 0.2.22 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.22/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -50,6 +50,13 @@ test("hand-spliced userscript is 0.2.21 with AutoAllow overlay retry, nav filter
   expect(js).toContain("title.before(mark)");
   expect(js).not.toContain("right: 36px");
   expect(js).toMatch(/id: "chatListStatus"[\s\S]{0,500}enabledByDefault: true/);
+  for (const id of ["cleaner", "noStarters", "noShareLink", "noDictation", "noSidebarIdentity", "composerOpacity", "skillBlocker"]) {
+    const start = js.indexOf(`id: "${id}"`);
+    expect(start).toBeGreaterThan(0);
+    const snippet = js.slice(start, start + 280);
+    expect(snippet).toMatch(/enabledByDefault:\s*false/);
+    expect(snippet).not.toMatch(/enabledByDefault:\s*true/);
+  }
   expect(js).toContain("ggpp:restored-chatListStatus-v2");
   expect(js).toContain("retireRedundantPlugins");
   expect(js).toContain("function computeFaviconState");

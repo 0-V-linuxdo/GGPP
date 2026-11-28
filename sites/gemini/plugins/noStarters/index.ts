@@ -7,7 +7,7 @@ export default definePlugin({
   description: "Hide suggested prompts and promo cards on the home screen.",
   tags: ["Declutter"],
   icon: I.sparkles,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   start(ctx) {
     ctx.css(`

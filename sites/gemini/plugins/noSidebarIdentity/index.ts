@@ -10,7 +10,7 @@ export default definePlugin({
   description: "Hide your name, email and plan in the side panel; the avatar stays clickable.",
   tags: ["Privacy"],
   icon: I.userX,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   settings: {
     hideName: { type: "boolean", label: "Name", description: "Your name next to the side-panel avatar.", default: true },

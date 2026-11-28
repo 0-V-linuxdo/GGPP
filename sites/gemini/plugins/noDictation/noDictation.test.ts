@@ -72,11 +72,11 @@ beforeAll(() => {
 });
 
 describe("noDictation definition contract (isolated adapter)", () => {
-  test("registers the actual plugin definition, enabled by default", () => {
+  test("registers the actual plugin definition, disabled by default", () => {
     expect(result.registeredCount).toBe(1);
     expect(result.sameDefinition).toBe(true);
     expect(result.id).toBe("noDictation");
-    expect(result.enabledByDefault).toBe(true);
+    expect(result.enabledByDefault).toBe(false);
   });
 
   test("CSS contains exactly the unchanged mic rule and one guarded min-width rule", () => {

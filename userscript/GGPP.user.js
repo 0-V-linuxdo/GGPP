@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.21
+// @version      0.2.22
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -6559,7 +6559,7 @@
     description: "Hide upgrade prompts, promo banners and locked models.",
     tags: ["Declutter"],
     icon: I3.brush,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     liveSettings: true,
     settings: {
@@ -6700,7 +6700,7 @@
     tags: ["Composer", "Appearance"],
     dependencies: ["gemini"],
     icon: I3.blend,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     settings: {
       opacity: { type: "number", label: "Opacity", description: "Background opacity of the message box. 100 is fully opaque.", default: 100, min: 0, max: 100, slider: true, unit: "%" },
@@ -8919,7 +8919,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     description: "Hide the microphone (voice input) button in the message box.",
     tags: ["Declutter"],
     icon: I3.micOff,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     start(ctx) {
       ctx.css(NO_DICTATION_CSS);
@@ -8933,7 +8933,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     description: "Hide the buttons that create public share links.",
     tags: ["Declutter", "Privacy"],
     icon: I3.share,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     settings: {
       hideChatShare: { type: "boolean", label: "Share conversation", description: '"Share conversation" in the conversation menu.', default: true },
@@ -8955,7 +8955,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     description: "Hide your name, email and plan in the side panel; the avatar stays clickable.",
     tags: ["Privacy"],
     icon: I3.userX,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     settings: {
       hideName: { type: "boolean", label: "Name", description: "Your name next to the side-panel avatar.", default: true },
@@ -8999,7 +8999,7 @@ input-container .input-buttons-wrapper-bottom:has(> .mic-button-container:only-c
     description: "Hide suggested prompts and promo cards on the home screen.",
     tags: ["Declutter"],
     icon: I3.sparkles,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     start(ctx) {
       ctx.css(`
@@ -10271,7 +10271,7 @@ ${depth === 0 ? "\n" : ""}`;
     description: "Hide the skills or Gems you name from Gemini's lists and menus.",
     tags: ["Privacy", "Declutter"],
     icon: I3.ban,
-    enabledByDefault: true,
+    enabledByDefault: false,
     updated: "2026-10-14",
     settings: {
       blocked: { type: "list", label: "Names to hide", description: "Exact names, one per row.", placeholder: "Skill or Gem name", default: [] }

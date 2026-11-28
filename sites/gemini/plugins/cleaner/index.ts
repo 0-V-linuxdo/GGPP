@@ -24,7 +24,7 @@ export default definePlugin({
   description: "Hide upgrade prompts, promo banners and locked models.",
   tags: ["Declutter"],
   icon: I.brush,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   settings: {
     hideUpgrade: { type: "boolean", label: "Upgrade buttons", description: "The Upgrade / Google AI plan buttons and links.", default: true },

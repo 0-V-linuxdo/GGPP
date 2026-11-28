@@ -11,7 +11,7 @@ export default definePlugin({
   description: "Hide the microphone (voice input) button in the message box.",
   tags: ["Declutter"],
   icon: I.micOff,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   start(ctx) {
     ctx.css(NO_DICTATION_CSS);

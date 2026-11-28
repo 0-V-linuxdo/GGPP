@@ -9,7 +9,7 @@ export default definePlugin({
   tags: ["Composer", "Appearance"],
   dependencies: ["gemini"],
   icon: I.blend,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   settings: {
     opacity: { type: "number", label: "Opacity", description: "Background opacity of the message box. 100 is fully opaque.", default: 100, min: 0, max: 100, slider: true, unit: "%" },

@@ -7,7 +7,7 @@ export default definePlugin({
   description: "Hide the buttons that create public share links.",
   tags: ["Declutter", "Privacy"],
   icon: I.share,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   settings: {
     hideChatShare: { type: "boolean", label: "Share conversation", description: "\"Share conversation\" in the conversation menu.", default: true },

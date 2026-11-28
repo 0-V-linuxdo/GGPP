@@ -24,7 +24,7 @@ export default definePlugin({
   description: "Hide the skills or Gems you name from Gemini's lists and menus.",
   tags: ["Privacy", "Declutter"],
   icon: I.ban,
-  enabledByDefault: true,
+  enabledByDefault: false,
   updated: "2026-10-14",
   settings: {
     blocked: { type: "list", label: "Names to hide", description: "Exact names, one per row.", placeholder: "Skill or Gem name", default: [] as string[] },
