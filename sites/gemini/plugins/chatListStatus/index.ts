@@ -30,15 +30,44 @@ export const NATIVE_SIDEBAR_FLAG_SEL = [
   "mat-icon[fonticon='outlined_flag']",
   "[data-mat-icon-name='flag']",
   "[data-mat-icon-name='outlined_flag']",
-  "[aria-label*='flag' i]:not([aria-label*='pin' i])",
+  "[aria-label*='flag' i]",
   "[aria-label*='旗帜']",
   "[aria-label*='红旗']",
 ].join(", ");
 
-const PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+/** Word-boundary pin labels. `*=pin` also matches `spinner`. */
+const PIN_SEL = [
+  "[aria-label='Pin' i]",
+  "[aria-label='Pinned' i]",
+  "[aria-label='Unpin' i]",
+  "[aria-label^='Pin ' i]",
+  "[aria-label^='Unpin ' i]",
+  "[aria-label^='Pinned ' i]",
+  "[aria-label*='Pin chat' i]",
+  "[aria-label*='Unpin chat' i]",
+  "[aria-label*='Pinned chat' i]",
+  "[aria-label*='置顶']",
+  "[aria-label*='取消置顶']",
+].join(", ");
+const PIN_LABEL = /(?:^|[^a-z])(?:un)?pin(?:ned|ning)?(?:\b|$)|置顶|取消置顶/i;
 const MENU_SEL = "[data-test-id='actions-menu-button'], [aria-label*='More options' i], [aria-label*='更多选项']";
 const FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
 const SPINNER_NAME = /progress_activity|autorenew|(?:^|\s)sync(?:\s|$)|spinner|loading/i;
+const TRAILING_RING_SEL = [
+  "span",
+  "i",
+  "em",
+  "div",
+  "button",
+  "gem-icon-button",
+  "svg",
+  "mat-icon",
+  ".google-symbols",
+  "[class*='progress' i]",
+  "[class*='spinner' i]",
+  "[class*='loading' i]",
+  "[class*='circular' i]",
+].join(", ");
 
 function isMenuChrome(el: Element): boolean {
   try {
@@ -46,6 +75,16 @@ function isMenuChrome(el: Element): boolean {
   } catch {
     return false;
   }
+}
+
+function isPinChrome(el: Element): boolean {
+  try {
+    if (el.closest(PIN_SEL)) return true;
+  } catch {
+    /* tests / invalid selector */
+  }
+  const label = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
+  return PIN_LABEL.test(label);
 }
 
 function isShownStatus(el: Element): boolean {
@@ -59,31 +98,95 @@ function isShownStatus(el: Element): boolean {
   return true;
 }
 
-export function rowHasNativeGeneratingSpinner(row: ParentNode): boolean {
-  const host = row as Element;
-  for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
-    if (isShownStatus(el) && !isPinChrome(el)) return true;
-  }
-  for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
-    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el)) continue;
-    const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
-    if (SPINNER_NAME.test(label)) return true;
-    try {
-      const anim = getComputedStyle(el).animationName;
-      if (anim && anim !== "none") return true;
-    } catch {
-      /* tests */
-    }
+function isTransparentColor(color: string): boolean {
+  const c = color.trim().toLowerCase();
+  return !c || c === "transparent" || c === "rgba(0, 0, 0, 0)" || /,\s*0\)$/.test(c);
+}
+
+function isCircularSpinStyle(el: Element): boolean {
+  try {
+    const s = getComputedStyle(el);
+    if (s.animationName && s.animationName !== "none") return true;
+    const br = s.borderRadius || "";
+    const circular = br === "50%" || br === "999px" || br === "9999px" || /50%/.test(br);
+    if (!circular) return false;
+    const top = s.borderTopColor || "";
+    const right = s.borderRightColor || "";
+    const left = s.borderLeftColor || "";
+    const bottom = s.borderBottomColor || "";
+    if (top && right && top !== right) return true;
+    if (!isTransparentColor(top) && (isTransparentColor(right) || isTransparentColor(left) || isTransparentColor(bottom))) return true;
+    if (s.borderTopWidth && s.borderTopWidth !== "0px" && (isTransparentColor(right) || isTransparentColor(bottom))) return true;
+  } catch {
+    /* tests */
   }
   return false;
 }
 
-function isPinChrome(el: Element): boolean {
+function isTrailingSlot(el: Element, hostBox: DOMRect): boolean {
+  const r = el.getBoundingClientRect();
+  if (r.width < 8 || r.width > 28 || r.height < 8 || r.height > 28) return false;
+  return r.left > hostBox.right - 88 && r.right <= hostBox.right + 4;
+}
+
+function shadowKids(el: Element): Element[] {
+  const root = (el as HTMLElement & { shadowRoot?: ShadowRoot | null }).shadowRoot;
+  if (!root || typeof root.querySelectorAll !== "function") return [];
   try {
-    return !!el.closest(PIN_SEL);
+    return [...root.querySelectorAll(TRAILING_RING_SEL)];
   } catch {
-    return false;
+    return [];
   }
+}
+
+function looksLikeNamedSpinner(el: Element): boolean {
+  const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+  if (SPINNER_NAME.test(label)) return true;
+  try {
+    const anim = getComputedStyle(el).animationName;
+    if (anim && anim !== "none") return true;
+  } catch {
+    /* tests */
+  }
+  return false;
+}
+
+function looksLikeTrailingRing(el: Element, hostBox: DOMRect): boolean {
+  if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls")) return false;
+  if (!isTrailingSlot(el, hostBox)) return false;
+  if (looksLikeNamedSpinner(el) || isCircularSpinStyle(el)) return true;
+  try {
+    if (el.querySelector?.("circle")) return true;
+  } catch {
+    /* tests */
+  }
+  return false;
+}
+
+export function rowHasNativeGeneratingSpinner(row: ParentNode): boolean {
+  const host = row as Element;
+  for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
+    if (isShownStatus(el) && !isPinChrome(el) && !isMenuChrome(el)) return true;
+  }
+  for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
+    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el)) continue;
+    if (looksLikeNamedSpinner(el)) return true;
+  }
+  const box = typeof host.getBoundingClientRect === "function" ? host.getBoundingClientRect() : null;
+  if (!box) return false;
+  const seen = new Set<Element>();
+  const consider = (el: Element) => {
+    if (seen.has(el)) return false;
+    seen.add(el);
+    return looksLikeTrailingRing(el, box);
+  };
+  for (const el of host.querySelectorAll(TRAILING_RING_SEL)) {
+    if (consider(el)) return true;
+    for (const kid of shadowKids(el)) {
+      if (consider(kid)) return true;
+    }
+  }
+  return false;
 }
 
 export function rowHasNativeFlag(row: ParentNode): boolean {
@@ -180,11 +283,12 @@ export default definePlugin({
       const id = gemini.route().conversationId;
       if (id && status.get(id) !== "live") set(id, null);
     });
-    // Safety net: the open chat can't be "replying" once Gemini's stop button is gone.
+    // Native generating rings often mount after response-start; repaint live rows so we hide once they appear.
     ctx.setInterval(() => {
       const id = gemini.route().conversationId;
       if (id && status.get(id) === "live" && !gemini.isGenerating()) set(id, null);
-    }, 2000);
+      else if ([...status.values()].some((value) => value === "live")) paint();
+    }, 500);
     document.addEventListener(
       "visibilitychange",
       () => {

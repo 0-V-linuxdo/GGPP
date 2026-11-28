@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.14
+// @version      0.2.15
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -5776,20 +5776,55 @@
     "mat-icon[fonticon='outlined_flag']",
     "[data-mat-icon-name='flag']",
     "[data-mat-icon-name='outlined_flag']",
-    "[aria-label*='flag' i]:not([aria-label*='pin' i])",
+    "[aria-label*='flag' i]",
     "[aria-label*='旗帜']",
     "[aria-label*='红旗']"
   ].join(", ");
-  var PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+  var PIN_SEL = [
+    "[aria-label='Pin' i]",
+    "[aria-label='Pinned' i]",
+    "[aria-label='Unpin' i]",
+    "[aria-label^='Pin ' i]",
+    "[aria-label^='Unpin ' i]",
+    "[aria-label^='Pinned ' i]",
+    "[aria-label*='Pin chat' i]",
+    "[aria-label*='Unpin chat' i]",
+    "[aria-label*='Pinned chat' i]",
+    "[aria-label*='置顶']",
+    "[aria-label*='取消置顶']"
+  ].join(", ");
+  var PIN_LABEL = /(?:^|[^a-z])(?:un)?pin(?:ned|ning)?(?:\b|$)|置顶|取消置顶/i;
   var MENU_SEL = "[data-test-id='actions-menu-button'], [aria-label*='More options' i], [aria-label*='更多选项']";
   var FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
   var SPINNER_NAME = /progress_activity|autorenew|(?:^|\s)sync(?:\s|$)|spinner|loading/i;
+  var TRAILING_RING_SEL = [
+    "span",
+    "i",
+    "em",
+    "div",
+    "button",
+    "gem-icon-button",
+    "svg",
+    "mat-icon",
+    ".google-symbols",
+    "[class*='progress' i]",
+    "[class*='spinner' i]",
+    "[class*='loading' i]",
+    "[class*='circular' i]"
+  ].join(", ");
   function isMenuChrome(el) {
     try {
       return !!el.closest(MENU_SEL);
     } catch {
       return false;
     }
+  }
+  function isPinChrome(el) {
+    try {
+      if (el.closest(PIN_SEL)) return true;
+    } catch {}
+    const label = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
+    return PIN_LABEL.test(label);
   }
   function isShownStatus(el) {
     if (!isVisible(el) || el.closest(".ggpp-cls"))
@@ -5801,32 +5836,103 @@
     } catch {}
     return true;
   }
+  function isTransparentColor(color) {
+    const c3 = color.trim().toLowerCase();
+    return !c3 || c3 === "transparent" || c3 === "rgba(0, 0, 0, 0)" || /,\s*0\)$/.test(c3);
+  }
+  function isCircularSpinStyle(el) {
+    try {
+      const s3 = getComputedStyle(el);
+      if (s3.animationName && s3.animationName !== "none")
+        return true;
+      const br = s3.borderRadius || "";
+      const circular = br === "50%" || br === "999px" || br === "9999px" || /50%/.test(br);
+      if (!circular)
+        return false;
+      const top = s3.borderTopColor || "";
+      const right = s3.borderRightColor || "";
+      const left = s3.borderLeftColor || "";
+      const bottom = s3.borderBottomColor || "";
+      if (top && right && top !== right)
+        return true;
+      if (!isTransparentColor(top) && (isTransparentColor(right) || isTransparentColor(left) || isTransparentColor(bottom)))
+        return true;
+      if (s3.borderTopWidth && s3.borderTopWidth !== "0px" && (isTransparentColor(right) || isTransparentColor(bottom)))
+        return true;
+    } catch {}
+    return false;
+  }
+  function isTrailingSlot(el, hostBox) {
+    const r3 = el.getBoundingClientRect();
+    if (r3.width < 8 || r3.width > 28 || r3.height < 8 || r3.height > 28)
+      return false;
+    return r3.left > hostBox.right - 88 && r3.right <= hostBox.right + 4;
+  }
+  function shadowKids(el) {
+    const root = el.shadowRoot;
+    if (!root || typeof root.querySelectorAll !== "function")
+      return [];
+    try {
+      return [...root.querySelectorAll(TRAILING_RING_SEL)];
+    } catch {
+      return [];
+    }
+  }
+  function looksLikeNamedSpinner(el) {
+    const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+    if (SPINNER_NAME.test(label))
+      return true;
+    try {
+      const anim = getComputedStyle(el).animationName;
+      if (anim && anim !== "none")
+        return true;
+    } catch {}
+    return false;
+  }
+  function looksLikeTrailingRing(el, hostBox) {
+    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls"))
+      return false;
+    if (!isTrailingSlot(el, hostBox))
+      return false;
+    if (looksLikeNamedSpinner(el) || isCircularSpinStyle(el))
+      return true;
+    try {
+      if (el.querySelector?.("circle"))
+        return true;
+    } catch {}
+    return false;
+  }
   function rowHasNativeGeneratingSpinner(row) {
     const host = row;
     for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
-      if (isShownStatus(el) && !isPinChrome(el))
+      if (isShownStatus(el) && !isPinChrome(el) && !isMenuChrome(el))
         return true;
     }
     for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
       if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el))
         continue;
-      const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
-      if (SPINNER_NAME.test(label))
+      if (looksLikeNamedSpinner(el))
         return true;
-      try {
-        const anim = getComputedStyle(el).animationName;
-        if (anim && anim !== "none")
+    }
+    const box = typeof host.getBoundingClientRect === "function" ? host.getBoundingClientRect() : null;
+    if (!box)
+      return false;
+    const seen = /* @__PURE__ */ new Set();
+    const consider = (el) => {
+      if (seen.has(el))
+        return false;
+      seen.add(el);
+      return looksLikeTrailingRing(el, box);
+    };
+    for (const el of host.querySelectorAll(TRAILING_RING_SEL)) {
+      if (consider(el))
+        return true;
+      for (const kid of shadowKids(el)) {
+        if (consider(kid))
           return true;
-      } catch {}
+      }
     }
     return false;
-  }
-  function isPinChrome(el) {
-    try {
-      return !!el.closest(PIN_SEL);
-    } catch {
-      return false;
-    }
   }
   function rowHasNativeFlag(row) {
     const host = row;
@@ -5916,7 +6022,8 @@
       ctx.setInterval(() => {
         const id = gemini.route().conversationId;
         if (id && status.get(id) === "live" && !gemini.isGenerating()) set(id, null);
-      }, 2e3);
+        else if ([...status.values()].some((value) => value === "live")) paint();
+      }, 500);
       document.addEventListener(
         "visibilitychange",
         () => {
