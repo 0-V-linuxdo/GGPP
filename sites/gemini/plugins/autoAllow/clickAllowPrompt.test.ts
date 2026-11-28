@@ -321,6 +321,30 @@ describe("findToolPermission uses the inner card script", () => {
     expect(expand.clicks).toBeGreaterThan(0);
   });
 
+  test("does not click Show more options overflow as Expand", () => {
+    const more = el("button", { attrs: { "aria-label": "Show more options", "aria-haspopup": "menu" } });
+    const conv = el("button", { attrs: { "aria-label": "Open menu for conversation actions" } });
+    const expand = el("button", { text: "Expand text" });
+    const cancel = el("button", { text: "Cancel" });
+    const allow = el("button", { text: "Allow" });
+    const inner = el("div", {
+      children: [
+        el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nWaiting for your input" }),
+        el("pre", { text: LIVE_POSTFORM }),
+        more,
+        conv,
+        expand,
+        cancel,
+        allow,
+      ],
+    });
+    const found = findToolPermission(el("body", { children: [inner] }) as unknown as ParentNode);
+    expect(found).toBeTruthy();
+    expect(more.clicks).toBe(0);
+    expect(conv.clicks).toBe(0);
+    expect(expand.clicks).toBeGreaterThan(0);
+  });
+
   test("does not treat an aria-pressed Allow toggle as the computer-use overlay", () => {
     const star = el("button", { text: "Allow", attrs: { "aria-pressed": "false" }, className: "ggpp-star-btn" });
     const root = el("body", {

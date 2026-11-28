@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.10
+// @version      0.2.11
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3378,7 +3378,8 @@
   var aa_BUTTON_SEL = "button, [role='button']";
   var aa_COMPUTER_USE_COPY = /computer\s*use|remote\s*(?:computer|browser)|远程(?:计算机|浏览器)|遠端(?:電腦|瀏覽器)|电脑使用|電腦使用/i;
   var aa_COMPUTER_USE_ATTR = /computer-?use|remote-?(?:computer|browser)|cua-/i;
-  var aa_EXPAND_LABEL = /expand(?:\s+text)?|show more|展开|展開|显示更多|顯示更多/i;
+  var aa_EXPAND_LABEL = /^(?:expand(?:\s+text)?|show more|展开|展開|显示更多|顯示更多)$/i;
+  var aa_OVERFLOW_MENU_LABEL = /more options|open menu|conversation actions/i;
   var aa_ALLOW_EXACT = new Set([
     "allow",
     "allow once",
@@ -3460,6 +3461,12 @@
       return true;
     const cls = `${el.className || ""}`;
     return /\bggpp-star-btn\b/.test(cls);
+  }
+  function aa_isOverflowMenu(el) {
+    const popup = (el.getAttribute("aria-haspopup") || "").trim().toLowerCase();
+    if (popup && popup !== "false")
+      return true;
+    return aa_OVERFLOW_MENU_LABEL.test(aa_elementLabel(el));
   }
   function aa_isButtonish(el) {
     if (el.tagName === "BUTTON")
@@ -3614,10 +3621,11 @@
       return true;
     return text.length > 80;
   }
+  var aa_expanded = new WeakSet;
   function expandPermissionCard(card) {
     const controls = [...card.querySelectorAll(aa_BUTTON_SEL)];
     for (const el of controls) {
-      if (aa_inGgppUi(el) || aa_isDisabled(el) || aa_isToggle(el))
+      if (aa_inGgppUi(el) || aa_isDisabled(el) || aa_isToggle(el) || aa_isOverflowMenu(el) || aa_expanded.has(el))
         continue;
       const label = aa_elementLabel(el);
       const kind = aa_buttonKind(label);
@@ -3625,9 +3633,12 @@
         continue;
       if (!aa_EXPAND_LABEL.test(label))
         continue;
+      aa_expanded.add(el);
       try {
         el.click();
-      } catch {}
+      } catch {
+        aa_expanded.delete(el);
+      }
     }
   }
   function extractPermissionScript(card) {

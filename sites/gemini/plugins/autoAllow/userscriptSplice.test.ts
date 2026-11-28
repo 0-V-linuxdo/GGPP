@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.10 with AutoAllow, nav filter, and flag-hide status", () => {
-  expect(js).toMatch(/@version\s+0\.2\.10/);
+test("hand-spliced userscript is 0.2.11 with AutoAllow, nav filter, and flag-hide status", () => {
+  expect(js).toMatch(/@version\s+0\.2\.11/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -20,6 +20,8 @@ test("hand-spliced userscript is 0.2.10 with AutoAllow, nav filter, and flag-hid
   expect(js).toContain("function isPermissionWaitText");
   expect(js).toContain("list_pages");
   expect(js).toContain("function rowHasNativeStatusChrome");
+  expect(js).toContain("function aa_isOverflowMenu");
+  expect(js).toMatch(/aa_EXPAND_LABEL = \/\^\(\?:expand/);
   expect(js).toContain("title.before(mark)");
   expect(js).not.toContain("right: 36px");
   expect(js).toMatch(/id: "chatListStatus"[\s\S]{0,500}enabledByDefault: true/);

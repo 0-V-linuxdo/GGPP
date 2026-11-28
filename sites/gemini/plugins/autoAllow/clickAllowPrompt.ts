@@ -5,7 +5,8 @@ const CODE_SEL = "pre, code, textarea, [data-test-id*='code']";
 const BUTTON_SEL = "button, [role='button']";
 const COMPUTER_USE_COPY = /computer\s*use|remote\s*(?:computer|browser)|远程(?:计算机|浏览器)|遠端(?:電腦|瀏覽器)|电脑使用|電腦使用/i;
 const COMPUTER_USE_ATTR = /computer-?use|remote-?(?:computer|browser)|cua-/i;
-const EXPAND_LABEL = /expand(?:\s+text)?|show more|展开|展開|显示更多|顯示更多/i;
+const EXPAND_LABEL = /^(?:expand(?:\s+text)?|show more|展开|展開|显示更多|顯示更多)$/i;
+const OVERFLOW_MENU_LABEL = /more options|open menu|conversation actions/i;
 
 const ALLOW_EXACT = new Set([
   "allow",
@@ -100,6 +101,12 @@ function isToggle(el: Element): boolean {
   if (pressed === "true" || pressed === "false") return true;
   const cls = `${(el as HTMLElement).className || ""}`;
   return /\bggpp-star-btn\b/.test(cls);
+}
+
+function isOverflowMenu(el: Element): boolean {
+  const popup = (el.getAttribute("aria-haspopup") || "").trim().toLowerCase();
+  if (popup && popup !== "false") return true;
+  return OVERFLOW_MENU_LABEL.test(elementLabel(el));
 }
 
 function isButtonish(el: Element): boolean {
@@ -255,17 +262,22 @@ function isCodeLike(text: string): boolean {
   return text.length > 80;
 }
 
+const expanded = new WeakSet<Element>();
+
 function expandPermissionCard(card: Element): void {
   const controls = [...card.querySelectorAll(BUTTON_SEL)];
   for (const el of controls) {
-    if (inGgppUi(el) || isDisabled(el) || isToggle(el)) continue;
+    if (inGgppUi(el) || isDisabled(el) || isToggle(el) || isOverflowMenu(el) || expanded.has(el)) continue;
     const label = elementLabel(el);
     const kind = buttonKind(label);
     if (kind === "allow" || kind === "sticky" || kind === "cancel") continue;
     if (!EXPAND_LABEL.test(label)) continue;
+    expanded.add(el);
     try {
       (el as HTMLElement).click();
-    } catch {}
+    } catch {
+      expanded.delete(el);
+    }
   }
 }
 
