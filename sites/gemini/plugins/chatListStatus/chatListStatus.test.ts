@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   NATIVE_SIDEBAR_FLAG_SEL,
   NATIVE_SIDEBAR_SPINNER_SEL,
+  placeStatusMark,
   rowHasNativeFlag,
   rowHasNativeGeneratingSpinner,
   rowHasNativeStatusChrome,
@@ -47,8 +48,12 @@ describe("chatListStatus restore", () => {
     expect(src).not.toMatch(/Off by default: Gemini already shows a spinner/);
     expect(src).toContain("rowHasNativeStatusChrome(row)");
     expect(src).toContain("rowHasNativeFlag");
-    expect(src).toContain("title.before(mark)");
+    expect(src).toContain("placeStatusMark(row, mark)");
+    expect(src).toContain("remy-goal-status-badge");
+    expect(src).not.toContain("title.before(mark)");
     expect(src).not.toContain("right: 36px");
+    expect(src).toContain("width: 16px");
+    expect(src).toContain("currentColor");
     expect(src).not.toMatch(/if \(s === "live" && row\.querySelector\(/);
     expect(src).not.toMatch(/const PIN_SEL[\s\S]{0,500}aria-label\*='pin'/);
     expect(src).toContain("[aria-label='Pin' i]");
@@ -184,7 +189,7 @@ describe("rowHasNativeGeneratingSpinner", () => {
         opacity: "1",
         animationName: "rotate",
         borderRadius: "50%",
-        borderTopColor: "rgb(66, 133, 244)",
+        borderTopColor: "currentColor",
         borderRightColor: "transparent",
         borderLeftColor: "transparent",
         borderBottomColor: "transparent",
@@ -207,7 +212,7 @@ describe("rowHasNativeGeneratingSpinner", () => {
         opacity: "1",
         animationName: "rotate",
         borderRadius: "50%",
-        borderTopColor: "rgb(66, 133, 244)",
+        borderTopColor: "currentColor",
         borderRightColor: "transparent",
         borderLeftColor: "transparent",
         borderBottomColor: "transparent",
@@ -335,5 +340,98 @@ describe("native flag hides GG++ status", () => {
   test("native spinner also counts as status chrome", () => {
     const spinner = fakeEl({ visible: true, kind: "spinner" });
     expect(rowHasNativeStatusChrome(fakeRow([spinner]))).toBe(true);
+  });
+});
+
+
+function mini(tag: string, className = "", attrs: Record<string, string> = {}) {
+  const kids: any[] = [];
+  const node: any = {
+    tagName: tag.toUpperCase(),
+    className,
+    classList: { contains: (c: string) => ` ${className} `.includes(` ${c} `) },
+    children: kids,
+    parentElement: null,
+    get nextElementSibling() {
+      const p = node.parentElement;
+      if (!p) return null;
+      const i = p.children.indexOf(node);
+      return i >= 0 ? p.children[i + 1] ?? null : null;
+    },
+    get previousElementSibling() {
+      const p = node.parentElement;
+      if (!p) return null;
+      const i = p.children.indexOf(node);
+      return i > 0 ? p.children[i - 1] ?? null : null;
+    },
+    getAttribute: (name: string) => attrs[name] ?? null,
+    querySelector(sel: string) {
+      const match = (el: any) => {
+        if (sel.startsWith(".")) return ` ${el.className} `.includes(` ${sel.slice(1)} `);
+        return el.tagName === sel.toUpperCase();
+      };
+      const walk = (el: any): any => {
+        for (const child of el.children) {
+          if (match(child)) return child;
+          const hit = walk(child);
+          if (hit) return hit;
+        }
+        return null;
+      };
+      return walk(node);
+    },
+    append(...els: any[]) {
+      for (const el of els) {
+        if (el.parentElement) {
+          const arr = el.parentElement.children as any[];
+          const i = arr.indexOf(el);
+          if (i >= 0) arr.splice(i, 1);
+        }
+        el.parentElement = node;
+        kids.push(el);
+      }
+    },
+    insertBefore(el: any, before: any) {
+      if (el.parentElement) {
+        const arr = el.parentElement.children as any[];
+        const i = arr.indexOf(el);
+        if (i >= 0) arr.splice(i, 1);
+      }
+      el.parentElement = node;
+      const i = before ? kids.indexOf(before) : -1;
+      kids.splice(i >= 0 ? i : kids.length, 0, el);
+    },
+    before(el: any) {
+      node.parentElement.insertBefore(el, node);
+    },
+  };
+  return node;
+}
+
+describe("placeStatusMark", () => {
+  test("uses remy-goal-status-badge instead of prefixing the title", () => {
+    const row = mini("div");
+    const title = mini("div", "title-text");
+    const badge = mini("remy-goal-status-badge");
+    const pin = mini("span", "conversation-pin-icon");
+    row.append(title, badge, pin);
+    const mark = mini("span", "ggpp-cls");
+    placeStatusMark(row as unknown as Element, mark as unknown as HTMLElement);
+    expect(mark.parentElement).toBe(badge);
+    expect(title.previousElementSibling).toBe(null);
+  });
+
+  test("falls back to hovered-trailing-content before the pin", () => {
+    const row = mini("div");
+    const title = mini("div", "title-text");
+    const trail = mini("div", "hovered-trailing-content");
+    const pin = mini("span", "conversation-pin-icon", { "aria-label": "Pinned chat" });
+    trail.append(pin);
+    row.append(title, trail);
+    const mark = mini("span", "ggpp-cls");
+    placeStatusMark(row as unknown as Element, mark as unknown as HTMLElement);
+    expect(mark.parentElement).toBe(trail);
+    expect(mark.nextElementSibling).toBe(pin);
+    expect(title.previousElementSibling).toBe(null);
   });
 });

@@ -1,6 +1,6 @@
 {
   "name": "ggpp",
-  "version": "0.2.22",
+  "version": "0.2.23",
   "private": true,
   "description": "GG++ — a plugin-first mod for gemini.google.com (Userscript++ site)",
   "license": "GPL-3.0-or-later",

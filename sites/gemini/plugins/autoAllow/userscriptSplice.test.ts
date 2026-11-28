@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.22 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
-  expect(js).toMatch(/@version\s+0\.2\.22/);
+test("hand-spliced userscript is 0.2.23 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.23/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -47,8 +47,12 @@ test("hand-spliced userscript is 0.2.22 with AutoAllow overlay retry, nav filter
   expect(js).not.toMatch(/var PIN_SEL = "\[aria-label\*='pin'/);
   expect(js).toContain("function aa_isOverflowMenu");
   expect(js).toMatch(/aa_EXPAND_LABEL = \/\^\(\?:expand/);
-  expect(js).toContain("title.before(mark)");
+  expect(js).toContain("placeStatusMark(row, mark)");
+  expect(js).toContain("remy-goal-status-badge");
+  expect(js).not.toContain("title.before(mark)");
   expect(js).not.toContain("right: 36px");
+  expect(js).toContain("width: 16px");
+  expect(js).toContain("currentColor");
   expect(js).toMatch(/id: "chatListStatus"[\s\S]{0,500}enabledByDefault: true/);
   for (const id of ["cleaner", "noStarters", "noShareLink", "noDictation", "noSidebarIdentity", "composerOpacity", "skillBlocker"]) {
     const start = js.indexOf(`id: "${id}"`);

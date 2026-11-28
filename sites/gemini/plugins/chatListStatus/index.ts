@@ -120,7 +120,7 @@ function isPinOnlyChrome(el: Element): boolean {
 function rowHasExtraTrailingStatus(row: Element): boolean {
   let trails: Element[] = [];
   try {
-    trails = [...row.querySelectorAll(".hovered-trailing-content")];
+    trails = [...row.querySelectorAll(".hovered-trailing-content, remy-goal-status-badge")];
   } catch {
     return false;
   }
@@ -259,6 +259,33 @@ export function rowHasNativeStatusChrome(row: ParentNode): boolean {
   return rowHasNativeGeneratingSpinner(row) || rowHasNativeFlag(row);
 }
 
+/** Put the fallback mark in Gemini's trailing status slot, never before the title. */
+export function placeStatusMark(row: Element, mark: HTMLElement): void {
+  const badge = row.querySelector("remy-goal-status-badge");
+  if (badge) {
+    if (mark.parentElement !== badge) badge.append(mark);
+    return;
+  }
+  const trail = row.querySelector(".hovered-trailing-content");
+  if (trail) {
+    const anchor = [...trail.children].find(
+      (el) => el !== mark && !el.classList.contains("ggpp-cls") && (isPinIconHost(el) || isPinChrome(el) || isMenuChrome(el)),
+    );
+    if (mark.parentElement !== trail || (anchor && mark.nextElementSibling !== anchor)) {
+      trail.insertBefore(mark, anchor ?? null);
+    }
+    return;
+  }
+  const pin = row.querySelector(".conversation-pin-icon");
+  if (pin) {
+    if (mark.nextElementSibling !== pin) pin.before(mark);
+    return;
+  }
+  const title = row.querySelector(".title-text");
+  const host = title?.parentElement ?? row;
+  if (mark.parentElement !== host) host.append(mark);
+}
+
 export default definePlugin({
   id: "chatListStatus",
   name: "ChatListStatus",
@@ -266,29 +293,27 @@ export default definePlugin({
   tags: ["Chats", "Notifications"],
   icon: I.list,
   enabledByDefault: true,
-  updated: "2026-11-28",
+  updated: "2026-11-29",
   dependencies: ["gemini"],
   start(ctx) {
     const gemini = ctx.use<GeminiApi>("gemini");
     const status = new Map<string, Status>();
 
     ctx.css(`
-      .ggpp-cls { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; margin-inline-end: 4px; vertical-align: middle; }
-      .ggpp-cls[data-s="done"] { background: #3b82f6; }
-      .ggpp-cls[data-s="error"] { background: #ef4444; }
-      .ggpp-cls[data-s="live"] { width: 12px; height: 12px; border: 2px solid #3b82f6; border-right-color: transparent; background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
+      .ggpp-cls { display: inline-block; flex: none; box-sizing: border-box; width: 16px; height: 16px; border-radius: 50%; pointer-events: none; vertical-align: middle; align-self: center; }
+      .ggpp-cls[data-s="live"] { border: 2px solid color-mix(in srgb, var(--gem-sys-color--on-surface, currentColor) 28%, transparent); border-top-color: var(--gem-sys-color--on-surface, currentColor); background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
+      .ggpp-cls[data-s="done"] { width: 8px; height: 8px; background: var(--gem-sys-color--on-surface, currentColor); }
+      .ggpp-cls[data-s="error"] { width: 8px; height: 8px; background: #ef4444; }
       @keyframes ggpp-cls-spin { to { transform: rotate(360deg); } }
-      @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-right-color: #3b82f6; } }
+      @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-color: var(--gem-sys-color--on-surface, currentColor); } }
+      remy-goal-status-badge:has(.ggpp-cls) { display: inline-flex !important; align-items: center; justify-content: center; min-width: 16px; min-height: 16px; opacity: 1 !important; visibility: visible !important; }
+      .hovered-trailing-content:has(> .ggpp-cls) { opacity: 1 !important; visibility: visible !important; }
+      .hovered-trailing-content:has(> .ggpp-cls) > :not(.ggpp-cls) { opacity: 0; }
+      gem-nav-list-item[data-test-id='conversation']:is(:hover, :focus-within) .hovered-trailing-content:has(> .ggpp-cls) > :not(.ggpp-cls) { opacity: 1; }
       gem-nav-list-item[data-test-id='conversation']:has(circular-progress, [role='progressbar'], mat-progress-spinner, mat-spinner, [data-mat-icon-name='progress_activity'], [fonticon='progress_activity']) .ggpp-cls { display: none !important; }
     `);
 
     const idOf = (row: Element) => row.querySelector<HTMLAnchorElement>(gemini.SEL.conversationLink)?.href.match(/\/([0-9a-f]{8,})(?:[/?#]|$)/i)?.[1] ?? null;
-
-    function placeMark(row: Element, mark: HTMLElement) {
-      const title = row.querySelector(gemini.SEL.conversationTitle);
-      if (title && mark.nextElementSibling !== title) title.before(mark);
-      else if (!title && mark.parentElement !== row) row.prepend(mark);
-    }
 
     function paint() {
       for (const row of gemini.qa(gemini.SEL.conversationRow)) {
@@ -302,7 +327,7 @@ export default definePlugin({
         if (!mark) {
           mark = h("span", { class: "ggpp-cls", "aria-hidden": "true" });
         }
-        placeMark(row, mark);
+        placeStatusMark(row, mark);
         mark.dataset.s = s;
         mark.title = s === "live" ? "Replying…" : s === "done" ? "New reply" : "Ended with an error";
       }
