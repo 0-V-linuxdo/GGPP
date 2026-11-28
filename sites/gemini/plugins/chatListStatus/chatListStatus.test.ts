@@ -71,7 +71,7 @@ describe("chatListStatus restore", () => {
     const migrate = readFileSync(resolve(ROOT, "sites/gemini/migrate.ts"), "utf8");
     const site = readFileSync(resolve(ROOT, "sites/gemini/index.ts"), "utf8");
     expect(migrate).toContain('ggpp:restored-chatListStatus-v2');
-    expect(migrate).toContain('chatListStatus: { enabled: true }');
+    expect(migrate).not.toContain('chatListStatus: { enabled: true }');
     expect(migrate).toContain('U.setPluginEnabled?.("chatListStatus", true)');
     expect(migrate).not.toMatch(/setPluginEnabled\?\.\("chatListStatus", false\)/);
     expect(migrate).not.toContain("ggpp:retired-chatListStatus-v1");

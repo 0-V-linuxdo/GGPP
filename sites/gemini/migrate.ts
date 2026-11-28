@@ -87,9 +87,6 @@ export function retireRedundantPlugins() {
   } catch {}
   const U = getU();
   try {
-    U.importSettings?.({ plugins: { chatListStatus: { enabled: true } } }, { merge: true });
-  } catch {}
-  try {
     U.setPluginEnabled?.("chatListStatus", true);
   } catch {}
   try {
@@ -97,8 +94,7 @@ export function retireRedundantPlugins() {
   } catch {}
 }
 
-
-export const PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v1";
+export const PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v2";
 
 /** Plugins that were enabledByDefault before 0.2.22. New installs stay off. */
 export const PRE_0222_DEFAULT_ON = [
@@ -116,6 +112,7 @@ export function hadExistingGgProfile(): boolean {
   try {
     if (localStorage.getItem(FLAG) === "1") return true;
     if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return true;
+    if (localStorage.getItem(LEGACY_LS)) return true;
   } catch {}
   return false;
 }
@@ -132,6 +129,7 @@ function storedPluginEnabled(U: ReturnType<typeof getU>, id: string): boolean | 
  * 0.2.22 flipped enabledByDefault to false. Unset enabled flags then followed
  * the new default and changed existing machines. Restore the old on-state once
  * for profiles that already existed; leave explicit on/off and fresh installs.
+ * Only setPluginEnabled — importSettings replaceAll would wipe other settings.
  */
 export function preserveLegacyDeclutterDefaults(existingProfile: boolean) {
   try {
@@ -139,20 +137,11 @@ export function preserveLegacyDeclutterDefaults(existingProfile: boolean) {
   } catch {}
   if (existingProfile) {
     const U = getU();
-    const plugins: Record<string, { enabled: true }> = {};
     for (const id of PRE_0222_DEFAULT_ON) {
       if (typeof storedPluginEnabled(U, id) === "boolean") continue;
-      plugins[id] = { enabled: true };
-    }
-    if (Object.keys(plugins).length) {
       try {
-        U.importSettings?.({ plugins }, { merge: true });
+        U.setPluginEnabled?.(id, true);
       } catch {}
-      for (const id of Object.keys(plugins)) {
-        try {
-          U.setPluginEnabled?.(id, true);
-        } catch {}
-      }
     }
   }
   try {

@@ -8,7 +8,10 @@ const migrate = readFileSync(resolve(HERE, "migrate.ts"), "utf8");
 const site = readFileSync(resolve(HERE, "index.ts"), "utf8");
 
 test("0.2.22 declutter default-off does not clobber existing profiles", () => {
-  expect(migrate).toContain('ggpp:preserved-pre-0222-declutter-v1');
+  expect(migrate).toContain('ggpp:preserved-pre-0222-declutter-v2');
+  expect(migrate).toContain('Only setPluginEnabled');
+  expect(migrate).not.toMatch(/preserveLegacyDeclutterDefaults[\s\S]*importSettings/);
+
   expect(migrate).toContain("preserveLegacyDeclutterDefaults");
   expect(migrate).toContain("hadExistingGgProfile");
   for (const id of ["cleaner", "noStarters", "noShareLink", "noDictation", "noSidebarIdentity", "composerOpacity", "skillBlocker"]) {

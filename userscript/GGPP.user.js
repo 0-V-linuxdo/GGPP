@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.24
+// @version      0.2.25
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -1689,10 +1689,6 @@
     }
     const U3 = getU();
     try {
-      U3.importSettings?.({ plugins: { chatListStatus: { enabled: true } } }, { merge: true });
-    } catch {
-    }
-    try {
       U3.setPluginEnabled?.("chatListStatus", true);
     } catch {
     }
@@ -1701,12 +1697,13 @@
     } catch {
     }
   }
-  var PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v1";
+  var PRESERVE_DECLUTTER_FLAG = "ggpp:preserved-pre-0222-declutter-v2";
   var PRE_0222_DEFAULT_ON = ["cleaner", "noStarters", "noShareLink", "noDictation", "noSidebarIdentity", "composerOpacity", "skillBlocker"];
   function hadExistingGgProfile() {
     try {
       if (localStorage.getItem(FLAG) === "1") return true;
       if (localStorage.getItem(RESTORE_CHATLIST_FLAG) === "1") return true;
+      if (localStorage.getItem(LEGACY_LS)) return true;
     } catch {
     }
     return false;
@@ -1726,21 +1723,11 @@
     }
     if (existingProfile) {
       const U3 = getU();
-      const plugins2 = {};
       for (const id of PRE_0222_DEFAULT_ON) {
         if (typeof storedPluginEnabled(U3, id) === "boolean") continue;
-        plugins2[id] = { enabled: true };
-      }
-      if (Object.keys(plugins2).length) {
         try {
-          U3.importSettings?.({ plugins: plugins2 }, { merge: true });
+          U3.setPluginEnabled?.(id, true);
         } catch {
-        }
-        for (const id of Object.keys(plugins2)) {
-          try {
-            U3.setPluginEnabled?.(id, true);
-          } catch {
-          }
         }
       }
     }
