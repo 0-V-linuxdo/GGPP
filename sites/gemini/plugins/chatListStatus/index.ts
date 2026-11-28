@@ -59,6 +59,7 @@ const TRAILING_RING_SEL = [
   "em",
   "div",
   "button",
+  "gem-icon",
   "gem-icon-button",
   "svg",
   "mat-icon",
@@ -77,6 +78,11 @@ function isMenuChrome(el: Element): boolean {
   }
 }
 
+function classNameOf(el: Element): string {
+  const value = (el as HTMLElement).className;
+  return typeof value === "string" ? value : String(value || "");
+}
+
 function isPinChrome(el: Element): boolean {
   try {
     if (el.closest(PIN_SEL)) return true;
@@ -85,6 +91,50 @@ function isPinChrome(el: Element): boolean {
   }
   const label = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
   return PIN_LABEL.test(label);
+}
+
+function isPinIconHost(el: Element): boolean {
+  if (/\bconversation-pin-icon\b/.test(classNameOf(el))) return true;
+  const name = `${el.getAttribute?.("data-mat-icon-name") || ""} ${el.getAttribute?.("fonticon") || ""}`;
+  if (/\bpush_pin\b|\bkeep\b|\bpin_off\b/i.test(name)) return true;
+  const own = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
+  return PIN_LABEL.test(own);
+}
+
+function looksLikeGeneratingMark(el: Element): boolean {
+  if (looksLikeNamedSpinner(el) || isCircularSpinStyle(el)) return true;
+  try {
+    if (el.querySelector?.("circle")) return true;
+  } catch {
+    /* tests */
+  }
+  return false;
+}
+
+/** Pin icon/control only. A generating ring inside a "Pinned chat" host still counts. */
+function isPinOnlyChrome(el: Element): boolean {
+  return isPinChrome(el) && !looksLikeGeneratingMark(el);
+}
+
+/** Native spinner/flag is a sibling of the pin inside hovered-trailing-content. */
+function rowHasExtraTrailingStatus(row: Element): boolean {
+  let trails: Element[] = [];
+  try {
+    trails = [...row.querySelectorAll(".hovered-trailing-content")];
+  } catch {
+    return false;
+  }
+  for (const trail of trails) {
+    const kids = [...((trail as { children?: ArrayLike<Element> }).children ?? [])] as Element[];
+    for (const child of kids) {
+      if (!isShownStatus(child) || isMenuChrome(child)) continue;
+      const cls = classNameOf(child);
+      if (/\bggpp-sb-check\b|\bggpp-cls\b/.test(cls)) continue;
+      if (isPinIconHost(child) && !looksLikeGeneratingMark(child)) continue;
+      return true;
+    }
+  }
+  return false;
 }
 
 function isShownStatus(el: Element): boolean {
@@ -152,24 +202,19 @@ function looksLikeNamedSpinner(el: Element): boolean {
 }
 
 function looksLikeTrailingRing(el: Element, hostBox: DOMRect): boolean {
-  if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls")) return false;
+  if (!isShownStatus(el) || isPinOnlyChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls")) return false;
   if (!isTrailingSlot(el, hostBox)) return false;
-  if (looksLikeNamedSpinner(el) || isCircularSpinStyle(el)) return true;
-  try {
-    if (el.querySelector?.("circle")) return true;
-  } catch {
-    /* tests */
-  }
-  return false;
+  return looksLikeGeneratingMark(el);
 }
 
 export function rowHasNativeGeneratingSpinner(row: ParentNode): boolean {
   const host = row as Element;
+  if (rowHasExtraTrailingStatus(host)) return true;
   for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
-    if (isShownStatus(el) && !isPinChrome(el) && !isMenuChrome(el)) return true;
+    if (isShownStatus(el) && !isPinOnlyChrome(el) && !isMenuChrome(el)) return true;
   }
   for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
-    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el)) continue;
+    if (!isShownStatus(el) || isPinOnlyChrome(el) || isMenuChrome(el)) continue;
     if (looksLikeNamedSpinner(el)) return true;
   }
   const box = typeof host.getBoundingClientRect === "function" ? host.getBoundingClientRect() : null;

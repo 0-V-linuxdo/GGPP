@@ -53,6 +53,11 @@ describe("chatListStatus restore", () => {
     expect(src).not.toMatch(/const PIN_SEL[\s\S]{0,500}aria-label\*='pin'/);
     expect(src).toContain("[aria-label='Pin' i]");
     expect(src).toContain("looksLikeTrailingRing");
+    expect(src).toContain("isPinOnlyChrome");
+    expect(src).toContain("looksLikeGeneratingMark");
+    expect(src).toContain("rowHasExtraTrailingStatus");
+    expect(src).toContain("hovered-trailing-content");
+    expect(src).toContain("gem-icon");
     expect(src).toMatch(/status\.values\(\)[\s\S]{0,80}live[\s\S]{0,40}paint\(\)/);
     expect(src).toContain("}, 500)");
   });
@@ -75,6 +80,8 @@ function fakeEl(opts: {
   closest?: (s: string) => unknown;
   attrs?: Record<string, string>;
   html?: string;
+  className?: string;
+  tagName?: string;
   box?: { left: number; right: number; width: number; height: number };
   children?: Array<{ getAttribute: (n: string) => string | null }>;
   style?: Record<string, string>;
@@ -87,6 +94,8 @@ function fakeEl(opts: {
     isConnected: true,
     _kind: opts.kind,
     _style: opts.style,
+    tagName: opts.tagName || "DIV",
+    className: opts.className || "",
     getBoundingClientRect: () => ({ width: box.width, height: box.height, left: box.left, right: box.right, top: 0, bottom: box.height }),
     closest: opts.closest ?? ((s: string) => (opts.sel && s.includes(opts.sel) ? {} : null)),
     getAttribute: (n: string) => opts.attrs?.[n] ?? null,
@@ -111,8 +120,11 @@ function fakeRow(nodes: unknown[], hostBox = { left: 0, right: 260, width: 260, 
       if (sel.startsWith("svg, mat-icon") || sel.startsWith("svg, mat-icon, .google-symbols")) {
         return all.filter((n) => n._kind === "flag" || n._kind === "svg" || n._kind === "svg-ring");
       }
-      if (sel.startsWith("span,") || sel.includes("gem-icon-button")) {
-        return all.filter((n) => n._kind === "ring" || n._kind === "svg-ring" || n._kind === "spinner" || n._kind === "svg");
+      if (sel.includes("hovered-trailing-content")) {
+        return all.filter((n) => n._kind === "trail");
+      }
+      if (sel.startsWith("span,") || sel.includes("gem-icon-button") || sel.includes("gem-icon")) {
+        return all.filter((n) => n._kind === "ring" || n._kind === "svg-ring" || n._kind === "spinner" || n._kind === "svg" || n._kind === "gem-icon");
       }
       return [];
     },
@@ -181,6 +193,96 @@ describe("rowHasNativeGeneratingSpinner", () => {
     });
     expect(rowHasNativeGeneratingSpinner(fakeRow([ring]))).toBe(true);
     expect(rowHasNativeStatusChrome(fakeRow([ring]))).toBe(true);
+  });
+
+  test("unlabeled 16px ring inside pinned container still hides GG++", () => {
+    const ring = fakeEl({
+      visible: true,
+      kind: "ring",
+      box: { left: 188, right: 204, width: 16, height: 16 },
+      closest: (sel: string) => (sel.includes("Pinned chat") || sel.includes("Pin") ? {} : null),
+      style: {
+        visibility: "visible",
+        display: "block",
+        opacity: "1",
+        animationName: "rotate",
+        borderRadius: "50%",
+        borderTopColor: "rgb(66, 133, 244)",
+        borderRightColor: "transparent",
+        borderLeftColor: "transparent",
+        borderBottomColor: "transparent",
+        borderTopWidth: "2px",
+      },
+    });
+    expect(rowHasNativeGeneratingSpinner(fakeRow([ring]))).toBe(true);
+    expect(rowHasNativeStatusChrome(fakeRow([ring]))).toBe(true);
+  });
+
+  test("pin-only trailing control is not a native spinner", () => {
+    const pin = fakeEl({
+      visible: true,
+      kind: "ring",
+      box: { left: 188, right: 204, width: 16, height: 16 },
+      closest: (sel: string) => (sel.includes("Pinned chat") || sel.includes("Pin") ? {} : null),
+      attrs: { "aria-label": "Pinned chat" },
+      style: {
+        visibility: "visible",
+        display: "block",
+        opacity: "1",
+        animationName: "none",
+        borderRadius: "0px",
+        borderTopColor: "",
+        borderRightColor: "",
+        borderLeftColor: "",
+        borderBottomColor: "",
+        borderTopWidth: "0px",
+      },
+    });
+    expect(rowHasNativeGeneratingSpinner(fakeRow([pin]))).toBe(false);
+    expect(rowHasNativeFlag(fakeRow([pin]))).toBe(false);
+    expect(rowHasNativeStatusChrome(fakeRow([pin]))).toBe(false);
+  });
+
+  test("unlabeled gem-icon sibling of pin hides GG++", () => {
+    const pin = fakeEl({
+      visible: true,
+      kind: "pin-host",
+      className: "gem-conversation-actions-menu-button conversation-pin-icon ng-star-inserted",
+      tagName: "GEM-ICON",
+      attrs: { "aria-label": "Pinned chat" },
+      box: { left: 208, right: 232, width: 24, height: 24 },
+    });
+    const spin = fakeEl({
+      visible: true,
+      kind: "gem-icon",
+      className: "ng-star-inserted",
+      tagName: "GEM-ICON",
+      closest: () => null,
+      box: { left: 176, right: 200, width: 24, height: 24 },
+    });
+    const trail = {
+      _kind: "trail",
+      children: [spin, pin],
+    };
+    expect(rowHasNativeGeneratingSpinner(fakeRow([trail]))).toBe(true);
+    expect(rowHasNativeStatusChrome(fakeRow([trail]))).toBe(true);
+  });
+
+  test("pin-only hovered trailing content keeps GG++", () => {
+    const pin = fakeEl({
+      visible: true,
+      kind: "pin-host",
+      className: "gem-conversation-actions-menu-button conversation-pin-icon ng-star-inserted",
+      tagName: "GEM-ICON",
+      attrs: { "aria-label": "Pinned chat" },
+      box: { left: 208, right: 232, width: 24, height: 24 },
+    });
+    const trail = {
+      _kind: "trail",
+      children: [pin],
+    };
+    expect(rowHasNativeGeneratingSpinner(fakeRow([trail]))).toBe(false);
+    expect(rowHasNativeStatusChrome(fakeRow([trail]))).toBe(false);
   });
 
   test("no native chrome keeps GG++ live mark", () => {

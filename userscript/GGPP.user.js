@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.16
+// @version      0.2.17
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -5803,6 +5803,7 @@
     "em",
     "div",
     "button",
+    "gem-icon",
     "gem-icon-button",
     "svg",
     "mat-icon",
@@ -5812,6 +5813,10 @@
     "[class*='loading' i]",
     "[class*='circular' i]"
   ].join(", ");
+  function classNameOf(el) {
+    const value = el.className;
+    return typeof value === "string" ? value : String(value || "");
+  }
   function isMenuChrome(el) {
     try {
       return !!el.closest(MENU_SEL);
@@ -5825,6 +5830,42 @@
     } catch {}
     const label = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
     return PIN_LABEL.test(label);
+  }
+  function isPinIconHost(el) {
+    if (/\bconversation-pin-icon\b/.test(classNameOf(el))) return true;
+    const name = `${el.getAttribute?.("data-mat-icon-name") || ""} ${el.getAttribute?.("fonticon") || ""}`;
+    if (/\bpush_pin\b|\bkeep\b|\bpin_off\b/i.test(name)) return true;
+    const own = `${el.getAttribute?.("aria-label") || ""} ${el.getAttribute?.("title") || ""}`;
+    return PIN_LABEL.test(own);
+  }
+  function looksLikeGeneratingMark(el) {
+    if (looksLikeNamedSpinner(el) || isCircularSpinStyle(el)) return true;
+    try {
+      if (el.querySelector?.("circle")) return true;
+    } catch {}
+    return false;
+  }
+  function isPinOnlyChrome(el) {
+    return isPinChrome(el) && !looksLikeGeneratingMark(el);
+  }
+  function rowHasExtraTrailingStatus(row) {
+    let trails = [];
+    try {
+      trails = [...row.querySelectorAll(".hovered-trailing-content")];
+    } catch {
+      return false;
+    }
+    for (const trail of trails) {
+      const kids = [...(trail.children ?? [])];
+      for (const child of kids) {
+        if (!isShownStatus(child) || isMenuChrome(child)) continue;
+        const cls = classNameOf(child);
+        if (/\bggpp-sb-check\b|\bggpp-cls\b/.test(cls)) continue;
+        if (isPinIconHost(child) && !looksLikeGeneratingMark(child)) continue;
+        return true;
+      }
+    }
+    return false;
   }
   function isShownStatus(el) {
     if (!isVisible(el) || el.closest(".ggpp-cls"))
@@ -5890,7 +5931,7 @@
     return false;
   }
   function looksLikeTrailingRing(el, hostBox) {
-    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls"))
+    if (!isShownStatus(el) || isPinOnlyChrome(el) || isMenuChrome(el) || el.closest(".ggpp-cls"))
       return false;
     if (!isTrailingSlot(el, hostBox))
       return false;
@@ -5904,12 +5945,13 @@
   }
   function rowHasNativeGeneratingSpinner(row) {
     const host = row;
+    if (rowHasExtraTrailingStatus(host)) return true;
     for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
-      if (isShownStatus(el) && !isPinChrome(el) && !isMenuChrome(el))
+      if (isShownStatus(el) && !isPinOnlyChrome(el) && !isMenuChrome(el))
         return true;
     }
     for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
-      if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el))
+      if (!isShownStatus(el) || isPinOnlyChrome(el) || isMenuChrome(el))
         continue;
       if (looksLikeNamedSpinner(el))
         return true;
