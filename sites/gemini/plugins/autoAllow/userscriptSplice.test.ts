@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.18 with AutoAllow, nav filter, flag-hide status, and Nightly favicons", () => {
-  expect(js).toMatch(/@version\s+0\.2\.18/);
+test("hand-spliced userscript is 0.2.19 with AutoAllow, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.19/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -18,6 +18,10 @@ test("hand-spliced userscript is 0.2.18 with AutoAllow, nav filter, flag-hide st
   expect(js).toContain('label: "总是允许"');
   expect(js).toContain("function aa_maybeExpandPermissionCard");
   expect(js).toContain("autoAllowFindPermission(document, { expand: !always })");
+  expect(js).toContain("所有权限请求都直接点 Allow，不展开询问内容。");
+  expect(js).toContain("if (always) {");
+  expect(js).toContain("autoAllowClick(card.element, ctx.settings.preferSticky !== false);");
+  expect(js).not.toContain("const verdict = always ? autoAllowRules(permission)");
   expect(js).toContain("function extractPermissionScript");
   expect(js).toContain("function isComputerUseOverlayAllow");
   expect(js).toContain("function filterNavMessages");
@@ -50,7 +54,7 @@ test("hand-spliced userscript is 0.2.18 with AutoAllow, nav filter, flag-hide st
   expect(js.split("\u00a0").length - 1).toBe(2);
 });
 
-test("spliced judge allows truncated H3yun evaluate_script and still denies cookies", () => {
+test("spliced judge allows truncated H3yun evaluate_script; always-allow overrides cookie deny", () => {
   const start = js.indexOf("var aa_DESTRUCTIVE");
   const end = js.indexOf("function aa_apiPrompt");
   expect(start).toBeGreaterThan(0);
@@ -71,7 +75,8 @@ test("spliced judge allows truncated H3yun evaluate_script and still denies cook
   expect(api.autoAllowRules({ toolName: "list_pages", script: "{}" })).toBe("allow");
   expect(api.autoAllowDecide("unsure", true)).toBe("allow");
   expect(api.autoAllowDecide("unsure", false)).toBe("skip");
-  expect(api.autoAllowDecide("deny", true)).toBe("deny");
+  expect(api.autoAllowDecide("deny", true)).toBe("allow");
+  expect(api.autoAllowDecide("deny", false)).toBe("deny");
 });
 
 test("spliced navigator keeps named tool steps and drops Allow chips", () => {

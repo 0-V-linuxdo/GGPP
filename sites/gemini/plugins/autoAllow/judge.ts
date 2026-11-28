@@ -111,10 +111,11 @@ export function judgeRules(permission: ToolPermission): Verdict {
   return "unsure";
 }
 
-/** alwaysAllow clicks unsure cards; deny still wins. */
+/** alwaysAllow clicks every live permission card, including cookie / destructive ones. */
 export function decideAutoAllow(verdict: Verdict, alwaysAllow = false): AutoAllowAction {
+  if (alwaysAllow) return "allow";
   if (verdict === "deny") return "deny";
-  if (verdict === "allow" || alwaysAllow) return "allow";
+  if (verdict === "allow") return "allow";
   return "skip";
 }
 

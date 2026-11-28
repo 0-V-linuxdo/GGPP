@@ -8,7 +8,7 @@ import { decideAutoAllow, judgeApi, judgeRules, openTemporaryWebJudge } from "./
 export default definePlugin({
   id: "autoAllow",
   name: "AutoAllow",
-  description: "Judges Gemini's in-page tool permissions. Uncertain requests are left for you to decide.",
+  description: "Judges Gemini's in-page tool permissions. 总是允许 skips the judge and clicks Allow.",
   tags: ["Messages"],
   icon: I.check,
   enabledByDefault: true,
@@ -26,7 +26,7 @@ export default definePlugin({
     alwaysAllow: {
       type: "boolean",
       label: "总是允许",
-      description: "不确定时直接点 Allow，不展开询问内容。",
+      description: "所有权限请求都直接点 Allow，不展开询问内容。",
       default: true,
     },
     preferSticky: {
@@ -73,16 +73,18 @@ export default definePlugin({
           const always = ctx.settings.alwaysAllow !== false;
           const card = findToolPermission(document, { expand: !always });
           if (!card) return;
+          if (always) {
+            clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
+            return;
+          }
           const permission = { toolName: card.toolName, script: card.script, text: card.text };
           const backend = ctx.settings.backend;
-          const verdict = always
-            ? judgeRules(permission)
-            : backend === "api"
-              ? await judgeApi(permission, ctx.settings.apiKey, ctx.settings.model)
-              : backend === "web"
-                ? openTemporaryWebJudge(permission)
-                : judgeRules(permission);
-          const action = decideAutoAllow(verdict, always);
+          const verdict = backend === "api"
+            ? await judgeApi(permission, ctx.settings.apiKey, ctx.settings.model)
+            : backend === "web"
+              ? openTemporaryWebJudge(permission)
+              : judgeRules(permission);
+          const action = decideAutoAllow(verdict, false);
           if (action === "allow") clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
           else if (action === "deny") clickCancelPrompt(card);
         } catch {}

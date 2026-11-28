@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.18
+// @version      0.2.19
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3905,9 +3905,11 @@
     return "unsure";
   }
   function autoAllowDecide(verdict, alwaysAllow) {
+    if (alwaysAllow)
+      return "allow";
     if (verdict === "deny")
       return "deny";
-    if (verdict === "allow" || alwaysAllow)
+    if (verdict === "allow")
       return "allow";
     return "skip";
   }
@@ -3984,14 +3986,14 @@
   var autoAllow_default = definePlugin({
     id: "autoAllow",
     name: "AutoAllow",
-    description: "Judges Gemini's in-page tool permissions. Uncertain requests are left for you to decide.",
+    description: "Judges Gemini's in-page tool permissions. 总是允许 skips the judge and clicks Allow.",
     tags: ["Messages"],
     icon: I3.check,
     enabledByDefault: true,
     updated: "2026-11-28",
     settings: {
       delay: { type: "number", label: "Delay", description: "Seconds to wait before acting on a verdict.", default: 0, min: 0, max: 5, unit: "s" },
-      alwaysAllow: { type: "boolean", label: "总是允许", description: "不确定时直接点 Allow，不展开询问内容。", default: true },
+      alwaysAllow: { type: "boolean", label: "总是允许", description: "所有权限请求都直接点 Allow，不展开询问内容。", default: true },
       preferSticky: { type: "boolean", label: "Remember when possible", description: "Prefer Always allow / Allow for this chat when Gemini offers it.", default: true },
       backend: { type: "select", label: "Judge backend", description: "Rules are local. API uses your Gemini key. Web opens a Gemini Temporary chat for review.", default: "rules", options: [{ value: "rules", label: "Local safety rules" }, { value: "api", label: "Gemini API" }, { value: "web", label: "Gemini Temporary chat (preview)" }] },
       apiKey: { type: "string", label: "Gemini API key", description: "Used only for the safety verdict; it is never logged.", default: "", placeholder: "AIza…", showIf: (values) => values.backend === "api" },
@@ -4008,10 +4010,14 @@
             const always = ctx.settings.alwaysAllow !== false;
             const card = autoAllowFindPermission(document, { expand: !always });
             if (!card) return;
+            if (always) {
+              autoAllowClick(card.element, ctx.settings.preferSticky !== false);
+              return;
+            }
             const permission = { toolName: card.toolName, script: card.script, text: card.text };
             const backend = ctx.settings.backend;
-            const verdict = always ? autoAllowRules(permission) : backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
-            const action = autoAllowDecide(verdict, always);
+            const verdict = backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
+            const action = autoAllowDecide(verdict, false);
             if (action === "allow") autoAllowClick(card.element, ctx.settings.preferSticky !== false);
             else if (action === "deny") autoAllowCancelClick(card.element);
           } catch {

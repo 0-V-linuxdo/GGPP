@@ -3,10 +3,10 @@ import { buttonKind, extractPermissionScript, findToolPermission, looksLikeToolP
 import { decideAutoAllow, judgeRules, openTemporaryWebJudge } from "./judge";
 
 describe("always allow option", () => {
-  test("clicks unsure when enabled, still denies, skips unsure when off", () => {
+  test("always-allow clicks every verdict, including cookie/destructive denials", () => {
     expect(decideAutoAllow("unsure", true)).toBe("allow");
     expect(decideAutoAllow("allow", true)).toBe("allow");
-    expect(decideAutoAllow("deny", true)).toBe("deny");
+    expect(decideAutoAllow("deny", true)).toBe("allow");
     expect(decideAutoAllow("unsure", false)).toBe("skip");
     expect(decideAutoAllow("allow", false)).toBe("allow");
     expect(decideAutoAllow("deny", false)).toBe("deny");
