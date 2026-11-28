@@ -8,7 +8,19 @@ import type { GeminiApi, ResponseEvent } from "../gemini";
 type Status = "live" | "done" | "error";
 
 /** Native sidenav generating indicators; skip our mark when one is actually visible. */
-export const NATIVE_SIDEBAR_SPINNER_SEL = "progress, [role='progressbar'], circular-progress, mat-progress-spinner, mat-spinner";
+export const NATIVE_SIDEBAR_SPINNER_SEL = [
+  "progress",
+  "[role='progressbar']",
+  "circular-progress",
+  "mat-progress-spinner",
+  "mat-spinner",
+  "[data-mat-icon-name='progress_activity']",
+  "[data-mat-icon-name='autorenew']",
+  "[data-mat-icon-name='sync']",
+  "[fonticon='progress_activity']",
+  "[fonticon='autorenew']",
+  "[fonticon='sync']",
+].join(", ");
 
 /** Gemini app red/orange flag on a conversation row (task / attention). */
 export const NATIVE_SIDEBAR_FLAG_SEL = [
@@ -24,10 +36,46 @@ export const NATIVE_SIDEBAR_FLAG_SEL = [
 ].join(", ");
 
 const PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+const MENU_SEL = "[data-test-id='actions-menu-button'], [aria-label*='More options' i], [aria-label*='更多选项']";
 const FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
+const SPINNER_NAME = /progress_activity|autorenew|(?:^|\s)sync(?:\s|$)|spinner|loading/i;
+
+function isMenuChrome(el: Element): boolean {
+  try {
+    return !!el.closest(MENU_SEL);
+  } catch {
+    return false;
+  }
+}
+
+function isShownStatus(el: Element): boolean {
+  if (!isVisible(el) || el.closest(".ggpp-cls")) return false;
+  try {
+    const s = getComputedStyle(el);
+    if (s.visibility === "hidden" || s.display === "none" || s.opacity === "0") return false;
+  } catch {
+    /* tests / detached */
+  }
+  return true;
+}
 
 export function rowHasNativeGeneratingSpinner(row: ParentNode): boolean {
-  return [...row.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)].some(isVisible);
+  const host = row as Element;
+  for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
+    if (isShownStatus(el) && !isPinChrome(el)) return true;
+  }
+  for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
+    if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el)) continue;
+    const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+    if (SPINNER_NAME.test(label)) return true;
+    try {
+      const anim = getComputedStyle(el).animationName;
+      if (anim && anim !== "none") return true;
+    } catch {
+      /* tests */
+    }
+  }
+  return false;
 }
 
 function isPinChrome(el: Element): boolean {
@@ -83,6 +131,7 @@ export default definePlugin({
       .ggpp-cls[data-s="live"] { width: 12px; height: 12px; border: 2px solid #3b82f6; border-right-color: transparent; background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
       @keyframes ggpp-cls-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-right-color: #3b82f6; } }
+      gem-nav-list-item[data-test-id='conversation']:has(circular-progress, [role='progressbar'], mat-progress-spinner, mat-spinner, [data-mat-icon-name='progress_activity'], [fonticon='progress_activity']) .ggpp-cls { display: none !important; }
     `);
 
     const idOf = (row: Element) => row.querySelector<HTMLAnchorElement>(gemini.SEL.conversationLink)?.href.match(/\/([0-9a-f]{8,})(?:[/?#]|$)/i)?.[1] ?? null;

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.13
+// @version      0.2.14
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -4484,6 +4484,7 @@
   ];
   var aa_ELLIPSIS = /^[.\u2026\u22EF]+/;
   var aa_JSON_CRUMB = /^(?:\{\s*\}|\[\s*\]|\{\s*\.\.\.\s*\})$/;
+  var aa_TOOL_ARG_KEY = /"(?:function|pageId|uid|selector|url|command|script|waitForStableDom|includeSnapshot|resourceTypes|pageSize|pageIdx|value)"/;
   function collapseNavText(text) {
     return String(text ?? "").replace(/\s+/g, " ").trim();
   }
@@ -4567,9 +4568,35 @@
       return true;
     if (aa_JSON_CRUMB.test(t))
       return true;
-    if (/^\{[\s\S]{0,400}\}$/.test(t) && !/[A-Za-z\u4e00-\u9fff]{4,}\s+[A-Za-z\u4e00-\u9fff]{4,}/.test(t))
+    if (!t.startsWith("{") || !t.endsWith("}"))
+      return false;
+    if (aa_TOOL_ARG_KEY.test(t))
       return true;
-    return false;
+    return t.length <= 400 && !/[A-Za-z\u4e00-\u9fff]{4,}\s+[A-Za-z\u4e00-\u9fff]{4,}/.test(t);
+  }
+  function permissionToolName(text) {
+    const s = collapseNavText(text);
+    const named = /(?:^|[?\s])run\s+([\w./:-]+)\s*\?/i.exec(s) ?? /allow gemini to\s+run\s+([\w./:-]+)/i.exec(s) ?? /允许\s*gemini[^A-Za-z0-9_]*([\w./:-]+)/i.exec(s) ?? /允許\s*gemini[^A-Za-z0-9_]*([\w./:-]+)/i.exec(s);
+    return named?.[1] ?? "";
+  }
+  function aa_inferToolLabel(text) {
+    const named = permissionToolName(text);
+    if (named)
+      return named;
+    const s = collapseNavText(text);
+    if (/"function"\s*:/.test(s))
+      return "evaluate_script";
+    if (/"resourceTypes"\s*:/.test(s) || /"pageSize"\s*:/.test(s))
+      return "list_network_requests";
+    if (/"value"\s*:/.test(s) && /"uid"\s*:/.test(s))
+      return "fill";
+    if (/"uid"\s*:/.test(s))
+      return "click";
+    if (aa_JSON_CRUMB.test(s))
+      return "tool";
+    if (aa_isPermissionPayload(s) && s.startsWith("{"))
+      return "tool";
+    return "";
   }
   function isChromeNavText(_role, text) {
     const start = aa_consumeChromeFromStart(text, true);
@@ -4582,14 +4609,10 @@
   }
   function navLabelText(text) {
     const leftover = aa_consumeChromeFromStart(text, false);
-    if (!leftover)
-      return "";
-    const stripped = aa_consumeTrailingButtons(leftover);
-    if (!stripped || aa_isPermissionPayload(stripped))
-      return "";
-    if (aa_consumeChromeFromStart(stripped, true) === "")
-      return "";
-    return stripped;
+    const stripped = leftover ? aa_consumeTrailingButtons(leftover) : "";
+    if (stripped && !aa_isPermissionPayload(stripped) && aa_consumeChromeFromStart(stripped, true) !== "")
+      return stripped;
+    return aa_inferToolLabel(text) || aa_inferToolLabel(stripped);
   }
   function isTopLevelMessageEl(el) {
     if (!el)
@@ -4637,7 +4660,7 @@
         return false;
       if (aa_hasNavMedia(m.el))
         return true;
-      return !isChromeNavText(m.role, m.text) && !!navLabelText(m.text);
+      return !!navLabelText(m.text);
     });
     if (generating && showAssistant) {
       for (let i = messages.length - 1;i >= 0; i--) {
@@ -4722,7 +4745,6 @@
         const cached = labels.get(m3.el);
         if (cached && !(m3.role === "model" && gemini.isGenerating())) return cached;
         let text = navLabelText(m3.text);
-        if (isChromeNavText(m3.role, m3.text)) text = "";
         if (!text) text = m3.el.querySelector("img") ? "Image" : m3.el.querySelector("uploader-file-preview, .file-preview-container *") ? "Attachment" : m3.role === "model" && gemini.isGenerating() ? "Writing…" : "…";
         const out = truncate(text, 61);
         labels.set(m3.el, out);
@@ -5734,7 +5756,19 @@
   });
 
   // sites/gemini/plugins/chatListStatus/index.ts
-  var NATIVE_SIDEBAR_SPINNER_SEL = "progress, [role='progressbar'], circular-progress, mat-progress-spinner, mat-spinner";
+  var NATIVE_SIDEBAR_SPINNER_SEL = [
+    "progress",
+    "[role='progressbar']",
+    "circular-progress",
+    "mat-progress-spinner",
+    "mat-spinner",
+    "[data-mat-icon-name='progress_activity']",
+    "[data-mat-icon-name='autorenew']",
+    "[data-mat-icon-name='sync']",
+    "[fonticon='progress_activity']",
+    "[fonticon='autorenew']",
+    "[fonticon='sync']"
+  ].join(", ");
   var NATIVE_SIDEBAR_FLAG_SEL = [
     "mat-icon[data-mat-icon-name='flag']",
     "mat-icon[data-mat-icon-name='outlined_flag']",
@@ -5747,9 +5781,45 @@
     "[aria-label*='红旗']"
   ].join(", ");
   var PIN_SEL = "[aria-label*='pin' i], [aria-label*='Pinned' i], [aria-label*='Unpin' i], [aria-label*='置顶']";
+  var MENU_SEL = "[data-test-id='actions-menu-button'], [aria-label*='More options' i], [aria-label*='更多选项']";
   var FLAG_PATH = /M14\.4\s*6|M14\s+6l-1-2H5v17|M5 21V4h9|M14\.05\s*4\.5/i;
+  var SPINNER_NAME = /progress_activity|autorenew|(?:^|\s)sync(?:\s|$)|spinner|loading/i;
+  function isMenuChrome(el) {
+    try {
+      return !!el.closest(MENU_SEL);
+    } catch {
+      return false;
+    }
+  }
+  function isShownStatus(el) {
+    if (!isVisible(el) || el.closest(".ggpp-cls"))
+      return false;
+    try {
+      const s3 = getComputedStyle(el);
+      if (s3.visibility === "hidden" || s3.display === "none" || s3.opacity === "0")
+        return false;
+    } catch {}
+    return true;
+  }
   function rowHasNativeGeneratingSpinner(row) {
-    return [...row.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)].some(isVisible);
+    const host = row;
+    for (const el of host.querySelectorAll(NATIVE_SIDEBAR_SPINNER_SEL)) {
+      if (isShownStatus(el) && !isPinChrome(el))
+        return true;
+    }
+    for (const el of host.querySelectorAll("svg, mat-icon, .google-symbols, [class*='spinner' i], [class*='loading' i]")) {
+      if (!isShownStatus(el) || isPinChrome(el) || isMenuChrome(el))
+        continue;
+      const label = `${el.getAttribute("data-mat-icon-name") || ""} ${el.getAttribute("fonticon") || ""} ${el.getAttribute("aria-label") || ""} ${el.textContent || ""}`.toLowerCase();
+      if (SPINNER_NAME.test(label))
+        return true;
+      try {
+        const anim = getComputedStyle(el).animationName;
+        if (anim && anim !== "none")
+          return true;
+      } catch {}
+    }
+    return false;
   }
   function isPinChrome(el) {
     try {
@@ -5799,6 +5869,7 @@
       .ggpp-cls[data-s="live"] { width: 12px; height: 12px; border: 2px solid #3b82f6; border-right-color: transparent; background: transparent; animation: ggpp-cls-spin .8s linear infinite; }
       @keyframes ggpp-cls-spin { to { transform: rotate(360deg); } }
       @media (prefers-reduced-motion: reduce) { .ggpp-cls[data-s="live"] { animation: none; border-right-color: #3b82f6; } }
+      gem-nav-list-item[data-test-id='conversation']:has(circular-progress, [role='progressbar'], mat-progress-spinner, mat-spinner, [data-mat-icon-name='progress_activity'], [fonticon='progress_activity']) .ggpp-cls { display: none !important; }
     `);
       const idOf = (row) => row.querySelector(gemini.SEL.conversationLink)?.href.match(/\/([0-9a-f]{8,})(?:[/?#]|$)/i)?.[1] ?? null;
       function placeMark(row, mark) {
@@ -7195,7 +7266,8 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
           clone3.querySelectorAll(".cdk-visually-hidden").forEach((n2) => n2.remove());
           return clone3.textContent?.trim() ?? "";
         }
-        return textOf(q4(SEL.modelText, el) ?? el);
+        const fromMd = textOf(q4(SEL.modelText, el));
+        return fromMd || textOf(el);
       }
       function setEditorText(text, append2 = false) {
         const ed = editor();

@@ -317,7 +317,8 @@ export default definePlugin({
         clone.querySelectorAll(".cdk-visually-hidden").forEach((n) => n.remove());
         return clone.textContent?.trim() ?? "";
       }
-      return textOf(q(SEL.modelText, el) ?? el);
+      const fromMd = textOf(q(SEL.modelText, el));
+      return fromMd || textOf(el);
     }
 
     function setEditorText(text: string, append = false) {

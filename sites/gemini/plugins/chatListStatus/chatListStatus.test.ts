@@ -84,6 +84,7 @@ describe("rowHasNativeGeneratingSpinner", () => {
     expect(NATIVE_SIDEBAR_SPINNER_SEL).toContain("[role='progressbar']");
     expect(NATIVE_SIDEBAR_SPINNER_SEL).toContain("circular-progress");
     expect(NATIVE_SIDEBAR_SPINNER_SEL).toContain("mat-progress-spinner");
+    expect(NATIVE_SIDEBAR_SPINNER_SEL).toContain("progress_activity");
   });
 
   test("false when the row has no native spinner", () => {
@@ -99,6 +100,15 @@ describe("rowHasNativeGeneratingSpinner", () => {
     const hidden = Object.assign(fakeEl({ visible: false }), { _kind: "spinner" });
     const shown = Object.assign(fakeEl({ visible: true }), { _kind: "spinner" });
     expect(rowHasNativeGeneratingSpinner(fakeRow([hidden, shown]))).toBe(true);
+  });
+
+  test("true for Gemini progress_activity generating icon", () => {
+    const icon = Object.assign(
+      fakeEl({ visible: true, attrs: { "data-mat-icon-name": "progress_activity" } }),
+      { _kind: "spinner" },
+    );
+    expect(rowHasNativeGeneratingSpinner(fakeRow([icon]))).toBe(true);
+    expect(rowHasNativeStatusChrome(fakeRow([icon]))).toBe(true);
   });
 });
 

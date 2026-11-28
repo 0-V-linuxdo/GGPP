@@ -1,4 +1,4 @@
-/** Task-mode / computer-use chrome that should not appear in BetterNavigator. */
+/** Task-mode / computer-use chrome that should not appear as raw outline text. */
 
 export type NavRole = "user" | "model";
 
@@ -68,6 +68,7 @@ const LONG_CHROME: RegExp[] = [
 
 const ELLIPSIS = /^[.\u2026\u22EF]+/;
 const JSON_CRUMB = /^(?:\{\s*\}|\[\s*\]|\{\s*\.\.\.\s*\})$/;
+const TOOL_ARG_KEY = /"(?:function|pageId|uid|selector|url|command|script|waitForStableDom|includeSnapshot|resourceTypes|pageSize|pageIdx|value)"/;
 
 export function collapseNavText(text: string): string {
   return String(text ?? "").replace(/\s+/g, " ").trim();
@@ -148,8 +149,33 @@ function isPermissionPayload(s: string): boolean {
   const t = collapseNavText(s);
   if (!t) return true;
   if (JSON_CRUMB.test(t)) return true;
-  if (/^\{[\s\S]{0,400}\}$/.test(t) && !/[A-Za-z\u4e00-\u9fff]{4,}\s+[A-Za-z\u4e00-\u9fff]{4,}/.test(t)) return true;
-  return false;
+  if (!t.startsWith("{") || !t.endsWith("}")) return false;
+  if (TOOL_ARG_KEY.test(t)) return true;
+  return t.length <= 400 && !/[A-Za-z\u4e00-\u9fff]{4,}\s+[A-Za-z\u4e00-\u9fff]{4,}/.test(t);
+}
+
+/** `click` / `evaluate_script` from "Run X?" / "Allow Gemini to run X". */
+export function permissionToolName(text: string): string {
+  const s = collapseNavText(text);
+  const named =
+    /(?:^|[?\s])run\s+([\w./:-]+)\s*\?/i.exec(s) ??
+    /allow gemini to\s+run\s+([\w./:-]+)/i.exec(s) ??
+    /允许\s*gemini[^A-Za-z0-9_]*([\w./:-]+)/i.exec(s) ??
+    /允許\s*gemini[^A-Za-z0-9_]*([\w./:-]+)/i.exec(s);
+  return named?.[1] ?? "";
+}
+
+function inferToolLabel(text: string): string {
+  const named = permissionToolName(text);
+  if (named) return named;
+  const s = collapseNavText(text);
+  if (/"function"\s*:/.test(s)) return "evaluate_script";
+  if (/"resourceTypes"\s*:/.test(s) || /"pageSize"\s*:/.test(s)) return "list_network_requests";
+  if (/"value"\s*:/.test(s) && /"uid"\s*:/.test(s)) return "fill";
+  if (/"uid"\s*:/.test(s)) return "click";
+  if (JSON_CRUMB.test(s)) return "tool";
+  if (isPermissionPayload(s) && s.startsWith("{")) return "tool";
+  return "";
 }
 
 /** True for empty status, permission cards, continue/allow chips, and action-only labels. */
@@ -161,14 +187,12 @@ export function isChromeNavText(_role: NavRole, text: string): boolean {
   return isPermissionPayload(stripped);
 }
 
-/** Collapsed outline label; chrome-only text becomes "". Permission prefixes are stripped. */
+/** Outline label: real prose, or a short tool name for computer-use cards. */
 export function navLabelText(text: string): string {
   const leftover = consumeChromeFromStart(text, false);
-  if (!leftover) return "";
-  const stripped = consumeTrailingButtons(leftover);
-  if (!stripped || isPermissionPayload(stripped)) return "";
-  if (consumeChromeFromStart(stripped, true) === "") return "";
-  return stripped;
+  const stripped = leftover ? consumeTrailingButtons(leftover) : "";
+  if (stripped && !isPermissionPayload(stripped) && consumeChromeFromStart(stripped, true) !== "") return stripped;
+  return inferToolLabel(text) || inferToolLabel(stripped);
 }
 
 export function isTopLevelMessageEl(el: NavEl | null | undefined): boolean {
@@ -208,8 +232,8 @@ export function isPermissionWaitText(text: string): boolean {
 }
 
 /**
- * Drop task-mode chrome rows. While generating, keep the last Writing… placeholder
- * even if it has no real label, but never resurrect a permission card.
+ * Keep real prompts/replies and computer-use tool steps. Drop Allow/Cancel chips
+ * and Writing… placeholders, except the last placeholder while generating.
  */
 export function filterNavMessages<T extends MessageLike>(
   messages: readonly T[],
@@ -222,7 +246,7 @@ export function filterNavMessages<T extends MessageLike>(
     if (!top[i]) return false;
     if (m.role === "model" && !showAssistant) return false;
     if (hasNavMedia(m.el)) return true;
-    return !isChromeNavText(m.role, m.text) && !!navLabelText(m.text);
+    return !!navLabelText(m.text);
   });
   if (generating && showAssistant) {
     for (let i = messages.length - 1; i >= 0; i--) {

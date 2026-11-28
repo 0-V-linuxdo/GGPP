@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.13 with AutoAllow, nav filter, and flag-hide status", () => {
-  expect(js).toMatch(/@version\s+0\.2\.13/);
+test("hand-spliced userscript is 0.2.14 with AutoAllow, nav filter, and flag-hide status", () => {
+  expect(js).toMatch(/@version\s+0\.2\.14/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -21,6 +21,8 @@ test("hand-spliced userscript is 0.2.13 with AutoAllow, nav filter, and flag-hid
   expect(js).toContain("function extractPermissionScript");
   expect(js).toContain("function isComputerUseOverlayAllow");
   expect(js).toContain("function filterNavMessages");
+  expect(js).toContain("function aa_inferToolLabel");
+  expect(js).toContain("progress_activity");
   expect(js).toContain("function isPermissionWaitText");
   expect(js).toContain("list_pages");
   expect(js).toContain("function rowHasNativeStatusChrome");
@@ -58,22 +60,31 @@ test("spliced judge allows truncated H3yun evaluate_script and still denies cook
   expect(api.autoAllowDecide("deny", true)).toBe("deny");
 });
 
-test("spliced navigator drops {} Cancel Allow permission rows", () => {
+test("spliced navigator keeps named tool steps and drops Allow chips", () => {
   const start = js.indexOf("  // sites/gemini/plugins/betterNavigator/navItems.ts");
   const end = js.indexOf("  var betterNavigator_default");
   expect(start).toBeGreaterThan(0);
   expect(end).toBeGreaterThan(start);
   const api = new Function(`${js.slice(start, end)}; return { isChromeNavText, navLabelText, filterNavMessages, isPermissionWaitText };`)();
   expect(api.isChromeNavText("model", "{} Cancel Allow")).toBe(true);
-  expect(api.navLabelText("{} Cancel Allow")).toBe("");
+  expect(api.navLabelText("{} Cancel Allow")).toBe("tool");
+  expect(api.navLabelText("Run list_pages? {} Cancel Allow")).toBe("list_pages");
+  expect(api.navLabelText('{"pageId":68,"function":"async () => { return 1; }"}')).toBe("evaluate_script");
   expect(api.isPermissionWaitText("Waiting for your input")).toBe(true);
   const kept = api.filterNavMessages(
     [
       { role: "user", text: "Help me inspect the current tab" },
       { role: "model", text: "当前 Tabbit mcp 已连接，可以继续。" },
+      { role: "user", text: "Allow" },
       { role: "model", text: "{} Cancel Allow" },
+      { role: "model", text: 'Run click?\n{"pageId":37,"uid":"8_24"}' },
     ],
     { showAssistant: true, generating: true },
   );
-  expect(kept.map((m) => m.text)).toEqual(["Help me inspect the current tab", "当前 Tabbit mcp 已连接，可以继续。"]);
+  expect(kept.map((m) => api.navLabelText(m.text) || m.text)).toEqual([
+    "Help me inspect the current tab",
+    "当前 Tabbit mcp 已连接，可以继续。",
+    "tool",
+    "click",
+  ]);
 });

@@ -3,7 +3,7 @@ import { h, isEditable, nextFrame } from "../../../../src/lib/dom";
 import { I } from "../../../../src/lib/icons";
 import { truncate } from "../../../../src/lib/text";
 import type { GeminiApi, Message } from "../gemini";
-import { filterNavMessages, isChromeNavText, isPermissionWaitText, navLabelText } from "./navItems";
+import { filterNavMessages, isPermissionWaitText, navLabelText } from "./navItems";
 
 /**
  * A Notion-style outline of the conversation: a tick rail at the right edge of
@@ -97,7 +97,6 @@ export default definePlugin({
       const cached = labels.get(m.el);
       if (cached && !(m.role === "model" && gemini.isGenerating())) return cached;
       let text = navLabelText(m.text);
-      if (isChromeNavText(m.role, m.text)) text = "";
       if (!text) text = m.el.querySelector("img") ? "Image" : m.el.querySelector("uploader-file-preview, .file-preview-container *") ? "Attachment" : m.role === "model" && gemini.isGenerating() ? "Writing…" : "…";
       const out = truncate(text, 61);
       labels.set(m.el, out);

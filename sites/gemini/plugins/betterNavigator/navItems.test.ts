@@ -60,8 +60,10 @@ describe("navLabelText", () => {
     expect(navLabelText("Writing...")).toBe("");
     expect(navLabelText("Cancel")).toBe("");
     expect(navLabelText("继续")).toBe("");
-    expect(navLabelText("{} Cancel Allow")).toBe("");
-    expect(navLabelText("Run list_pages? {} Cancel Allow")).toBe("");
+    expect(navLabelText("{} Cancel Allow")).toBe("tool");
+    expect(navLabelText("Run list_pages? {} Cancel Allow")).toBe("list_pages");
+    expect(navLabelText('Run click?\nAllow Gemini to run click on your machine?\n{"pageId":37,"includeSnapshot":true,"uid":"8_24"}\nCancel\nAllow')).toBe("click");
+    expect(navLabelText('{"pageId":68,"function":"async () => { return 1; }"}')).toBe("evaluate_script");
   });
 
   test("strips a permission prefix when real markdown follows", () => {
@@ -101,28 +103,59 @@ describe("filterNavMessages", () => {
     msg("model", "Writing..."),
   ];
 
-  test("keeps the real prompt and reply; drops Cancel / 继续 / permission chrome", () => {
+  test("keeps the real prompt, tool steps, and reply; drops Cancel / 继续 / Allow chips", () => {
     const kept = filterNavMessages(liveOutline, { showAssistant: true, generating: false });
-    expect(kept.map((m) => navLabelText(m.text) || m.text)).toEqual(["Help me inspect the current tab", "当前 Tabbit mcp 已连接，可以继续。"]);
-    expect(kept.map((m) => m.role)).toEqual(["user", "model"]);
+    expect(kept.map((m) => navLabelText(m.text) || m.text)).toEqual([
+      "Help me inspect the current tab",
+      "evaluate_script",
+      "当前 Tabbit mcp 已连接，可以继续。",
+    ]);
+    expect(kept.map((m) => m.role)).toEqual(["user", "model", "model"]);
   });
 
-  test("drops a {} Cancel Allow permission row even while generating", () => {
+  test("keeps a {} Cancel Allow computer-use step as a tool row", () => {
     const kept = filterNavMessages(
       [msg("user", "Help me inspect the current tab"), msg("model", "当前 Tabbit mcp 已连接，可以继续。"), msg("model", "{} Cancel Allow")],
       { showAssistant: true, generating: true },
     );
-    expect(kept.map((m) => navLabelText(m.text) || m.text)).toEqual(["Help me inspect the current tab", "当前 Tabbit mcp 已连接，可以继续。"]);
+    expect(kept.map((m) => navLabelText(m.text) || m.text)).toEqual([
+      "Help me inspect the current tab",
+      "当前 Tabbit mcp 已连接，可以继续。",
+      "tool",
+    ]);
   });
 
   test("while generating, also keeps the last Writing placeholder", () => {
     const kept = filterNavMessages(liveOutline, { showAssistant: true, generating: true });
     expect(kept.map((m) => [m.role, navLabelText(m.text)])).toEqual([
       ["user", "Help me inspect the current tab"],
+      ["model", "evaluate_script"],
       ["model", "当前 Tabbit mcp 已连接，可以继续。"],
       ["model", ""],
     ]);
-    expect(isChromeNavText(kept[2]!.role, kept[2]!.text)).toBe(true);
+    expect(isChromeNavText(kept[3]!.role, kept[3]!.text)).toBe(true);
+  });
+
+  test("H3yun task-mode outline keeps prose and named tool steps, not Allow chips or raw JSON", () => {
+    const kept = filterNavMessages(
+      [
+        msg("user", "直接通过页面设置补齐 订单 的 2 个打印模板及主链路自动化并逐条验证生效。继续"),
+        msg("model", "现在响应完全正常。刚实测了 Tabbit mcp 和氚云页面，连接顺畅。"),
+        msg("user", "Allow"),
+        msg("model", 'Run click?\nAllow Gemini to run click on your machine?\n{"pageId":37,"includeSnapshot":true,"uid":"8_24"}\nCancel\nAllow'),
+        msg("user", "Allow"),
+        msg("model", "Run list_pages?\nAllow Gemini to run list_pages on your machine?\n{}\nCancel\nAllow"),
+        msg("model", '{"pageId":68,"function":"async () => { const get = (u) => fetch(u); return 1; }"}'),
+      ],
+      { showAssistant: true, generating: false },
+    );
+    expect(kept.map((m) => navLabelText(m.text))).toEqual([
+      "直接通过页面设置补齐 订单 的 2 个打印模板及主链路自动化并逐条验证生效",
+      "现在响应完全正常。刚实测了 Tabbit mcp 和氚云页面，连接顺畅。",
+      "click",
+      "list_pages",
+      "evaluate_script",
+    ]);
   });
 
   test("showAssistant false hides model rows including the live placeholder", () => {
@@ -161,7 +194,7 @@ describe("BetterNavigator wiring", () => {
     expect(src).toContain("isPermissionWaitText");
     expect(src).toContain("gemini.isGenerating() && !waiting && last?.role === \"model\" ? last : undefined");
     expect(src).toContain("navLabelText(");
-    expect(src).toContain("isChromeNavText(");
+    expect(src).not.toMatch(/if \(isChromeNavText/);
     expect(src).not.toMatch(/items\.findLast\(\((?:m|m3)\) => \1\.role === "model"\)/);
   });
 });
