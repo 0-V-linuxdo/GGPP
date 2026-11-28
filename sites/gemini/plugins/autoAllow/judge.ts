@@ -7,6 +7,7 @@ export type ToolPermission = {
 };
 
 export type Verdict = "allow" | "deny" | "unsure";
+export type AutoAllowAction = "allow" | "deny" | "skip";
 
 const DESTRUCTIVE = /(?:\brm\s+-[a-z]*r[a-z]*\b|\brmdir\s+\/s\b|\bremove-item\b[^\n]*-recurse\b|\bdel\s+\/s\b|\bformat\s+[a-z]:|\bmkfs\b|\bdd\s+if=.*\bof=|\bshutdown\b|\breboot\b|\bkillall\b|\btaskkill\b|\bgit\s+reset\s+--hard\b|\bdrop\s+(?:database|table)\b|\bdelete\s+from\b)/i;
 const EXFILTRATION = /(?:document\s*\.\s*cookie|\bbody\s*:[^\n;]{0,200}\b(?:document\.cookie|localStorage(?:\.getItem)?|sessionStorage|indexedDB|api[_-]?key|access[_-]?token|authorization|secret)\b)/i;
@@ -108,6 +109,13 @@ export function judgeRules(permission: ToolPermission): Verdict {
   if (/^(?:list_files|read_file|search_files|inspect)$/i.test(tool) && script.length < 4000) return "allow";
   if (/^evaluate_script$/i.test(tool)) return isSafeEvaluateScript(script) ? "allow" : "unsure";
   return "unsure";
+}
+
+/** alwaysAllow clicks unsure cards; deny still wins. */
+export function decideAutoAllow(verdict: Verdict, alwaysAllow = false): AutoAllowAction {
+  if (verdict === "deny") return "deny";
+  if (verdict === "allow" || alwaysAllow) return "allow";
+  return "skip";
 }
 
 function apiPrompt(permission: ToolPermission): string {

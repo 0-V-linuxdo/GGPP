@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.11
+// @version      0.2.12
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3896,6 +3896,13 @@
       return isSafeEvaluateScript(script) ? "allow" : "unsure";
     return "unsure";
   }
+  function autoAllowDecide(verdict, alwaysAllow) {
+    if (verdict === "deny")
+      return "deny";
+    if (verdict === "allow" || alwaysAllow)
+      return "allow";
+    return "skip";
+  }
   function aa_apiPrompt(permission) {
     return [
       "You are a safety gate for a computer-use permission request.",
@@ -3976,6 +3983,7 @@
     updated: "2026-11-28",
     settings: {
       delay: { type: "number", label: "Delay", description: "Seconds to wait before acting on a verdict.", default: 0, min: 0, max: 5, unit: "s" },
+      alwaysAllow: { type: "boolean", label: "总是允许", description: "规则不确定时也点 Allow。破坏性和 cookie 外传仍会拒绝。", default: true },
       preferSticky: { type: "boolean", label: "Remember when possible", description: "Prefer Always allow / Allow for this chat when Gemini offers it.", default: true },
       backend: { type: "select", label: "Judge backend", description: "Rules are local. API uses your Gemini key. Web opens a Gemini Temporary chat for review.", default: "rules", options: [{ value: "rules", label: "Local safety rules" }, { value: "api", label: "Gemini API" }, { value: "web", label: "Gemini Temporary chat (preview)" }] },
       apiKey: { type: "string", label: "Gemini API key", description: "Used only for the safety verdict; it is never logged.", default: "", placeholder: "AIza…", showIf: (values) => values.backend === "api" },
@@ -3994,8 +4002,9 @@
             const permission = { toolName: card.toolName, script: card.script, text: card.text };
             const backend = ctx.settings.backend;
             const verdict = backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
-            if (verdict === "allow") autoAllowClick(card.element, ctx.settings.preferSticky !== false);
-            else if (verdict === "deny") autoAllowCancelClick(card.element);
+            const action = autoAllowDecide(verdict, ctx.settings.alwaysAllow !== false);
+            if (action === "allow") autoAllowClick(card.element, ctx.settings.preferSticky !== false);
+            else if (action === "deny") autoAllowCancelClick(card.element);
           } catch {
           }
         };

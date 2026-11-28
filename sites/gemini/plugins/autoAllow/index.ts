@@ -1,7 +1,7 @@
 import { definePlugin } from "../../shims/types";
 import { I } from "../../../../src/lib/icons";
 import { clickAllowPrompt, clickCancelPrompt, findToolPermission } from "./clickAllowPrompt";
-import { judgeApi, judgeRules, openTemporaryWebJudge } from "./judge";
+import { decideAutoAllow, judgeApi, judgeRules, openTemporaryWebJudge } from "./judge";
 
 /** Judge Gemini's in-page tool-permission cards before allowing or denying them. */
 
@@ -22,6 +22,12 @@ export default definePlugin({
       min: 0,
       max: 5,
       unit: "s",
+    },
+    alwaysAllow: {
+      type: "boolean",
+      label: "总是允许",
+      description: "规则不确定时也点 Allow。破坏性和 cookie 外传仍会拒绝。",
+      default: true,
     },
     preferSticky: {
       type: "boolean",
@@ -73,8 +79,9 @@ export default definePlugin({
             : backend === "web"
               ? openTemporaryWebJudge(permission)
               : judgeRules(permission);
-          if (verdict === "allow") clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
-          else if (verdict === "deny") clickCancelPrompt(card);
+          const action = decideAutoAllow(verdict, ctx.settings.alwaysAllow !== false);
+          if (action === "allow") clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
+          else if (action === "deny") clickCancelPrompt(card);
         } catch {}
       };
       if (delayMs) pending = setTimeout(run, delayMs);

@@ -1,6 +1,17 @@
 import { describe, expect, test } from "bun:test";
 import { buttonKind, extractPermissionScript, findToolPermission, looksLikeToolPermission, pickAllowLabel } from "./clickAllowPrompt";
-import { judgeRules, openTemporaryWebJudge } from "./judge";
+import { decideAutoAllow, judgeRules, openTemporaryWebJudge } from "./judge";
+
+describe("always allow option", () => {
+  test("clicks unsure when enabled, still denies, skips unsure when off", () => {
+    expect(decideAutoAllow("unsure", true)).toBe("allow");
+    expect(decideAutoAllow("allow", true)).toBe("allow");
+    expect(decideAutoAllow("deny", true)).toBe("deny");
+    expect(decideAutoAllow("unsure", false)).toBe("skip");
+    expect(decideAutoAllow("allow", false)).toBe("allow");
+    expect(decideAutoAllow("deny", false)).toBe("deny");
+  });
+});
 
 describe("tool permission labels", () => {
   test("classifies Allow / sticky / Cancel in English and Chinese", () => {
