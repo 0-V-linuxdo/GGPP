@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.15
+// @version      0.2.16
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -7182,6 +7182,9 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
   function textOf(el) {
     return el?.innerText?.trim() ?? el?.textContent?.trim() ?? "";
   }
+  function readableText(el) {
+    return el?.innerText?.trim() || el?.textContent?.trim() || "";
+  }
   var gemini_default2 = definePlugin({
     id: "gemini",
     name: "Gemini Adapter",
@@ -7373,8 +7376,8 @@ a{color:#a8c7fa}img{max-width:100%}pre{white-space:pre-wrap}
           clone3.querySelectorAll(".cdk-visually-hidden").forEach((n2) => n2.remove());
           return clone3.textContent?.trim() ?? "";
         }
-        const fromMd = textOf(q4(SEL.modelText, el));
-        return fromMd || textOf(el);
+        const fromMd = readableText(q4(SEL.modelText, el));
+        return fromMd || readableText(el);
       }
       function setEditorText(text, append2 = false) {
         const ed = editor();

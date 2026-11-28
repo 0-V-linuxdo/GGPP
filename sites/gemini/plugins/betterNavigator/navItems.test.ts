@@ -66,6 +66,11 @@ describe("navLabelText", () => {
     expect(navLabelText('{"pageId":68,"function":"async () => { return 1; }"}')).toBe("evaluate_script");
   });
 
+  test("labels off-screen confirmation cards from textContent", () => {
+    expect(navLabelText(' Run take_snapshot? Allow Gemini to run take_snapshot on your machine? {"pageId":37}')).toBe("take_snapshot");
+    expect(navLabelText("")).toBe("");
+  });
+
   test("strips a permission prefix when real markdown follows", () => {
     expect(navLabelText("Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\n\nHere is the TypeScript plan.")).toBe(
       "Here is the TypeScript plan.",

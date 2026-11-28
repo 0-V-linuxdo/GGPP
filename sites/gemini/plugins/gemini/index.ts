@@ -96,6 +96,11 @@ function textOf(el: Element | null | undefined) {
   return (el as HTMLElement | null)?.innerText?.trim() ?? el?.textContent?.trim() ?? "";
 }
 
+/** innerText is empty for content-visibility-skipped / off-screen turns; textContent still has the card. */
+export function readableText(el: Element | null | undefined): string {
+  return (el as HTMLElement | null)?.innerText?.trim() || el?.textContent?.trim() || "";
+}
+
 export default definePlugin({
   id: "gemini",
   name: "Gemini Adapter",
@@ -317,8 +322,8 @@ export default definePlugin({
         clone.querySelectorAll(".cdk-visually-hidden").forEach((n) => n.remove());
         return clone.textContent?.trim() ?? "";
       }
-      const fromMd = textOf(q(SEL.modelText, el));
-      return fromMd || textOf(el);
+      const fromMd = readableText(q(SEL.modelText, el));
+      return fromMd || readableText(el);
     }
 
     function setEditorText(text: string, append = false) {

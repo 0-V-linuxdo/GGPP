@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.15 with AutoAllow, nav filter, and flag-hide status", () => {
-  expect(js).toMatch(/@version\s+0\.2\.15/);
+test("hand-spliced userscript is 0.2.16 with AutoAllow, nav filter, and flag-hide status", () => {
+  expect(js).toMatch(/@version\s+0\.2\.16/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -27,6 +27,8 @@ test("hand-spliced userscript is 0.2.15 with AutoAllow, nav filter, and flag-hid
   expect(js).toContain("list_pages");
   expect(js).toContain("function rowHasNativeStatusChrome");
   expect(js).toContain("function looksLikeTrailingRing");
+  expect(js).toContain("function readableText");
+  expect(js).toContain("const fromMd = readableText(q4(SEL.modelText, el));");
   expect(js).toContain("[aria-label='Pin' i]");
   expect(js).not.toMatch(/var PIN_SEL = "\[aria-label\*='pin'/);
   expect(js).toContain("function aa_isOverflowMenu");
