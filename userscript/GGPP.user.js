@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.19
+// @version      0.2.20
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -3554,7 +3554,7 @@
   }
   function aa_isFixedTopRightPill(el) {
     const hosts = [el, ...aa_walkParents(el, 8)];
-    const positioned = hosts.some((n) => /fixed|sticky/i.test(aa_computedPosition(n)));
+    const positioned = hosts.some((n) => /fixed|sticky|absolute/i.test(aa_computedPosition(n)));
     if (!positioned)
       return false;
     try {
@@ -3565,10 +3565,10 @@
       const vh = typeof window !== "undefined" ? window.innerHeight : 0;
       if (!vw)
         return false;
-      const topish = rect.top >= -12 && rect.top <= Math.max(140, vh * 0.25);
-      const rightish = rect.right >= vw - Math.max(280, vw * 0.34);
+      const rightish = rect.left >= vw * 0.45 || rect.right >= vw - Math.max(280, vw * 0.34);
       const pill = rect.height <= 96 && rect.width <= 320;
-      return topish && rightish && pill;
+      const onScreen = vh ? rect.bottom > 0 && rect.top < vh : true;
+      return rightish && pill && onScreen;
     } catch {
       return false;
     }
@@ -3739,15 +3739,17 @@
     aa_maybeExpandPermissionCard(scriptCard, expand);
     aa_maybeExpandPermissionCard(host, expand);
     const text = aa_normalizeLabel(aa_nodeText(scriptCard || host) || aa_nodeText(host));
-    const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || text;
+    const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || "";
     const toolName = aa_inferEvaluateTool(script, text);
-    if (!toolName && !script)
+    if (!toolName && !aa_isCodeLike(script) && !autoAllowLooksLikePermission(text))
       return null;
     return { element: host, toolName, script, text };
   }
   var aa_clicked = new WeakSet;
-  function aa_clickTarget(target) {
-    if (!target || aa_isDisabled(target) || aa_clicked.has(target) || aa_isToggle(target))
+  function aa_clickTarget(target, retryWhileEnabled = false) {
+    if (!target || aa_isDisabled(target) || aa_isToggle(target))
+      return false;
+    if (aa_clicked.has(target) && !retryWhileEnabled)
       return false;
     aa_clicked.add(target);
     try {
@@ -3782,15 +3784,15 @@
     for (const el of aa_buttonCandidates(root)) {
       if (!isComputerUseOverlayAllow(el))
         continue;
-      if (aa_clickTarget(el))
+      if (aa_clickTarget(el, true))
         return true;
     }
     return false;
   }
   function autoAllowClick(root = document, preferSticky = true) {
-    if (aa_clickClassicAllow(root, preferSticky))
-      return true;
     if (aa_clickOverlayAllow(root))
+      return true;
+    if (aa_clickClassicAllow(root, preferSticky))
       return true;
     const doc = typeof document !== "undefined" ? document : null;
     if (doc && root !== doc)
@@ -3992,7 +3994,7 @@
     enabledByDefault: true,
     updated: "2026-11-28",
     settings: {
-      delay: { type: "number", label: "Delay", description: "Seconds to wait before acting on a verdict.", default: 0, min: 0, max: 5, unit: "s" },
+      delay: { type: "number", label: "Delay", description: "Seconds to wait before clicking Allow.", default: 0, min: 0, max: 5, unit: "s" },
       alwaysAllow: { type: "boolean", label: "总是允许", description: "所有权限请求都直接点 Allow，不展开询问内容。", default: true },
       preferSticky: { type: "boolean", label: "Remember when possible", description: "Prefer Always allow / Allow for this chat when Gemini offers it.", default: true },
       backend: { type: "select", label: "Judge backend", description: "Rules are local. API uses your Gemini key. Web opens a Gemini Temporary chat for review.", default: "rules", options: [{ value: "rules", label: "Local safety rules" }, { value: "api", label: "Gemini API" }, { value: "web", label: "Gemini Temporary chat (preview)" }] },
@@ -4008,12 +4010,12 @@
         const run = async () => {
           try {
             const always = ctx.settings.alwaysAllow !== false;
-            const card = autoAllowFindPermission(document, { expand: !always });
-            if (!card) return;
             if (always) {
-              autoAllowClick(card.element, ctx.settings.preferSticky !== false);
+              autoAllowClick(document, ctx.settings.preferSticky !== false);
               return;
             }
+            const card = autoAllowFindPermission(document);
+            if (!card) return;
             const permission = { toolName: card.toolName, script: card.script, text: card.text };
             const backend = ctx.settings.backend;
             const verdict = backend === "api" ? await autoAllowApi(permission, ctx.settings.apiKey, ctx.settings.model) : backend === "web" ? autoAllowWeb(permission) : autoAllowRules(permission);
@@ -6283,6 +6285,7 @@
     enabledByDefault: true,
     updated: "2026-11-28",
     dependencies: ["gemini"],
+    liveSettings: true,
     settings: {
       style: {
         type: "select",
@@ -6300,17 +6303,43 @@
     },
     start(ctx) {
       const gemini = ctx.use("gemini");
-      const style = ctx.settings.style;
       let conversation = gemini.route().conversationId;
       let typedSinceSwitch = true;
       let justFinished = false;
       let lastError = false;
       let interrupted = false;
       let current3 = null;
+      let lastStyle = null;
       let angle = 0;
       let link = null;
+      let blobUrl = null;
       let applying = false;
       const original = [];
+      function forgetBlob() {
+        if (!blobUrl) return;
+        try {
+          URL.revokeObjectURL(blobUrl);
+        } catch {
+        }
+        blobUrl = null;
+      }
+      function toFaviconUrl(dataUrl) {
+        try {
+          if (typeof URL === "undefined" || typeof atob !== "function" || typeof Blob !== "function") return dataUrl;
+          const comma = dataUrl.indexOf(",");
+          if (comma < 0 || !dataUrl.startsWith("data:")) return dataUrl;
+          const mime = /data:([^;,]+)/.exec(dataUrl.slice(0, comma))?.[1] || "image/png";
+          const bin = atob(dataUrl.slice(comma + 1));
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          const next = URL.createObjectURL(new Blob([bytes], { type: mime }));
+          forgetBlob();
+          blobUrl = next;
+          return next;
+        } catch {
+          return dataUrl;
+        }
+      }
       const hasDraft = () => !!gemini.editorText().replace(/\u200b/g, "").trim();
       function compute() {
         const next = computeFaviconState({
@@ -6338,6 +6367,7 @@
       function restore() {
         link?.remove();
         link = null;
+        forgetBlob();
         for (const o3 of original) {
           if (o3.href) o3.el.setAttribute("href", o3.href);
           if (o3.rel) o3.el.rel = o3.rel;
@@ -6347,33 +6377,42 @@
         }
       }
       function others() {
-        return [...document.querySelectorAll(ICON_LINK_SEL)].filter((l3) => l3 !== link);
+        const ours = link?.getAttribute("href") || "";
+        return [...document.querySelectorAll(ICON_LINK_SEL)].filter((l3) => l3 !== link && l3.getAttribute("href") !== ours);
       }
       function apply2(state3, force = false) {
+        const style = ctx.settings.style;
+        if (style !== lastStyle) force = true;
         const href = faviconHref(style, state3, state3 === "rotate" ? angle : 0);
         const extra = others();
-        if (!force && state3 === current3 && link?.isConnected && (!href || link.getAttribute("href") === href) && extra.length === 0) {
+        if (!force && state3 === current3 && link?.isConnected && extra.length === 0) {
           return;
         }
         applying = true;
         try {
           current3 = state3;
+          lastStyle = style;
           if (!href) {
             restore();
             return;
           }
+          const painted = toFaviconUrl(href);
+          const type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
           for (const l3 of extra) {
             remember(l3);
-            l3.remove();
+            l3.rel = l3.rel || "icon";
+            l3.type = type;
+            l3.setAttribute("href", painted);
           }
           link?.remove();
           link = document.createElement("link");
+          link.id = "ggpp-favicon";
           link.rel = "icon";
-          link.type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
+          link.type = type;
           link.setAttribute("sizes", "32x32");
           link.dataset.ggpp = "favicon";
-          link.setAttribute("href", href);
           document.head.append(link);
+          link.setAttribute("href", painted);
         } finally {
           applying = false;
         }
@@ -6403,6 +6442,7 @@
         justFinished = !e3.error && !e3.interrupted;
         apply2(compute(), true);
       });
+      ctx.on("settings:chatStateFavicons", () => apply2(compute(), true));
       ctx.on("gemini:route", () => {
         const id = gemini.route().conversationId;
         if (id === conversation) return;

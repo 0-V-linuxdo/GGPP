@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buttonKind, extractPermissionScript, findToolPermission, looksLikeToolPermission, pickAllowLabel } from "./clickAllowPrompt";
+import { buttonKind, clickAllowPrompt, extractPermissionScript, findToolPermission, isComputerUseOverlayAllow, looksLikeToolPermission, pickAllowLabel } from "./clickAllowPrompt";
 import { decideAutoAllow, judgeRules, openTemporaryWebJudge } from "./judge";
 
 describe("always allow option", () => {
@@ -190,6 +190,8 @@ describe("truncated H3yun evaluate_script previews", () => {
   });
 });
 
+type FakeRect = { top: number; left: number; width: number; height: number; right: number; bottom: number };
+
 type FakeEl = {
   tagName: string;
   ownText: string;
@@ -200,6 +202,7 @@ type FakeEl = {
   className: string;
   id: string;
   style: { position: string };
+  rect: FakeRect;
   clicks: number;
   get innerText(): string;
   get textContent(): string;
@@ -210,6 +213,7 @@ type FakeEl = {
   matches(sel: string): boolean;
   querySelectorAll(sel: string): FakeEl[];
   querySelector(sel: string): FakeEl | null;
+  getBoundingClientRect(): FakeRect;
   click(): void;
 };
 
@@ -242,7 +246,18 @@ function el(tag: string, opts: {
   attrs?: Record<string, string>;
   className?: string;
   children?: FakeEl[];
+  position?: string;
+  rect?: { top: number; left: number; width: number; height: number };
 } = {}): FakeEl {
+  const box = opts.rect || { top: 0, left: 0, width: 0, height: 0 };
+  const rect: FakeRect = {
+    top: box.top,
+    left: box.left,
+    width: box.width,
+    height: box.height,
+    right: box.left + box.width,
+    bottom: box.top + box.height,
+  };
   const node: FakeEl = {
     tagName: tag.toUpperCase(),
     ownText: opts.text || "",
@@ -252,7 +267,8 @@ function el(tag: string, opts: {
     attrs: { ...(opts.attrs || {}) },
     className: opts.className || "",
     id: "",
-    style: { position: "" },
+    style: { position: opts.position || "" },
+    rect,
     clicks: 0,
     get innerText() {
       return [this.ownText, ...this.children.map((child) => child.innerText)].filter(Boolean).join("\n");
@@ -285,6 +301,9 @@ function el(tag: string, opts: {
     },
     querySelector(sel) {
       return this.querySelectorAll(sel)[0] ?? null;
+    },
+    getBoundingClientRect() {
+      return this.rect;
     },
     click() {
       this.clicks += 1;
@@ -412,5 +431,111 @@ describe("findToolPermission uses the inner card script", () => {
       ],
     });
     expect(findToolPermission(root as unknown as ParentNode)).toBeNull();
+  });
+});
+
+function withViewport<T>(size: { innerWidth: number; innerHeight: number }, fn: () => T): T {
+  const prior = (globalThis as any).window;
+  (globalThis as any).window = { ...(prior || {}), ...size };
+  try {
+    return fn();
+  } finally {
+    (globalThis as any).window = prior;
+  }
+}
+
+function midRightAllow(opts: { position?: string; pressed?: boolean; text?: string } = {}) {
+  return el("button", {
+    text: opts.text || "Allow",
+    position: opts.position || "fixed",
+    attrs: opts.pressed != null ? { "aria-pressed": opts.pressed ? "true" : "false" } : {},
+    rect: { top: 420, left: 1180, width: 88, height: 40 },
+  });
+}
+
+describe("right-side overlay Allow", () => {
+  test("treats a mid-viewport right Allow pill as overlay, including absolute", () => {
+    withViewport({ innerWidth: 1440, innerHeight: 900 }, () => {
+      const fixed = midRightAllow({ position: "fixed" });
+      const sticky = midRightAllow({ position: "sticky" });
+      const absolute = midRightAllow({ position: "absolute" });
+      expect(isComputerUseOverlayAllow(fixed as unknown as Element)).toBe(true);
+      expect(isComputerUseOverlayAllow(sticky as unknown as Element)).toBe(true);
+      expect(isComputerUseOverlayAllow(absolute as unknown as Element)).toBe(true);
+      expect(findToolPermission(el("body", { children: [fixed] }) as unknown as ParentNode)).toBeNull();
+    });
+  });
+
+  test("always-on clicks overlay Allow even when findToolPermission is null", () => {
+    withViewport({ innerWidth: 1440, innerHeight: 900 }, () => {
+      const allow = midRightAllow();
+      const root = el("body", { children: [allow] });
+      expect(findToolPermission(root as unknown as ParentNode)).toBeNull();
+      expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(true);
+      expect(allow.clicks).toBe(1);
+      expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(true);
+      expect(allow.clicks).toBe(2);
+    });
+  });
+
+  test("ignores an aria-pressed Allow toggle even when it sits mid-right", () => {
+    withViewport({ innerWidth: 1440, innerHeight: 900 }, () => {
+      const toggle = midRightAllow({ pressed: false });
+      const root = el("body", { children: [toggle] });
+      expect(isComputerUseOverlayAllow(toggle as unknown as Element)).toBe(false);
+      expect(findToolPermission(root as unknown as ParentNode)).toBeNull();
+      expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(false);
+      expect(toggle.clicks).toBe(0);
+    });
+  });
+
+  test("does not treat a left-side Allow pill as overlay", () => {
+    withViewport({ innerWidth: 1440, innerHeight: 900 }, () => {
+      const left = el("button", {
+        text: "Allow",
+        position: "fixed",
+        rect: { top: 420, left: 24, width: 88, height: 40 },
+      });
+      expect(isComputerUseOverlayAllow(left as unknown as Element)).toBe(false);
+      expect(clickAllowPrompt(el("body", { children: [left] }) as unknown as ParentNode)).toBe(false);
+      expect(left.clicks).toBe(0);
+    });
+  });
+
+  test("prefers overlay Allow over a classic enabled card", () => {
+    withViewport({ innerWidth: 1440, innerHeight: 900 }, () => {
+      const overlay = midRightAllow();
+      const classicAllow = el("button", { text: "Allow" });
+      const classic = el("div", {
+        children: [
+          el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nWaiting for your input" }),
+          el("button", { text: "Cancel" }),
+          classicAllow,
+        ],
+      });
+      const root = el("body", { children: [classic, overlay] });
+      expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(true);
+      expect(overlay.clicks).toBe(1);
+      expect(classicAllow.clicks).toBe(0);
+    });
+  });
+
+  test("classic Allow still one-shots through WeakSet", () => {
+    const classicAllow = el("button", { text: "Allow" });
+    const root = el("body", {
+      children: [
+        el("div", {
+          children: [
+            el("p", { text: "Run evaluate_script?\nAllow Gemini to run evaluate_script on your machine?\nWaiting for your input" }),
+            el("button", { text: "Cancel" }),
+            classicAllow,
+          ],
+        }),
+      ],
+    });
+    expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(true);
+    expect(classicAllow.clicks).toBe(1);
+    expect(clickAllowPrompt(root as unknown as ParentNode)).toBe(false);
+    expect(classicAllow.clicks).toBe(1);
   });
 });

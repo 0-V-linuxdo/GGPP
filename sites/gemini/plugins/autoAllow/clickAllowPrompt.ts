@@ -194,9 +194,10 @@ function computedPosition(el: Element): string {
   return "";
 }
 
+/** Fixed/sticky right-side Allow pill. Live overlays sit mid-viewport, so vertical band is not required. */
 function isFixedTopRightPill(el: Element): boolean {
   const hosts = [el, ...walkParents(el, 8)];
-  const positioned = hosts.some((n) => /fixed|sticky/i.test(computedPosition(n)));
+  const positioned = hosts.some((n) => /fixed|sticky|absolute/i.test(computedPosition(n)));
   if (!positioned) return false;
   try {
     const rect = (el as HTMLElement).getBoundingClientRect?.();
@@ -204,10 +205,10 @@ function isFixedTopRightPill(el: Element): boolean {
     const vw = typeof window !== "undefined" ? window.innerWidth : 0;
     const vh = typeof window !== "undefined" ? window.innerHeight : 0;
     if (!vw) return false;
-    const topish = rect.top >= -12 && rect.top <= Math.max(140, vh * 0.25);
-    const rightish = rect.right >= vw - Math.max(280, vw * 0.34);
+    const rightish = rect.left >= vw * 0.45 || rect.right >= vw - Math.max(280, vw * 0.34);
     const pill = rect.height <= 96 && rect.width <= 320;
-    return topish && rightish && pill;
+    const onScreen = vh ? rect.bottom > 0 && rect.top < vh : true;
+    return rightish && pill && onScreen;
   } catch {
     return false;
   }
@@ -377,16 +378,17 @@ export function findToolPermission(root: ParentNode = document, opts: FindToolPe
   maybeExpandPermissionCard(scriptCard, expand);
   maybeExpandPermissionCard(host, expand);
   const text = normalizeLabel(nodeText(scriptCard || host) || nodeText(host));
-  const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || text;
+  const script = extractPermissionScript(scriptCard || host) || extractPermissionScript(host) || "";
   const toolName = inferEvaluateTool(script, text);
-  if (!toolName && !script) return null;
+  if (!toolName && !isCodeLike(script) && !looksLikeToolPermission(text)) return null;
   return { element: host, toolName, script, text };
 }
 
 const clicked = new WeakSet<Element>();
 
-function clickTarget(target: Element | undefined): boolean {
-  if (!target || isDisabled(target) || clicked.has(target) || isToggle(target)) return false;
+function clickTarget(target: Element | undefined, retryWhileEnabled = false): boolean {
+  if (!target || isDisabled(target) || isToggle(target)) return false;
+  if (clicked.has(target) && !retryWhileEnabled) return false;
   clicked.add(target);
   try {
     (target as HTMLElement).click();
@@ -421,14 +423,14 @@ function clickClassicAllow(root: ParentNode, preferSticky: boolean): boolean {
 function clickOverlayAllow(root: ParentNode): boolean {
   for (const el of buttonCandidates(root)) {
     if (!isComputerUseOverlayAllow(el)) continue;
-    if (clickTarget(el)) return true;
+    if (clickTarget(el, true)) return true;
   }
   return false;
 }
 
 export function clickAllowPrompt(root: ParentNode = document, preferSticky = true): boolean {
-  if (clickClassicAllow(root, preferSticky)) return true;
   if (clickOverlayAllow(root)) return true;
+  if (clickClassicAllow(root, preferSticky)) return true;
   const doc = typeof document !== "undefined" ? document : null;
   if (doc && root !== doc) return clickOverlayAllow(doc);
   return false;

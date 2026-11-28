@@ -3,7 +3,7 @@ import { I } from "../../../../src/lib/icons";
 import { clickAllowPrompt, clickCancelPrompt, findToolPermission } from "./clickAllowPrompt";
 import { decideAutoAllow, judgeApi, judgeRules, openTemporaryWebJudge } from "./judge";
 
-/** Judge Gemini's in-page tool-permission cards before allowing or denying them. */
+/** Click Gemini's in-page tool-permission Allow. 总是允许 skips the judge and does not expand the card. */
 
 export default definePlugin({
   id: "autoAllow",
@@ -71,12 +71,12 @@ export default definePlugin({
       const run = async () => {
         try {
           const always = ctx.settings.alwaysAllow !== false;
-          const card = findToolPermission(document, { expand: !always });
-          if (!card) return;
           if (always) {
-            clickAllowPrompt(card.element, ctx.settings.preferSticky !== false);
+            clickAllowPrompt(document, ctx.settings.preferSticky !== false);
             return;
           }
+          const card = findToolPermission(document);
+          if (!card) return;
           const permission = { toolName: card.toolName, script: card.script, text: card.text };
           const backend = ctx.settings.backend;
           const verdict = backend === "api"

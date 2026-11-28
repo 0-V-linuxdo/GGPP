@@ -228,6 +228,7 @@ export default definePlugin({
   enabledByDefault: true,
   updated: "2026-11-28",
   dependencies: ["gemini"],
+  liveSettings: true,
   settings: {
     style: {
       type: "select",
@@ -245,7 +246,6 @@ export default definePlugin({
   },
   start(ctx) {
     const gemini = ctx.use<GeminiApi>("gemini");
-    const style = ctx.settings.style;
 
     let conversation = gemini.route().conversationId;
     let typedSinceSwitch = true;
@@ -253,10 +253,38 @@ export default definePlugin({
     let lastError = false;
     let interrupted = false;
     let current: FaviconState | null = null;
+    let lastStyle: string | null = null;
     let angle = 0;
     let link: HTMLLinkElement | null = null;
+    let blobUrl: string | null = null;
     let applying = false;
     const original: { el: HTMLLinkElement; href: string; rel: string; type: string; sizes: string }[] = [];
+
+    function forgetBlob() {
+      if (!blobUrl) return;
+      try {
+        URL.revokeObjectURL(blobUrl);
+      } catch {}
+      blobUrl = null;
+    }
+
+    function toFaviconUrl(dataUrl: string): string {
+      try {
+        if (typeof URL === "undefined" || typeof atob !== "function" || typeof Blob !== "function") return dataUrl;
+        const comma = dataUrl.indexOf(",");
+        if (comma < 0 || !dataUrl.startsWith("data:")) return dataUrl;
+        const mime = /data:([^;,]+)/.exec(dataUrl.slice(0, comma))?.[1] || "image/png";
+        const bin = atob(dataUrl.slice(comma + 1));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        const next = URL.createObjectURL(new Blob([bytes], { type: mime }));
+        forgetBlob();
+        blobUrl = next;
+        return next;
+      } catch {
+        return dataUrl;
+      }
+    }
 
     const hasDraft = () => !!gemini.editorText().replace(/\u200b/g, "").trim();
 
@@ -288,6 +316,7 @@ export default definePlugin({
     function restore() {
       link?.remove();
       link = null;
+      forgetBlob();
       for (const o of original) {
         if (o.href) o.el.setAttribute("href", o.href);
         if (o.rel) o.el.rel = o.rel;
@@ -298,34 +327,45 @@ export default definePlugin({
     }
 
     function others(): HTMLLinkElement[] {
-      return [...document.querySelectorAll<HTMLLinkElement>(ICON_LINK_SEL)].filter((l) => l !== link);
+      const ours = link?.getAttribute("href") || "";
+      return [...document.querySelectorAll<HTMLLinkElement>(ICON_LINK_SEL)].filter(
+        (l) => l !== link && l.getAttribute("href") !== ours,
+      );
     }
 
     function apply(state: FaviconState, force = false) {
+      const style = ctx.settings.style;
+      if (style !== lastStyle) force = true;
       const href = faviconHref(style, state, state === "rotate" ? angle : 0);
       const extra = others();
-      if (!force && state === current && link?.isConnected && (!href || link.getAttribute("href") === href) && extra.length === 0) {
+      if (!force && state === current && link?.isConnected && extra.length === 0) {
         return;
       }
       applying = true;
       try {
         current = state;
+        lastStyle = style;
         if (!href) {
           restore();
           return;
         }
+        const painted = toFaviconUrl(href);
+        const type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
         for (const l of extra) {
           remember(l);
-          l.remove();
+          l.rel = l.rel || "icon";
+          l.type = type;
+          l.setAttribute("href", painted);
         }
         link?.remove();
         link = document.createElement("link");
+        link.id = "ggpp-favicon";
         link.rel = "icon";
-        link.type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
+        link.type = type;
         link.setAttribute("sizes", "32x32");
         link.dataset.ggpp = "favicon";
-        link.setAttribute("href", href);
         document.head.append(link);
+        link.setAttribute("href", painted);
       } finally {
         applying = false;
       }
@@ -357,6 +397,7 @@ export default definePlugin({
       justFinished = !e.error && !e.interrupted;
       apply(compute(), true);
     });
+    ctx.on("settings:chatStateFavicons", () => apply(compute(), true));
     ctx.on("gemini:route", () => {
       const id = gemini.route().conversationId;
       if (id === conversation) return;

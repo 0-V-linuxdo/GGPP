@@ -102,12 +102,16 @@ describe("favicon drawing", () => {
 });
 
 describe("favicon apply contract", () => {
-  test("source recreates a PNG link and strips apple-touch icons", () => {
+  test("source recreates a PNG link and retargets competing icons", () => {
     expect(ICON_LINK_SEL).toContain("apple-touch-icon");
     expect(ICON_LINK_SEL).toContain("mask-icon");
     expect(src).toContain('document.createElement("canvas")');
     expect(src).toContain('toDataURL("image/png")');
-    expect(src).toContain("link?.remove()");
+    expect(src).toContain("URL.createObjectURL");
+    expect(src).toContain("URL.revokeObjectURL");
+    expect(src).toContain('id = "ggpp-favicon"');
+    expect(src).toContain("document.head.append(link)");
+    expect(src).toContain('link.setAttribute("href", painted)');
     expect(src).toContain('dataset.ggpp = "favicon"');
     expect(src).toContain("apply(state, true)");
     expect(src).toContain("angle = (angle + 45) % 360");
@@ -118,8 +122,32 @@ describe("favicon apply contract", () => {
     expect(js).toContain("function faviconHref");
     expect(js).toContain("apple-touch-icon");
     expect(js).toContain('toDataURL("image/png")');
+    expect(js).toContain("URL.createObjectURL");
+    expect(js).toContain("function toFaviconUrl");
+    expect(js).toContain('id = "ggpp-favicon"');
     expect(js).toContain('dataset.ggpp = "favicon"');
     expect(js).not.toContain("animateTransform");
     expect(js).toContain("angle = (angle + 45) % 360");
+    expect(js).toContain('ctx.on("settings:chatStateFavicons"');
+    expect(js).toContain("if (style !== lastStyle) force = true");
+  });
+});
+
+describe("live style", () => {
+  test("style is read at apply time and liveSettings is on", () => {
+    expect(src).toContain("liveSettings: true");
+    expect(src).toContain("const style = ctx.settings.style");
+    expect(src).toContain("if (style !== lastStyle) force = true");
+    expect(src).toContain("lastStyle = style");
+    expect(src).toContain('ctx.on("settings:chatStateFavicons"');
+    expect(src).not.toContain("const style = ctx.settings.style;\n    let conversation");
+  });
+
+  test("Background tint is a distinct idle href from Badge", () => {
+    const badge = faviconHref("badge", "idle");
+    const bg = faviconHref("bg", "idle");
+    expect(badge).toMatch(/^data:image\/(png|svg\+xml)/);
+    expect(bg).toMatch(/^data:image\/(png|svg\+xml)/);
+    expect(badge).not.toBe(bg);
   });
 });
