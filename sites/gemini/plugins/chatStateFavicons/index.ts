@@ -160,13 +160,89 @@ function paintBadge(ctx: CanvasRenderingContext2D, state: Exclude<FaviconState, 
   paintGlyph(ctx, state, angle);
 }
 
+function u32be(n: number): Uint8Array {
+  return Uint8Array.of((n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255);
+}
+
+function concatBytes(...parts: Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0));
+  let o = 0;
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
+  return out;
+}
+
+function crc32(bytes: Uint8Array): number {
+  let c = ~0 >>> 0;
+  for (let i = 0; i < bytes.length; i++) {
+    c ^= bytes[i];
+    for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+  }
+  return ~c >>> 0;
+}
+
+function adler32(bytes: Uint8Array): number {
+  let a = 1;
+  let b = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    a = (a + bytes[i]) % 65521;
+    b = (b + a) % 65521;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+function pngChunk(type: string, data: Uint8Array): Uint8Array {
+  const body = concatBytes(Uint8Array.from(type, (ch) => ch.charCodeAt(0)), data);
+  return concatBytes(u32be(data.length), body, u32be(crc32(body)));
+}
+
+function pngFromKey(key: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  const raw = Uint8Array.of(0, (h >>> 16) & 255, (h >>> 8) & 255, h & 255);
+  const stored = concatBytes(Uint8Array.of(0x78, 0x01, 0x01, 0x04, 0x00, 0xfb, 0xff), raw, u32be(adler32(raw)));
+  const png = concatBytes(
+    Uint8Array.of(137, 80, 78, 71, 13, 10, 26, 10),
+    pngChunk("IHDR", concatBytes(u32be(1), u32be(1), Uint8Array.of(8, 2, 0, 0, 0))),
+    pngChunk("IDAT", stored),
+    pngChunk("IEND", new Uint8Array()),
+  );
+  let bin = "";
+  for (let i = 0; i < png.length; i++) bin += String.fromCharCode(png[i]);
+  return `data:image/png;base64,${btoa(bin)}`;
+}
+
+function pngFromSvg(svg: string): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = FAVICON_PX;
+    const ctx = canvas.getContext("2d");
+    if (ctx && typeof Image === "function") {
+      const img = new Image();
+      img.src = svgDataUrl(svg);
+      if (img.complete && img.naturalWidth > 0) {
+        ctx.drawImage(img, 0, 0, FAVICON_PX, FAVICON_PX);
+        return canvas.toDataURL("image/png");
+      }
+    }
+    return pngFromKey(svg);
+  } catch {
+    return pngFromKey(svg);
+  }
+}
+
 function paintOnCanvas(style: string, state: FaviconState, angle: number): string | null {
   const svg = svgFor(style, state, angle);
   if (!svg) return null;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = FAVICON_PX;
   const ctx = canvas.getContext("2d");
-  if (!ctx || typeof Path2D !== "function") return svgDataUrl(svg);
+  if (!ctx || typeof Path2D !== "function") return pngFromSvg(svg);
   ctx.scale(FAVICON_PX / 64, FAVICON_PX / 64);
   const color = state === "idle" ? "" : COLORS[state];
   if (style === "original" && state !== "idle") {
@@ -215,7 +291,7 @@ export function faviconHref(style: string, state: FaviconState, angle = 0): stri
     return paintOnCanvas(style, state, angle);
   } catch {
     const svg = svgFor(style, state, angle);
-    return svg ? svgDataUrl(svg) : null;
+    return svg ? pngFromSvg(svg) : null;
   }
 }
 
@@ -256,35 +332,8 @@ export default definePlugin({
     let lastStyle: string | null = null;
     let angle = 0;
     let link: HTMLLinkElement | null = null;
-    let blobUrl: string | null = null;
     let applying = false;
     const original: { el: HTMLLinkElement; href: string; rel: string; type: string; sizes: string }[] = [];
-
-    function forgetBlob() {
-      if (!blobUrl) return;
-      try {
-        URL.revokeObjectURL(blobUrl);
-      } catch {}
-      blobUrl = null;
-    }
-
-    function toFaviconUrl(dataUrl: string): string {
-      try {
-        if (typeof URL === "undefined" || typeof atob !== "function" || typeof Blob !== "function") return dataUrl;
-        const comma = dataUrl.indexOf(",");
-        if (comma < 0 || !dataUrl.startsWith("data:")) return dataUrl;
-        const mime = /data:([^;,]+)/.exec(dataUrl.slice(0, comma))?.[1] || "image/png";
-        const bin = atob(dataUrl.slice(comma + 1));
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        const next = URL.createObjectURL(new Blob([bytes], { type: mime }));
-        forgetBlob();
-        blobUrl = next;
-        return next;
-      } catch {
-        return dataUrl;
-      }
-    }
 
     const hasDraft = () => !!gemini.editorText().replace(/\u200b/g, "").trim();
 
@@ -316,7 +365,6 @@ export default definePlugin({
     function restore() {
       link?.remove();
       link = null;
-      forgetBlob();
       for (const o of original) {
         if (o.href) o.el.setAttribute("href", o.href);
         if (o.rel) o.el.rel = o.rel;
@@ -327,10 +375,7 @@ export default definePlugin({
     }
 
     function others(): HTMLLinkElement[] {
-      const ours = link?.getAttribute("href") || "";
-      return [...document.querySelectorAll<HTMLLinkElement>(ICON_LINK_SEL)].filter(
-        (l) => l !== link && l.getAttribute("href") !== ours,
-      );
+      return [...document.querySelectorAll<HTMLLinkElement>(ICON_LINK_SEL)].filter((l) => l !== link);
     }
 
     function apply(state: FaviconState, force = false) {
@@ -349,23 +394,19 @@ export default definePlugin({
           restore();
           return;
         }
-        const painted = toFaviconUrl(href);
-        const type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
         for (const l of extra) {
           remember(l);
-          l.rel = l.rel || "icon";
-          l.type = type;
-          l.setAttribute("href", painted);
+          l.remove();
         }
         link?.remove();
         link = document.createElement("link");
         link.id = "ggpp-favicon";
         link.rel = "icon";
-        link.type = type;
-        link.setAttribute("sizes", "32x32");
+        link.type = "image/png";
+        link.setAttribute("sizes", "any");
         link.dataset.ggpp = "favicon";
         document.head.append(link);
-        link.setAttribute("href", painted);
+        link.setAttribute("href", href);
       } finally {
         applying = false;
       }

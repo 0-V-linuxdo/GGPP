@@ -94,25 +94,31 @@ describe("favicon drawing", () => {
     const idle = faviconHref("badge", "idle");
     const rotate = faviconHref("badge", "rotate", 45);
     const done = faviconHref("badge", "done");
-    expect(idle).toMatch(/^data:image\/(png|svg\+xml)/);
-    expect(rotate).toMatch(/^data:image\/(png|svg\+xml)/);
+    expect(idle).toMatch(/^data:image\/png/);
+    expect(rotate).toMatch(/^data:image\/png/);
     expect(idle).not.toBe(rotate);
     expect(rotate).not.toBe(done);
   });
 });
 
 describe("favicon apply contract", () => {
-  test("source recreates a PNG link and retargets competing icons", () => {
+  test("source recreates a PNG link and drops competing icons", () => {
     expect(ICON_LINK_SEL).toContain("apple-touch-icon");
     expect(ICON_LINK_SEL).toContain("mask-icon");
     expect(src).toContain('document.createElement("canvas")');
     expect(src).toContain('toDataURL("image/png")');
-    expect(src).toContain("URL.createObjectURL");
-    expect(src).toContain("URL.revokeObjectURL");
+    expect(src).toContain("function pngFromSvg");
+    expect(src).toContain("function pngFromKey");
+    expect(src).toContain("ctx.drawImage(img, 0, 0, FAVICON_PX, FAVICON_PX)");
+    expect(src).toContain("return pngFromKey(svg)");
+    expect(src).not.toContain("URL.createObjectURL");
+    expect(src).not.toContain("toFaviconUrl");
     expect(src).toContain('id = "ggpp-favicon"');
     expect(src).toContain("document.head.append(link)");
-    expect(src).toContain('link.setAttribute("href", painted)');
+    expect(src).toContain('link.setAttribute("href", href)');
+    expect(src).toContain('setAttribute("sizes", "any")');
     expect(src).toContain('dataset.ggpp = "favicon"');
+    expect(src).toMatch(/for \(const l of extra\) \{\s*remember\(l\);\s*l\.remove\(\);/);
     expect(src).toContain("apply(state, true)");
     expect(src).toContain("angle = (angle + 45) % 360");
   });
@@ -120,16 +126,28 @@ describe("favicon apply contract", () => {
   test("hand-spliced userscript follows the same Nightly-safe path", () => {
     expect(js).toContain("function computeFaviconState");
     expect(js).toContain("function faviconHref");
+    expect(js).toContain("function pngFromSvg");
+    expect(js).toContain("function pngFromKey");
+    expect(js).toContain("return pngFromKey(svg3)");
     expect(js).toContain("apple-touch-icon");
     expect(js).toContain('toDataURL("image/png")');
-    expect(js).toContain("URL.createObjectURL");
-    expect(js).toContain("function toFaviconUrl");
+    expect(js).not.toContain("function toFaviconUrl");
+    expect(js).not.toContain("function forgetBlob");
     expect(js).toContain('id = "ggpp-favicon"');
     expect(js).toContain('dataset.ggpp = "favicon"');
+    expect(js).toContain('setAttribute("sizes", "any")');
+    expect(js).toMatch(/for \(const l3 of extra\) \{\s*remember\(l3\);\s*l3\.remove\(\);/);
     expect(js).not.toContain("animateTransform");
     expect(js).toContain("angle = (angle + 45) % 360");
     expect(js).toContain('ctx.on("settings:chatStateFavicons"');
     expect(js).toContain("if (style !== lastStyle) force = true");
+  });
+
+  test("gstatic and apple-touch links are removed, leaving #ggpp-favicon", () => {
+    expect(src).toMatch(/for \(const l of extra\) \{\s*remember\(l\);\s*l\.remove\(\);/);
+    expect(src).not.toContain('l.setAttribute("href", painted)');
+    expect(js).toMatch(/for \(const l3 of extra\) \{\s*remember\(l3\);\s*l3\.remove\(\);/);
+    expect(js).not.toContain('l3.setAttribute("href", painted)');
   });
 });
 
@@ -146,8 +164,8 @@ describe("live style", () => {
   test("Background tint is a distinct idle href from Badge", () => {
     const badge = faviconHref("badge", "idle");
     const bg = faviconHref("bg", "idle");
-    expect(badge).toMatch(/^data:image\/(png|svg\+xml)/);
-    expect(bg).toMatch(/^data:image\/(png|svg\+xml)/);
+    expect(badge).toMatch(/^data:image\/png/);
+    expect(bg).toMatch(/^data:image\/png/);
     expect(badge).not.toBe(bg);
   });
 });

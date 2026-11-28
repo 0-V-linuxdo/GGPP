@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.20 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
-  expect(js).toMatch(/@version\s+0\.2\.20/);
+test("hand-spliced userscript is 0.2.21 with AutoAllow overlay retry, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.21/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -54,6 +54,7 @@ test("hand-spliced userscript is 0.2.20 with AutoAllow overlay retry, nav filter
   expect(js).toContain("retireRedundantPlugins");
   expect(js).toContain("function computeFaviconState");
   expect(js).toContain("function faviconHref");
+  expect(js).toContain("function pngFromKey");
   expect(js).toContain("apple-touch-icon");
   expect(js).toContain('toDataURL("image/png")');
   expect(js).not.toContain("animateTransform");
