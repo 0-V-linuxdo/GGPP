@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GG++
 // @namespace    ggpp
-// @version      0.2.17
+// @version      0.2.18
 // @description  A plugin-first mod for Gemini on the web (Userscript++).
 // @author       GG++
 // @license      GPL-3.0-or-later
@@ -6080,6 +6080,7 @@
   });
 
   // sites/gemini/plugins/chatStateFavicons/index.ts
+  var ICON_LINK_SEL = "link[rel~='icon'], link[rel='apple-touch-icon' i], link[rel='apple-touch-icon-precomposed' i], link[rel='mask-icon' i]";
   var COLORS2 = {
     rotate: "#3B82F6",
     done: "#22C55E",
@@ -6089,14 +6090,21 @@
   var EMOJI = { rotate: "🔄", done: "✔️", ready: "👍", error: "🚫" };
   var SPARK = "M32 6C32 21 43 32 58 32C43 32 32 43 32 58C32 43 21 32 6 32C21 32 32 21 32 6Z";
   var GRADIENT = `<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4285F4"/><stop offset=".6" stop-color="#9B72CB"/><stop offset="1" stop-color="#D96570"/></linearGradient>`;
-  var GLYPH = {
-    rotate: `<path d="M45 49a6 6 0 1 0 6-6" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 51 49" to="360 51 49" dur=".85s" repeatCount="indefinite"/></path>`,
-    done: `<path d="M46 49l4 4 7-8" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`,
-    ready: `<path d="M51 56V43M45.5 48.5L51 43l5.5 5.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`,
-    error: `<path d="M46.5 44.5l9 9M55.5 44.5l-9 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>`
-  };
-  function svgFor(style, state3) {
-    const wrap2 = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs>${GRADIENT}</defs>${body}</svg>`;
+  var FAVICON_PX = 32;
+  function glyphSvg(state3, angle) {
+    if (state3 === "rotate") {
+      return `<path d="M45 49a6 6 0 1 0 6-6" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" transform="rotate(${angle} 51 49)"/>`;
+    }
+    if (state3 === "done") {
+      return `<path d="M46 49l4 4 7-8" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+    if (state3 === "ready") {
+      return `<path d="M51 56V43M45.5 48.5L51 43l5.5 5.5" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+    return `<path d="M46.5 44.5l9 9M55.5 44.5l-9 9" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>`;
+  }
+  function svgFor(style, state3, angle = 0) {
+    const wrap2 = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="32" height="32"><defs>${GRADIENT}</defs>${body}</svg>`;
     if (style === "original") {
       return state3 === "idle" ? null : wrap2(`<text x="32" y="50" font-size="48" text-anchor="middle">${EMOJI[state3]}</text>`);
     }
@@ -6113,10 +6121,151 @@
         );
       case "badge":
         return wrap2(
-          `<path d="${SPARK}" fill="url(#g)"/>${state3 === "idle" ? "" : `<circle cx="51" cy="49" r="13" fill="#131314"/><circle cx="51" cy="49" r="10.5" fill="${color}"/>${GLYPH[state3]}`}`
+          `<path d="${SPARK}" fill="url(#g)"/>${state3 === "idle" ? "" : `<circle cx="51" cy="49" r="13" fill="#131314"/><circle cx="51" cy="49" r="10.5" fill="${color}"/>${glyphSvg(state3, angle)}`}`
         );
       default:
         return null;
+    }
+  }
+  function computeFaviconState(input) {
+    const { generating, draft, hasDraft, interrupted, lastError } = input;
+    if (interrupted && !generating) return { state: draft ? "ready" : "idle", justFinished: false };
+    if (lastError && !generating) return { state: "error", justFinished: false };
+    if (generating) return { state: "rotate", justFinished: false };
+    if (input.justFinished) {
+      if (!hasDraft) return { state: "done", justFinished: true };
+      return { state: "ready", justFinished: false };
+    }
+    return { state: draft ? "ready" : "idle", justFinished: false };
+  }
+  function svgDataUrl(svg3) {
+    return `data:image/svg+xml;base64,${btoa(svg3)}`;
+  }
+  function paintSpark(g2, fill) {
+    g2.fillStyle = fill;
+    g2.fill(new Path2D(SPARK));
+  }
+  function sparkGradient(g2) {
+    const g3 = g2.createLinearGradient(6, 58, 58, 6);
+    g3.addColorStop(0, "#4285F4");
+    g3.addColorStop(0.6, "#9B72CB");
+    g3.addColorStop(1, "#D96570");
+    return g3;
+  }
+  function roundTile(g2, fill) {
+    g2.fillStyle = fill;
+    if (typeof g2.roundRect === "function") {
+      g2.beginPath();
+      g2.roundRect(0, 0, 64, 64, 16);
+      g2.fill();
+      return;
+    }
+    g2.fillRect(0, 0, 64, 64);
+  }
+  function paintGlyph(g2, state3, angle) {
+    g2.save();
+    g2.strokeStyle = "#fff";
+    g2.lineCap = "round";
+    g2.lineJoin = "round";
+    g2.lineWidth = 3.2;
+    if (state3 === "rotate") {
+      g2.translate(51, 49);
+      g2.rotate(angle * Math.PI / 180);
+      g2.translate(-51, -49);
+      g2.lineWidth = 3;
+      g2.beginPath();
+      g2.arc(51, 49, 6, -0.2 * Math.PI, 1.35 * Math.PI);
+      g2.stroke();
+    } else if (state3 === "done") {
+      g2.beginPath();
+      g2.moveTo(46, 49);
+      g2.lineTo(50, 53);
+      g2.lineTo(57, 45);
+      g2.stroke();
+    } else if (state3 === "ready") {
+      g2.beginPath();
+      g2.moveTo(51, 56);
+      g2.lineTo(51, 43);
+      g2.moveTo(45.5, 48.5);
+      g2.lineTo(51, 43);
+      g2.lineTo(56.5, 48.5);
+      g2.stroke();
+    } else {
+      g2.beginPath();
+      g2.moveTo(46.5, 44.5);
+      g2.lineTo(55.5, 53.5);
+      g2.moveTo(55.5, 44.5);
+      g2.lineTo(46.5, 53.5);
+      g2.stroke();
+    }
+    g2.restore();
+  }
+  function paintBadge(g2, state3, angle) {
+    g2.beginPath();
+    g2.fillStyle = "#131314";
+    g2.arc(51, 49, 13, 0, Math.PI * 2);
+    g2.fill();
+    g2.beginPath();
+    g2.fillStyle = COLORS2[state3];
+    g2.arc(51, 49, 10.5, 0, Math.PI * 2);
+    g2.fill();
+    paintGlyph(g2, state3, angle);
+  }
+  function paintOnCanvas(style, state3, angle) {
+    const svg3 = svgFor(style, state3, angle);
+    if (!svg3) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = FAVICON_PX;
+    const g2 = canvas.getContext("2d");
+    if (!g2 || typeof Path2D !== "function") return svgDataUrl(svg3);
+    g2.scale(FAVICON_PX / 64, FAVICON_PX / 64);
+    const color = state3 === "idle" ? "" : COLORS2[state3];
+    if (style === "original" && state3 !== "idle") {
+      g2.font = "48px sans-serif";
+      g2.textAlign = "center";
+      g2.textBaseline = "middle";
+      g2.fillText(EMOJI[state3], 32, 34);
+      return canvas.toDataURL("image/png");
+    }
+    if (style === "hole") {
+      roundTile(g2, "#131314");
+      g2.save();
+      g2.translate(6, 6);
+      g2.scale(0.81, 0.81);
+      paintSpark(g2, color || sparkGradient(g2));
+      g2.restore();
+      return canvas.toDataURL("image/png");
+    }
+    if (style === "bg") {
+      roundTile(g2, color || "#131314");
+      g2.save();
+      g2.translate(6, 6);
+      g2.scale(0.81, 0.81);
+      paintSpark(g2, color ? "#fff" : sparkGradient(g2));
+      g2.restore();
+      return canvas.toDataURL("image/png");
+    }
+    paintSpark(g2, sparkGradient(g2));
+    if (style === "dot" && color) {
+      g2.beginPath();
+      g2.fillStyle = "#131314";
+      g2.arc(50, 50, 11, 0, Math.PI * 2);
+      g2.fill();
+      g2.beginPath();
+      g2.fillStyle = color;
+      g2.arc(50, 50, 8, 0, Math.PI * 2);
+      g2.fill();
+    } else if (style === "badge" && state3 !== "idle") {
+      paintBadge(g2, state3, angle);
+    }
+    return canvas.toDataURL("image/png");
+  }
+  function faviconHref(style, state3, angle = 0) {
+    try {
+      return paintOnCanvas(style, state3, angle);
+    } catch {
+      const svg3 = svgFor(style, state3, angle);
+      return svg3 ? svgDataUrl(svg3) : null;
     }
   }
   var chatStateFavicons_default = definePlugin({
@@ -6126,7 +6275,7 @@
     tags: ["Notifications"],
     icon: I3.favicon,
     enabledByDefault: true,
-    updated: "2026-10-14",
+    updated: "2026-11-28",
     dependencies: ["gemini"],
     settings: {
       style: {
@@ -6152,45 +6301,76 @@
       let lastError = false;
       let interrupted = false;
       let current3 = null;
+      let angle = 0;
       let link = null;
-      const original = [...document.querySelectorAll("link[rel~='icon']")].map((l3) => ({ el: l3, href: l3.href }));
-      const hasDraft = () => !!gemini.editorText().replace(/​/g, "").trim();
+      let applying = false;
+      const original = [];
+      const hasDraft = () => !!gemini.editorText().replace(/\u200b/g, "").trim();
       function compute() {
-        const generating = gemini.isGenerating();
-        const draft = hasDraft() && typedSinceSwitch;
-        if (interrupted && !generating) return draft ? "ready" : "idle";
-        if (lastError && !generating) return "error";
-        if (generating) return draft ? "ready" : "rotate";
-        if (justFinished) {
-          if (!hasDraft()) return "done";
-          justFinished = false;
-          return "ready";
-        }
-        return draft ? "ready" : "idle";
+        const next = computeFaviconState({
+          generating: gemini.isGenerating(),
+          draft: hasDraft() && typedSinceSwitch,
+          hasDraft: hasDraft(),
+          interrupted,
+          lastError,
+          justFinished
+        });
+        justFinished = next.justFinished;
+        return next.state;
       }
-      function apply2(state3) {
-        if (state3 === current3 && link?.isConnected) return;
-        current3 = state3;
-        const svg3 = svgFor(style, state3);
-        if (!svg3) {
-          link?.remove();
-          link = null;
-          for (const o3 of original) {
-            o3.el.href = o3.href;
-            if (!o3.el.isConnected) document.head.append(o3.el);
-          }
+      function remember(el) {
+        if (el.dataset.ggpp === "favicon") return;
+        if (original.some((o3) => o3.el === el)) return;
+        original.push({
+          el,
+          href: el.getAttribute("href") || "",
+          rel: el.rel,
+          type: el.type,
+          sizes: el.getAttribute("sizes") || ""
+        });
+      }
+      function restore() {
+        link?.remove();
+        link = null;
+        for (const o3 of original) {
+          if (o3.href) o3.el.setAttribute("href", o3.href);
+          if (o3.rel) o3.el.rel = o3.rel;
+          if (o3.type) o3.el.type = o3.type;
+          if (o3.sizes) o3.el.setAttribute("sizes", o3.sizes);
+          if (!o3.el.isConnected) document.head.append(o3.el);
+        }
+      }
+      function others() {
+        return [...document.querySelectorAll(ICON_LINK_SEL)].filter((l3) => l3 !== link);
+      }
+      function apply2(state3, force = false) {
+        const href = faviconHref(style, state3, state3 === "rotate" ? angle : 0);
+        const extra = others();
+        if (!force && state3 === current3 && link?.isConnected && (!href || link.getAttribute("href") === href) && extra.length === 0) {
           return;
         }
-        for (const l3 of document.querySelectorAll("link[rel~='icon']")) if (l3 !== link) l3.remove();
-        if (!link) {
+        applying = true;
+        try {
+          current3 = state3;
+          if (!href) {
+            restore();
+            return;
+          }
+          for (const l3 of extra) {
+            remember(l3);
+            l3.remove();
+          }
+          link?.remove();
           link = document.createElement("link");
           link.rel = "icon";
-          link.type = "image/svg+xml";
+          link.type = href.startsWith("data:image/svg") ? "image/svg+xml" : "image/png";
+          link.setAttribute("sizes", "32x32");
           link.dataset.ggpp = "favicon";
+          link.setAttribute("href", href);
+          document.head.append(link);
+        } finally {
+          applying = false;
         }
-        link.dataset.href = `data:image/svg+xml,${encodeURIComponent(svg3)}`;
-        link.setAttribute("href", link.dataset.href);
-        if (!link.isConnected) document.head.append(link);
       }
       let queued = false;
       const update = () => {
@@ -6206,6 +6386,7 @@
           lastError = false;
           interrupted = false;
           justFinished = false;
+          angle = 0;
         }
         update();
       });
@@ -6214,7 +6395,7 @@
         lastError = !!e3.error;
         interrupted = !!e3.interrupted;
         justFinished = !e3.error && !e3.interrupted;
-        apply2(compute());
+        apply2(compute(), true);
       });
       ctx.on("gemini:route", () => {
         const id = gemini.route().conversationId;
@@ -6224,6 +6405,7 @@
         justFinished = false;
         lastError = false;
         interrupted = false;
+        angle = 0;
         update();
       });
       const onInput = (e3) => {
@@ -6234,23 +6416,25 @@
       document.addEventListener("input", onInput, { capture: true, signal: ctx.signal });
       document.addEventListener("compositionend", onInput, { capture: true, signal: ctx.signal });
       const mo3 = new MutationObserver(() => {
-        const ours = link?.dataset.href;
-        if (link && (!link.isConnected || link.getAttribute("href") !== ours || document.querySelectorAll("link[rel~='icon']").length > 1)) {
+        if (applying) return;
+        if (!link?.isConnected || others().length) {
           current3 = null;
           update();
         }
       });
       mo3.observe(document.head, { childList: true, subtree: true, attributes: true, attributeFilter: ["href", "rel"] });
       ctx.cleanup(() => mo3.disconnect());
-      ctx.setInterval(() => document.hidden && apply2(compute()), 1e3);
-      apply2(compute());
-      ctx.cleanup(() => {
-        link?.remove();
-        for (const o3 of original) {
-          o3.el.href = o3.href;
-          if (!o3.el.isConnected) document.head.append(o3.el);
+      ctx.setInterval(() => {
+        const state3 = compute();
+        if (state3 === "rotate") {
+          angle = (angle + 45) % 360;
+          apply2(state3, true);
+          return;
         }
-      });
+        if (document.hidden) apply2(state3);
+      }, 200);
+      apply2(compute(), true);
+      ctx.cleanup(() => restore());
     }
   });
 

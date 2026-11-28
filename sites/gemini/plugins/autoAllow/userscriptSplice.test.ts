@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../../..");
 const js = readFileSync(resolve(ROOT, "userscript/GGPP.user.js"), "utf8");
 
-test("hand-spliced userscript is 0.2.17 with AutoAllow, nav filter, and flag-hide status", () => {
-  expect(js).toMatch(/@version\s+0\.2\.17/);
+test("hand-spliced userscript is 0.2.18 with AutoAllow, nav filter, flag-hide status, and Nightly favicons", () => {
+  expect(js).toMatch(/@version\s+0\.2\.18/);
   expect(js).not.toMatch(/@version\s+0\.2\.8/);
   expect(js).toContain('id: "autoAllow"');
   expect(js).toContain("function unwrapEvaluateScript");
@@ -42,6 +42,11 @@ test("hand-spliced userscript is 0.2.17 with AutoAllow, nav filter, and flag-hid
   expect(js).toMatch(/id: "chatListStatus"[\s\S]{0,500}enabledByDefault: true/);
   expect(js).toContain("ggpp:restored-chatListStatus-v2");
   expect(js).toContain("retireRedundantPlugins");
+  expect(js).toContain("function computeFaviconState");
+  expect(js).toContain("function faviconHref");
+  expect(js).toContain("apple-touch-icon");
+  expect(js).toContain('toDataURL("image/png")');
+  expect(js).not.toContain("animateTransform");
   expect(js.split("\u00a0").length - 1).toBe(2);
 });
 

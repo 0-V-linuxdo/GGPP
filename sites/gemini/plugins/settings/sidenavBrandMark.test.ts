@@ -32,5 +32,5 @@ test("sidenav launcher in userscript uses the @icon img, not I.ggpp", () => {
   expect(js).toContain(GGPP_ICON_DATA_URI);
   expect(js).toMatch(/function brandMark\(size = 20\)[\s\S]{0,400}createElement\("img"\)/);
   expect(js).not.toContain("url(#ggppSidenavSpark)");
-  expect(js).toMatch(/@version\s+0\.2\.8/);
+  expect(js).toMatch(/@version\s+0\.2\.18/);
 });
